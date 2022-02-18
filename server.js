@@ -31,6 +31,7 @@ openspace = false;
 function newConnection(socket) {
     console.log('New connection: ' + socket.id)
     socket.on('start', Start)
+    socket.on('move', Move)
 
 
     function Start(data) {
@@ -49,6 +50,11 @@ function newConnection(socket) {
             players.push(player);
             
         }
+    }
+
+    function Move(data) {
+        console.log(data.num + ' ' + data.x + ' ' + data.y);
+        players[data.num] = data;
     }
 }
 

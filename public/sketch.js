@@ -38,3 +38,17 @@ function draw() {
 		}
 	}
 }
+
+function keyPressed() {
+	if (keyCode === UP_ARROW) {
+		player.pos.x += 100;
+		console.log("UP_ARROW PRESSED");
+	}
+	var data = {
+		num: player.num,
+		x: player.pos.x,
+		y: player.pos.y
+		
+	};
+	socket.emit('move', data)
+}

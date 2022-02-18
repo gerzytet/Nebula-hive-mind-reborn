@@ -2,6 +2,7 @@ function Player(x, y) {
 	this.pos = createVector(x, y)
 	this.size = 20
 	this.vel = createVector(0, 0)
+	this.num = null
 
 
 	this.show = function () {
