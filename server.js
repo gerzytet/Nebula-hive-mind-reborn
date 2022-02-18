@@ -53,14 +53,18 @@ function newConnection(socket) {
     }
 
     function Move(data) {
-        console.log(data.num + ' ' + data.x + ' ' + data.y);
-        players[data.num] = data;
+        var d = getIndex(socket.id);
+        console.log(players)
+        console.log(d + ' ' + data.x + ' ' + data.y + ' ' + data.velx + ' ' + data.vely);
+        players[d].x = data.x;
+        players[d].y = data.y;
     }
 }
 
 function getIndex(id) {
-    for (i = 0; i < players.length; i++) {
-        if (id == players[i].id) {
+    for (var i = 0; i < players.length; i++) {
+        console.log(i + ' ' + (id === players[i].id))
+        if (id === players[i].id) {
             return i;
         }
     }
