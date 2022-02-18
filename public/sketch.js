@@ -55,10 +55,31 @@ var playerEdgeSoftLimitHeight = canvasHeight / 10;
 var mapWidth = 3000;
 var mapHeight = 2000;
 
+
+
+var cnv;
+let x;
+let y;
+var speed = 10;
+
+function centerCanvas() {
+    x = width / 2;
+    y = height / 2;
+    background(0, 0, 0);
+}
+
+function windowResized() {
+	cnv = resizeCanvas(windowWidth-20, windowHeight-300);
+	centerCanvas();
+}
+
 function setup() {
-	createCanvas(canvasWidth, canvasHeight);
+	createCanvas(windowWidth-20, windowHeight-300);
 	background(51);
 	socket = io.connect('http://localhost:3000');
+
+	cnv.parent('sketch-container');
+
 
 	player = new Player(random(width), random(height));
 	var data = {
