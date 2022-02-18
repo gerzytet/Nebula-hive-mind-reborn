@@ -1,3 +1,10 @@
+/*
+@file sketch.js
+@author entire team
+@date 2/18/2022
+@brief File that controls the graphics on the canvas
+*/
+
 var socket
 var players = []
 var player
@@ -9,6 +16,7 @@ pos: p5 vector  (x, y) position
 id: String      the socket id
 num: int        the player number
 size: int       the player size (basically a test value)
+lastPing: Date  the last time the player has replied to the server
 */
 
 /*
@@ -44,65 +52,73 @@ move:
 C -> S
 data: an XY object
 effect: the server moves the player to the specified position when it recieves
-*/
 
-var canvasWidth = 1500;
-var canvasHeight = 700;
-//the closesnt distance a player can get to edge of the screen without the camera attempting to move
-var playerEdgeSoftLimitWidth = canvasWidth / 10;
-var playerEdgeSoftLimitHeight = canvasHeight / 10;
+heartbeatReply:
+C -> S
+data: empty object
+effect: the server will know that the client is still connected when it recieves this packet
+*/
 
 var mapWidth = 3000;
 var mapHeight = 2000;
 
-
-
 var cnv;
-let x;
-let y;
-var speed = 10;
+var camera;
 
 function centerCanvas() {
-    x = width / 2;
-    y = height / 2;
-    background(0, 0, 0);
+	x = width / 2;
+	y = height / 2;
+	background(0, 0, 0);
 }
 
 function windowResized() {
-	cnv = resizeCanvas(windowWidth-20, windowHeight-300);
+	cnv = resizeCanvas(windowWidth - 20, windowHeight - 20);
 	centerCanvas();
 }
 
 function setup() {
-	createCanvas(windowWidth-20, windowHeight-300);
+	cnv = createCanvas(20, 20);
+	cnv.parent("sketch-container");
+	windowResized()
+	centerCanvas();
+	x = width / 2;
+	y = height / 2;
 	background(51);
 	socket = io.connect('http://localhost:3000');
-
-	cnv.parent('sketch-container');
-
 
 	player = new Player(random(width), random(height));
 	var data = {
 		x: player.pos.x,
 		y: player.pos.y
 	};
+	camera = {
+		x: 0,
+		y: 0
+	}
+
 	socket.emit('start', data);
 	socket.on('heartbeat', function (data) {
 		players = data;
+		socket.emit('heartbeatReply', {});
 	})
 }
 
 function draw() {
 	background(51)
+	console.log("camera: " + camera.x + " " +  camera.y);
 
-	var camera = {
-		x: 0,
-		y: 0
-	}
 	
+	//the closest distance a player can get to edge of the screen without the camera attempting to move
+	var playerEdgeSoftLimitWidth = windowWidth / 10;
+	var playerEdgeSoftLimitHeight = windowHeight / 10;
+	var oldcamera = {
+		x: camera.x,
+		y: camera.y
+	}
+
 	//case when player is at the bottom or right of the screen
-	var edgeX = camera.x + canvasWidth
-	var edgeY = camera.y + canvasHeight
+	var edgeX = camera.x + windowWidth
+	var edgeY = camera.y + windowHeight
 
 	var distFromEdgeX = edgeX - player.pos.x
 	var distFromEdgeY = edgeY - player.pos.y
@@ -110,14 +126,17 @@ function draw() {
 	var cameraMoveX = max(playerEdgeSoftLimitWidth - distFromEdgeX, 0);
 	var cameraMoveY = max(playerEdgeSoftLimitHeight - distFromEdgeY, 0);
 	
-	var cameraLimitX = mapWidth - canvasWidth;
-	var cameraLimitY = mapHeight - canvasHeight;
+	var cameraLimitX = mapWidth - windowWidth;
+	var cameraLimitY = mapHeight - windowHeight;
 	
 	var newCameraX = min(camera.x + cameraMoveX, cameraLimitX);
 	var newCameraY = min(camera.y + cameraMoveY, cameraLimitY);
 
 	camera.x = newCameraX;
 	camera.y = newCameraY;
+	/*if (camera.x != oldcamera.x || camera.y != oldcamera.y) {
+		console.log("camera: " + camera.x + " " +  camera.y);
+	}*/
 
 	//case when player is at the top or left of the screen
 	var edgeX = camera.x
@@ -137,51 +156,83 @@ function draw() {
 	
 	camera.x = newCameraX;
 	camera.y = newCameraY;
-	console.log("camera: " + camera.x + " " +  camera.y);
+	/*if (camera.x != oldcamera.x || camera.y != oldcamera.y) {
+		console.log("camera: " + camera.x + " " +  camera.y);
+	}*/
+	//log camera
 
-	//player.smoothMove();
-	for (var i = players.length - 1; i >= 0; i--) {
-		if (players[i].num === 0) { fill(255, 0, 0) }
-		else if (players[i].num === 1) { fill(0, 0, 255) }
-		else if (players[i].num === 2) { fill(0, 255, 0) }
-		else if (players[i].num === 3) { fill(255, 255, 0) }
-		else {fill(255, 102, 25)}
-		ellipse(players[i].x, players[i].y, players[i].size * 2, players[i].size * 2);
-
-		fill(255);
-		textAlign(CENTER);
-		textSize(15);
-		text(players[i].num+1, players[i].x, players[i].y + (players[i].size/3));
+	function code(c) {
+		return c.charCodeAt()
 	}
-}
 
-function keyTyped() {
-	if (keyCode === UP_ARROW || key === 'w' || key === 'W') {
-		//player.vel.y = -1;
-		player.pos.y += 10;
+	//controls basic player movement
+	if (keyIsDown(UP_ARROW) || keyIsDown(code('w')) || keyIsDown(code('W'))) {
+		player.vel.y = -1;
+		//player.pos.y -= 10;
 		console.log("UP_ARROW PRESSED");
-	} else if (keyCode === DOWN_ARROW || key === 's' || key === 'S') {
-		//player.vel.x = 1;
-		player.pos.y -= 10;
+	}
+	if (keyIsDown(DOWN_ARROW) || keyIsDown(code('s')) || keyIsDown(code('S'))) {
+		player.vel.y = 1;
+		//player.pos.y += 10;
 		console.log("DOWN_ARROW PRESSED");
-	} else if (keyCode === LEFT_ARROW || key === 'a' || key === 'A') {
-		//player.vel.x = -1;
-		player.pos.x += 10;
+	}
+	if (keyIsDown(LEFT_ARROW) || keyIsDown(code('a')) || keyIsDown(code('A'))) {
+		player.vel.x = -1;
+		//player.pos.x -= 10;
 		console.log("LEFT_ARROW PRESSED");
-	} else if (keyCode === RIGHT_ARROW || key === 'd' || key === 'D') {
-		//player.vel.x = 1;
-		player.pos.x -= 10;
+	}
+	if (keyIsDown(RIGHT_ARROW) || keyIsDown(code('d')) || keyIsDown(code('D'))) {
+		player.vel.x = 1;
+		//player.pos.x += 10;
 		console.log("RIGHT_ARROW PRESSED");
 	}
-	player.pos.x = max(player.pos.x, 0)
-	player.pos.y = max(player.pos.y, 0)
+
+	player.smoothMove();
+	for (var i = players.length - 1; i >= 0; i--) {
+		var id = players[i].id;
+		if (id.substring(2, id.length) !== socket.id) {
+			if (players[i].num === 0) { fill(255, 0, 0) }
+			else if (players[i].num === 1) { fill(0, 0, 255) }
+			else if (players[i].num === 2) { fill(0, 255, 0) }
+			else if (players[i].num === 3) { fill(255, 255, 0) }
+			else { fill(255, 102, 25) }
+			ellipse(players[i].x - camera.x, players[i].y - camera.y, players[i].size * 2, players[i].size * 2);
+
+			fill(255);
+			textAlign(CENTER);
+			textSize(15);
+			text(players[i].num + 1, players[i].x - camera.x, players[i].y - camera.y + (players[i].size / 3));
+		}
+	}
 
 	var data = {
 		x: player.pos.x,
-		y: player.pos.y,
-		velx: player.vel.x,
-		vely: player.vel.y
+		y: player.pos.y
 	};
-	
+
 	socket.emit('move', data)
+}
+
+function keyReleased() {
+	if (keyCode === UP_ARROW || key === 'w' || key === 'W') {
+		player.vel.y = 0;
+		//player.pos.y -= 10;
+		console.log("UP_ARROW PRESSED");
+	} else if (keyCode === DOWN_ARROW || key === 's' || key === 'S') {
+		player.vel.y = 0;
+		//player.pos.y += 10;
+		console.log("DOWN_ARROW PRESSED");
+	} else if (keyCode === LEFT_ARROW || key === 'a' || key === 'A') {
+		player.vel.x = 0;
+		//player.pos.x -= 10;
+		console.log("LEFT_ARROW PRESSED");
+	} else if (keyCode === RIGHT_ARROW || key === 'd' || key === 'D') {
+		player.vel.x = 0;
+		//player.pos.x += 10;
+		console.log("RIGHT_ARROW PRESSED");
+	}
+	//o key code to disconnect
+	else if (key === 'o') {
+		socket.disconnect()
+	}
 }

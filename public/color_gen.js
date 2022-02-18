@@ -1,3 +1,10 @@
+/*
+@file color_gen.js
+@author Christian R
+@date 2/18/2022
+@brief File that generates specific colors for users when they enter the game.
+*/
+
 const cyrb53 = function(str, seed = 0) {
     let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
     for (let i = 0, ch; i < str.length; i++) {
