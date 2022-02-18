@@ -1,17 +1,18 @@
 {
-  "name": "js_test",
+  "name": "node-js-1",
   "version": "1.0.0",
-  "description": "socket demo",
+  "description": "My first use of node js",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
   "keywords": [
+    "sockets",
     "p5.js",
     "node"
   ],
-  "author": "Craig",
+  "author": "Christian2",
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.2",

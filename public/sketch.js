@@ -1,47 +1,40 @@
 var socket
-
-const cyrb53 = function(str, seed = 0) {
-    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
-    for (let i = 0, ch; i < str.length; i++) {
-        ch = str.charCodeAt(i);
-        h1 = Math.imul(h1 ^ ch, 2654435761);
-        h2 = Math.imul(h2 ^ ch, 1597334677);
-    }
-    h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
-    h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
-    return 4294967296 * (2097151 & h2) + (h1>>>0);
-};
+var players = []
+var player
 
 function setup() {
-	createCanvas(200, 200)
-	background(51)
-	
-	socket = io.connect('http://localhost:3000')
-	
-	socket.on('mouse', newDrawing)
-}
+	createCanvas(1500, 700);
+	background(51);
+	socket = io.connect('http://localhost:3000');
 
-function newDrawing(data) {
-	noStroke()
-	hash = cyrb53(data.id)
-	fill((hash & 0xFF), (hash & 0xFF00) >> 8, (hash & 0xFF0000) >> 16)
-	ellipse(data.x, data.y, 36, 36)
-}
-
-function mouseDragged() {
-	console.log(mouseX + '|||||' + mouseY)
+	player = new Player(random(width), random(height));
 	var data = {
-		x: mouseX,
-		y: mouseY,
-		id: socket.id
-	}
-	socket.emit('mouse', data)
-	
-	noStroke()
-	fill(255, 255, 255)
-	ellipse(mouseX, mouseY, 60, 10)
+		x: player.pos.x,
+		y: player.pos.y
+	};
+	socket.emit('start', data);
+	socket.on('heartbeat', function (data) {
+		players = data;
+	})
 }
 
 function draw() {
+	fill(51)
 	
+	for (var i = players.length - 1; i >= 0; i--) {
+		var id = players[i].id;
+		if (id.substring(2, id.length) !== socket.id) {
+			if (players[i].num == 0) { fill(255, 0, 0) }
+			else if (players[i].num == 1) { fill(0, 0, 255) }
+			else if (players[i].num == 2) { fill(0, 255, 0) }
+			else if (players[i].num == 3) { fill(255, 255, 0) }
+			else {fill(255, 102, 25)}
+			ellipse(players[i].x, players[i].y, players[i].size * 2, players[i].size * 2);
+
+			fill(255);
+			textAlign(CENTER);
+			textSize(15);
+			text(players[i].num+1, players[i].x, players[i].y + (players[i].size/3));
+		}
+	}
 }
