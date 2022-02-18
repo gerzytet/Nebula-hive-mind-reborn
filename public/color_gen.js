@@ -14,9 +14,17 @@ const cyrb53 = function(str, seed = 0) {
 //find a smarter way to do this that ensures colors are spaced properly
 //returns an array of length 3 with R, G, B values
 function colorFromId(id) {
-    var hash = cyrb53(id)
+    var hash = cyrb53(id.toString())
     var r = hash & 0xFF
     var g = (hash >> 8) & 0xFF
     var b = (hash >> 16) & 0xFF
     return [r, g, b]
 }
+
+function test() {
+    console.log(colorFromId(1))
+    console.log(colorFromId(2))
+    console.log(colorFromId(3))
+}
+
+//test()
