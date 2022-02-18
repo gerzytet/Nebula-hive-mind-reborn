@@ -1,0 +1,20 @@
+{
+  "name": "js_test",
+  "version": "1.0.0",
+  "description": "socket demo",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "p5.js",
+    "node"
+  ],
+  "author": "Craig",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.2",
+    "socket.io": "^4.4.1"
+  }
+}
