@@ -16,99 +16,81 @@ console.log('My server is running')
 
 var socket = require('socket.io')
 var io = socket(server)
+var shared = require('./public/shared.js')
+console.log(shared)
+
 var players = []
 io.sockets.on('connection', newConnection)
 
-function Player(id, x, y) {
-    this.id = id
-    this.x = x
-    this.y = y
-    this.size = 20
-    this.num = null
-}
+setInterval(tick, 33);
 
-
-setInterval(heartbeat, 33);
 const timeoutMillis = 10000;
+class ServerPlayer extends shared.Player {
+    constructor(id, pos) {
+        super(id, pos)
+        this.lastPing = Date.now()
+    }
 
-function heartbeat() {
-    io.sockets.emit('heartbeat', players);
-    var toRemove = [];
-    for (var i = 0; i < players.length; i++) {
-        //if now - players.lastPing > timeoutMillis
-        //remove player
-        if (Date.now() - players[i].lastPing > timeoutMillis) {
-            toRemove.push(players[i]);
-        }
+    updatePing() {
+        this.lastPing = Date.now()
     }
-    if (toRemove.length > 0) {
-        console.log("removing " + toRemove.length);
+
+    isTimedOut() {
+        return Date.now() - this.lastPing > timeoutMillis
     }
-    var newPlayers = [];
-    for (var i = 0; i < players.length; i++) {
-        if (!toRemove.includes(players[i])) {
-            newPlayers.push(players[i]);
-        }
-    }
-    players = newPlayers;
 }
 
-openspace = false;
+var state = new shared.GameState()
+var events = []
+
+function tick() {
+    for (var i = 0; i < state.players.length; i++) {
+        if (state.players[i].isTimedOut()) {
+            events.push(
+                new shared.PlayerLeave(state.players[i].id)
+            )
+        }
+    }
+    state.advance(events)
+
+    eventsSerialized = []
+    for (var i = 0; i < events.length; i++) {
+        eventsSerialized.push(events[i].serialize())
+    }
+    events = []
+
+    io.sockets.emit("tick", eventsSerialized)
+}
+
 function newConnection(socket) {
     console.log('New connection: ' + socket.id)
-    socket.on('start', Start)
-    socket.on('move', Move)
-    socket.on('heartbeatReply', heartbeatReply)
+    socket.on('changeVelocity', changeVelocity)
+    socket.on('tickReply', tickReply)
 
-    function Start(data) {
-        //console.log(socket.id + ' ' + data.x + ' ' + data.y);
-        var player = new Player(socket.id, data.x, data.y);
-        if (openspace) {
-            for (i = 0; i < players.length; i++) {
-                if (players[i] == 0) {
-                    player.num = i;
-                    players[i] = player;
-                }
-            }
+    var player = new ServerPlayer(socket.id, new shared.SimpleVector(
+        Math.floor(Math.random() * /*shared.mapWidth*/ 400),
+        Math.floor(Math.random() * /*shared.mapHeight*/ 400))
+    )
+    events.push(
+        new shared.PlayerJoin(player)
+    )
+    socket.emit("state", state.serialize())
+
+    function tickReply(data) {
+        var player = state.playerById(socket.id)
+        if (player === null) {
+            return
         }
-        else {
-            player.num = players.length;
-            players.push(player);
-            
-        }
+        player.updatePing()
     }
 
-    function Move(data) {
-        var d = getIndex(socket.id);
-        if (d === undefined) {
-            console.log("Warning: player not found in Move function");
-            return;
+    function changeVelocity(data) {
+        var player = state.playerById(socket.id)
+        if (player === null) {
+            console.log(state)
+            return
         }
-        //console.log(players)
-        //console.log(d + ' ' + data.x + ' ' + data.y);
-        players[d].x = data.x;
-        players[d].y = data.y;
-    }
-
-    function heartbeatReply(data) {
-        var d = getIndex(socket.id);
-        if (d === undefined) {
-            console.log("Warning: player not found in heartbeat function");
-            return;
-        }
-
-        if (d === undefined) {
-            console.log("error " + socket.id + ' ' + players);
-        }
-        players[d].lastPing = Date.now();
-    }
-}
-
-function getIndex(id) {
-    for (var i = 0; i < players.length; i++) {
-        //console.log(i + ' ' + (id === players[i].id))
-        if (id === players[i].id) {
-            return i;
-        }
+        console.log("change velocity " + data.vel.x + " " + data.vel.y)
+        events.push(new shared.PlayerChangeVelocity(player.id, data.vel))
     }
 }

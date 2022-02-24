@@ -6,108 +6,125 @@
 */
 
 var socket
-var players = []
-var player
+class ClientPlayer extends Player {
+	constructor(id, pos) {
+		super(id, pos)
+	}
 
-/*
-Player object:
+	static fromPlayer(player) {
+		return new ClientPlayer(player.id, player.pos)
+		this.size = player.size
+		this.vel = player.vel
+	}
 
-pos: p5 vector  (x, y) position
-id: String      the socket id
-num: int        the player number
-size: int       the player size (basically a test value)
-lastPing: Date  the last time the player has replied to the server
-*/
+	show() {
+		push()
+		fill(255, 0, 0)
+		ellipse(this.pos.x - camera.x, this.pos.y - camera.y, this.size * 2, this.size * 2)
+		pop()
 
-/*
-XY object:
+		push()
+		fill(255);
+		textAlign(CENTER);
+		textSize(15);
+		text(42, this.pos.x - camera.x, this.pos.y - camera.y + (this.size / 3))
+		pop()
+	}
+}
 
-x: int       the x position
-y: int       the y position
-*/
-
-//the players array consists of a list of Player objects, as above
-//the players array has identical contents as the server-side players array
-
-/*
-types of packets:
-
-S: server
-C: client
-S -> C: a packet that gets sent from the server to client size
-C -> S: a packet that gets sent from the client to server size
-
-heartbeat:
-S -> C
-data: the player array from the server.
-effect: The client sets its player array to the recieved player array when it recieves
-this packet is sent by the server every 33 milliseconds.
-
-start:
-C -> S
-data: an XY object
-effect: the server creates a new player at this position associated with the socket id when it recieves
-
-move:
-C -> S
-data: an XY object
-effect: the server moves the player to the specified position when it recieves
-
-heartbeatReply:
-C -> S
-data: empty object
-effect: the server will know that the client is still connected when it recieves this packet
-*/
-
-var mapWidth = 3000;
-var mapHeight = 2000;
-
-var cnv;
-var camera;
+var cnv
+var camera
+var state
 
 function centerCanvas() {
-	x = width / 2;
-	y = height / 2;
-	background(0, 0, 0);
+	x = width / 2
+	y = height / 2
+	background(0, 0, 0)
 }
 
 function windowResized() {
-	cnv = resizeCanvas(windowWidth - 20, windowHeight - 20);
-	centerCanvas();
+	cnv = resizeCanvas(windowWidth - 20, windowHeight - 20)
+	centerCanvas()
 }
 
 function setup() {
 	cnv = createCanvas(20, 20);
-	cnv.parent("sketch-container");
+	cnv.parent("sketch-container")
 	windowResized()
-	centerCanvas();
-	x = width / 2;
-	y = height / 2;
-	background(51);
-	socket = io.connect('http://localhost:3000');
-
-	player = new Player(random(width), random(height));
-	var data = {
-		x: player.pos.x,
-		y: player.pos.y
-	};
+	centerCanvas()
+	x = width / 2
+	y = height / 2
+	background(51)
+	socket = io.connect()
 	camera = {
 		x: 0,
 		y: 0
 	}
 
-	socket.emit('start', data);
-	socket.on('heartbeat', function (data) {
-		players = data;
-		socket.emit('heartbeatReply', {});
+	socket.on('tick', function (eventsSerialized) {
+		if (eventsSerialized.length !== 0) {
+			console.log(eventsSerialized)
+		}
+		var events = []
+		for (var i = 0; i < eventsSerialized.length; i++) {
+			events.push(GameEvent.deserialize(eventsSerialized[i]))
+		}
+
+		//HACK
+		for (var i = 0; i < events.length; i++) {
+			if (events[i] instanceof PlayerJoin) {
+				events[i].player = ClientPlayer.fromPlayer(events[i].player)
+			}
+		}
+
+		state.advance(events)
+		socket.emit('tickReply', {});
 	})
+
+	socket.on("state", function (stateSerialized) {
+		state = GameState.deserialize(stateSerialized)
+
+		//HACK
+		for (var i = 0; i < state.players.length; i++) {
+			state.players[i] = ClientPlayer.fromPlayer(state.players[i])
+		}
+	})
+
+	lastvx = 0
+	lastvy = 0
 }
 
-function draw() {
-	background(51)
-	console.log("camera: " + camera.x + " " +  camera.y);
+var lastvx
+var lastvy
+function doMovement() {
+	var vy = 0;
+	var vx = 0;
 
-	
+	function code(c) {
+		return c.charCodeAt()
+	}
+
+	if (keyIsDown(UP_ARROW) || keyIsDown(code('w')) || keyIsDown(code('W'))) {
+		vy = -1
+	} else if (keyIsDown(DOWN_ARROW) || keyIsDown(code('s')) || keyIsDown(code('S'))) {
+		vy = 1
+	}
+	if (keyIsDown(LEFT_ARROW) || keyIsDown(code('a')) || keyIsDown(code('A'))) {
+		vx = -1
+	} else if (keyIsDown(RIGHT_ARROW) || keyIsDown(code('d')) || keyIsDown(code('D'))) {
+		vx = 1
+	}
+
+	if (lastvy !== vy || lastvx !== vx) {
+		socket.emit("changeVelocity", {
+			vel: new SimpleVector(vx, vy)
+		});
+	}
+	lastvx = vx
+	lastvy = vy
+}
+
+function moveCamera(player) {
 	//the closest distance a player can get to edge of the screen without the camera attempting to move
 	var playerEdgeSoftLimitWidth = windowWidth / 10;
 	var playerEdgeSoftLimitHeight = windowHeight / 10;
@@ -123,17 +140,17 @@ function draw() {
 	var distFromEdgeX = edgeX - player.pos.x
 	var distFromEdgeY = edgeY - player.pos.y
 
-	var cameraMoveX = max(playerEdgeSoftLimitWidth - distFromEdgeX, 0);
-	var cameraMoveY = max(playerEdgeSoftLimitHeight - distFromEdgeY, 0);
+	var cameraMoveX = max(playerEdgeSoftLimitWidth - distFromEdgeX, 0)
+	var cameraMoveY = max(playerEdgeSoftLimitHeight - distFromEdgeY, 0)
 	
 	var cameraLimitX = mapWidth - windowWidth;
 	var cameraLimitY = mapHeight - windowHeight;
 	
-	var newCameraX = min(camera.x + cameraMoveX, cameraLimitX);
-	var newCameraY = min(camera.y + cameraMoveY, cameraLimitY);
+	var newCameraX = min(camera.x + cameraMoveX, cameraLimitX)
+	var newCameraY = min(camera.y + cameraMoveY, cameraLimitY)
 
-	camera.x = newCameraX;
-	camera.y = newCameraY;
+	camera.x = newCameraX
+	camera.y = newCameraY
 	/*if (camera.x != oldcamera.x || camera.y != oldcamera.y) {
 		console.log("camera: " + camera.x + " " +  camera.y);
 	}*/
@@ -145,94 +162,36 @@ function draw() {
 	var distFromEdgeX = player.pos.x - edgeX
 	var distFromEdgeY = player.pos.y - edgeY
 
-	var cameraMoveX = max(playerEdgeSoftLimitWidth - distFromEdgeX, 0);
-	var cameraMoveY = max(playerEdgeSoftLimitHeight - distFromEdgeY, 0);
+	var cameraMoveX = max(playerEdgeSoftLimitWidth - distFromEdgeX, 0)
+	var cameraMoveY = max(playerEdgeSoftLimitHeight - distFromEdgeY, 0)
 	
-	var cameraLimitX = 0;
-	var cameraLimitY = 0;
+	var cameraLimitX = 0
+	var cameraLimitY = 0
 
-	var newCameraX = max(camera.x - cameraMoveX, cameraLimitX);
-	var newCameraY = max(camera.y - cameraMoveY, cameraLimitY);
+	var newCameraX = max(camera.x - cameraMoveX, cameraLimitX)
+	var newCameraY = max(camera.y - cameraMoveY, cameraLimitY)
 	
-	camera.x = newCameraX;
-	camera.y = newCameraY;
-	/*if (camera.x != oldcamera.x || camera.y != oldcamera.y) {
-		console.log("camera: " + camera.x + " " +  camera.y);
-	}*/
-	//log camera
-
-	function code(c) {
-		return c.charCodeAt()
-	}
-
-	//controls basic player movement
-	if (keyIsDown(UP_ARROW) || keyIsDown(code('w')) || keyIsDown(code('W'))) {
-		player.vel.y = -1;
-		//player.pos.y -= 10;
-		console.log("UP_ARROW PRESSED");
-	}
-	if (keyIsDown(DOWN_ARROW) || keyIsDown(code('s')) || keyIsDown(code('S'))) {
-		player.vel.y = 1;
-		//player.pos.y += 10;
-		console.log("DOWN_ARROW PRESSED");
-	}
-	if (keyIsDown(LEFT_ARROW) || keyIsDown(code('a')) || keyIsDown(code('A'))) {
-		player.vel.x = -1;
-		//player.pos.x -= 10;
-		console.log("LEFT_ARROW PRESSED");
-	}
-	if (keyIsDown(RIGHT_ARROW) || keyIsDown(code('d')) || keyIsDown(code('D'))) {
-		player.vel.x = 1;
-		//player.pos.x += 10;
-		console.log("RIGHT_ARROW PRESSED");
-	}
-
-	player.smoothMove();
-	for (var i = players.length - 1; i >= 0; i--) {
-		var id = players[i].id;
-		if (id.substring(2, id.length) !== socket.id) {
-			if (players[i].num === 0) { fill(255, 0, 0) }
-			else if (players[i].num === 1) { fill(0, 0, 255) }
-			else if (players[i].num === 2) { fill(0, 255, 0) }
-			else if (players[i].num === 3) { fill(255, 255, 0) }
-			else { fill(255, 102, 25) }
-			ellipse(players[i].x - camera.x, players[i].y - camera.y, players[i].size * 2, players[i].size * 2);
-
-			fill(255);
-			textAlign(CENTER);
-			textSize(15);
-			text(players[i].num + 1, players[i].x - camera.x, players[i].y - camera.y + (players[i].size / 3));
-		}
-	}
-
-	var data = {
-		x: player.pos.x,
-		y: player.pos.y
-	};
-
-	socket.emit('move', data)
+	camera.x = newCameraX
+	camera.y = newCameraY
 }
 
-function keyReleased() {
-	if (keyCode === UP_ARROW || key === 'w' || key === 'W') {
-		player.vel.y = 0;
-		//player.pos.y -= 10;
-		console.log("UP_ARROW PRESSED");
-	} else if (keyCode === DOWN_ARROW || key === 's' || key === 'S') {
-		player.vel.y = 0;
-		//player.pos.y += 10;
-		console.log("DOWN_ARROW PRESSED");
-	} else if (keyCode === LEFT_ARROW || key === 'a' || key === 'A') {
-		player.vel.x = 0;
-		//player.pos.x -= 10;
-		console.log("LEFT_ARROW PRESSED");
-	} else if (keyCode === RIGHT_ARROW || key === 'd' || key === 'D') {
-		player.vel.x = 0;
-		//player.pos.x += 10;
-		console.log("RIGHT_ARROW PRESSED");
+function draw() {
+	if (state === undefined) {
+		//we are still waiting for initial state packet
+		return
 	}
-	//o key code to disconnect
-	else if (key === 'o') {
-		socket.disconnect()
+	var player = state.playerById(socket.id)
+	if (player === null) {
+		//we got initial state packet, but it will not have us as a player at first
+		return
+	}
+
+	doMovement()
+	moveCamera(player)
+
+	background(51)
+	
+	for (var i = 0; i < state.players.length; i++) {
+		state.players[i].show()
 	}
 }
