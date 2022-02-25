@@ -47,6 +47,12 @@ function windowResized() {
 	centerCanvas()
 }
 
+function preload() {
+	bg = loadImage('Sprite_Background.png', () => { }, () => {
+		console.log("failed to load background");
+	});
+}
+
 function setup() {
 	cnv = createCanvas(20, 20);
 	cnv.parent("sketch-container")
@@ -126,8 +132,8 @@ function doMovement() {
 
 function moveCamera(player) {
 	//the closest distance a player can get to edge of the screen without the camera attempting to move
-	var playerEdgeSoftLimitWidth = windowWidth / 10;
-	var playerEdgeSoftLimitHeight = windowHeight / 10;
+	var playerEdgeSoftLimitWidth = (windowWidth / 2) + 1;
+	var playerEdgeSoftLimitHeight = (windowHeight / 2) + 1;
 	var oldcamera = {
 		x: camera.x,
 		y: camera.y
@@ -190,6 +196,8 @@ function draw() {
 	moveCamera(player)
 
 	background(51)
+	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
+
 	
 	for (var i = 0; i < state.players.length; i++) {
 		state.players[i].show()
