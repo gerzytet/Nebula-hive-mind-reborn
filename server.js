@@ -64,7 +64,7 @@ function tick() {
 
 function newConnection(socket) {
     console.log('New connection: ' + socket.id)
-    socket.on('changeVelocity', changeVelocity)
+    socket.on('changeAcceleration', changeAcceleration)
     socket.on('tickReply', tickReply)
 
     var player = new ServerPlayer(socket.id, new shared.SimpleVector(
@@ -84,13 +84,13 @@ function newConnection(socket) {
         player.updatePing()
     }
 
-    function changeVelocity(data) {
+    function changeAcceleration(data) {
         var player = state.playerById(socket.id)
         if (player === null) {
             console.log(state)
             return
         }
-        console.log("change velocity " + data.vel.x + " " + data.vel.y)
-        events.push(new shared.PlayerChangeVelocity(player.id, data.vel))
+        console.log("change acceleration " + data.acc.x + " " + data.acc.y)
+        events.push(new shared.PlayerChangeAcceleration(player.id, data.acc))
     }
 }

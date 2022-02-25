@@ -25,6 +25,50 @@ function preload() {
 	bg = loadImage('Sprite_Background.png', () => { }, () => {
 		console.log("failed to load background");
 	});
+	pship = loadImage('Player_Ship_2.png', () => { }, () => {
+		console.log("failed to load player ship");
+	});
+	eship = loadImage('Ship_1.png', () => { }, () => {
+		console.log("failed to load enemy ship");
+	});
+	asteroid_full = loadImage('Asteroid_Full.png', () => { }, () => {
+		console.log("failed to load asteroid full");
+	});
+	asteroid_medium = loadImage('Asteroid_Medium.png', () => { }, () => {
+		console.log("failed to load asteroid medium");
+	});
+	asteroid_low = loadImage('Asteroid_Low.png', () => { }, () => {
+		console.log("failed to load asteroid low");
+	});
+
+	powerupFuel = loadImage('PowerUp_Fuel_2.png', () => { }, () => {
+		console.log("failed to load powerup fuel");
+	})
+	powerupHealth = loadImage('PowerUp-Health.png', () => { }, () => {
+		console.log("failed to load powerup health");
+	})
+	powerupSpeed = loadImage('PowerUp-Speed.png', () => { }, () => {
+		console.log("failed to load powerup speed");
+	})
+	powerupAttack = loadImage('PowerUp-Attack.png', () => { }, () => {
+		console.log("failed to load powerup attack");
+	})
+	powerupMachineGun = loadImage('Gun.png', () => { }, () => {
+		console.log("failed to load powerup machine gun");
+	})
+
+	swordImg = loadImage('Sword.png', () => { }, () => {
+		console.log("failed to load sword");
+	});
+}
+
+//change name to input value
+function changeName() {
+	const name = input.value();
+	input.value('');
+	//data = name
+	//player.name = name;
+	//socket.emit('changeName', data);
 }
 
 function setup() {
@@ -35,6 +79,17 @@ function setup() {
 	x = width / 2
 	y = height / 2
 	background(51)
+
+	input = createInput();
+	input.position(0, 0);
+
+	button = createButton('Change Name');
+	button.position(input.x + input.width, 0);
+	button.mousePressed(changeName);
+
+	textAlign(CENTER);
+	textSize(50);
+
 	socket = io.connect()
 	camera = {
 		x: 0,
@@ -58,38 +113,38 @@ function setup() {
 		state = GameState.deserialize(stateSerialized)
 	})
 
-	lastvx = 0
-	lastvy = 0
+	lastax = 0
+	lastay = 0
 }
 
-var lastvx
-var lastvy
+var lastax
+var lastay
 function doMovement() {
-	var vy = 0;
-	var vx = 0;
+	var ay = 0;
+	var ax = 0;
 
 	function code(c) {
 		return c.charCodeAt()
 	}
 
 	if (keyIsDown(UP_ARROW) || keyIsDown(code('w')) || keyIsDown(code('W'))) {
-		vy = -1
+		ay = -0.1
 	} else if (keyIsDown(DOWN_ARROW) || keyIsDown(code('s')) || keyIsDown(code('S'))) {
-		vy = 1
+		ay = 0.1
 	}
 	if (keyIsDown(LEFT_ARROW) || keyIsDown(code('a')) || keyIsDown(code('A'))) {
-		vx = -1
+		ax = -0.1
 	} else if (keyIsDown(RIGHT_ARROW) || keyIsDown(code('d')) || keyIsDown(code('D'))) {
-		vx = 1
+		ax = 0.1
 	}
 
-	if (lastvy !== vy || lastvx !== vx) {
-		socket.emit("changeVelocity", {
-			vel: new SimpleVector(vx, vy)
+	if (lastay !== ay || lastax !== ax) {
+		socket.emit("changeAcceleration", {
+			acc: new SimpleVector(ax, ay)
 		});
 	}
-	lastvx = vx
-	lastvy = vy
+	lastax = ax
+	lastay = ay
 }
 
 function moveCamera(player) {
@@ -145,8 +200,12 @@ function moveCamera(player) {
 
 function showPlayer(player) {
 	push()
-	fill(255, 0, 0)
-	ellipse(player.pos.x - camera.x, player.pos.y - camera.y, player.size * 2, player.size * 2)
+	angleMode(DEGREES)
+	translate(player.pos.x - camera.x, player.pos.y - camera.y);
+	rotate(-player.angle + 90);
+	//tint(player.teamColor.r, player.teamColor.g, player.teamColor.b);
+	imageMode(CENTER);
+	image(pship, 0, 0, player.size * 2, player.size * 2);
 	pop()
 
 	push()

@@ -61,21 +61,41 @@ class Player {
 		this.pos = pos
 		this.size = 20
 		this.vel = new SimpleVector(0, 0)
+		this.acc = new SimpleVector(0, 0)
 		this.id = id
 	}
 
+	limitMagnitude(vec, max) {
+		var magSquared = vec.x * vec.x + vec.y * vec.y
+		if (magSquared > max * max) {
+			var mag = Math.sqrt(magSquared)
+			vec.x /= mag
+			vec.y /= mag
+			vec.x *= max
+			vec.y *= max
+		}
+	}
+
 	smoothMove() {
+		this.vel.x += this.acc.x
+		this.vel.y += this.acc.y
+		this.limitMagnitude(this.vel, 10)
 		this.pos.x += this.vel.x
 		this.pos.y += this.vel.y
+		this.vel.x = this.vel.x * 0.99
+		this.vel.y = this.vel.y * 0.99
 
-		this.pos.x = Math.max(this.pos.x, 0)
-		this.pos.y = Math.max(this.pos.y, 0)
+		this.pos.x = Math.max(this.pos.x, this.size)
+		this.pos.y = Math.max(this.pos.y, this.size)
+		this.pos.x = Math.min((mapWidth-this.size), this.pos.x)
+		this.pos.y = Math.min((mapHeight-this.size), this.pos.y)
 	}
 
 	serialize() {
 		return {
 			pos: this.pos,
 			vel: this.vel,
+			acc: this.acc,
 			size: this.size,
 			id: this.id	
 		}
@@ -83,6 +103,7 @@ class Player {
 
 	static deserialize(data) {
 		var player = new Player(data.id, data.pos)
+		player.acc = data.acc
 		player.vel = data.vel
 		player.size = data.size
 		return player
@@ -106,8 +127,8 @@ class GameEvent {
 	//delegates to children based on data.type
 	static deserialize(data) {
 		switch (data.type) {
-			case "PlayerChangeVelocity":
-				return PlayerChangeVelocity.deserialize(data)
+			case "PlayerChangeAcceleration":
+				return PlayerChangeAcceleration.deserialize(data)
 			case "PlayerJoin":
 				return PlayerJoin.deserialize(data)
 			case "PlayerLeave":
@@ -118,18 +139,18 @@ class GameEvent {
 	}
 }
 
-//event for when a player changes velocity
+//event for when a player changes acceleration
 /*
-client sends 'changeVelocity' packet with data: {
-   vel: new velocity as a simple vector
+client sends 'changeAcceleration' packet with data: {
+   vel: new acceleration as a simple vector
 }
 server creates this event in response
 */
-class PlayerChangeVelocity extends GameEvent {
-	constructor(id, vel) {
+class PlayerChangeAcceleration extends GameEvent {
+	constructor(id, acc) {
 		super()
 		this.id = id
-		this.vel = vel
+		this.acc = acc
 	}
 
 	apply(state) {
@@ -137,19 +158,19 @@ class PlayerChangeVelocity extends GameEvent {
 		if (player === null) {
 			return
 		}
-		player.vel = this.vel
+		player.acc = this.acc
 	}
 
 	serialize() {
 		return {
 			id: this.id,
-			vel: this.vel,
-			type: "PlayerChangeVelocity"
+			acc: this.acc,
+			type: "PlayerChangeAcceleration"
 		}
 	}
 
 	static deserialize(data) {
-		return new PlayerChangeVelocity(data.id, data.vel)
+		return new PlayerChangeAcceleration(data.id, data.acc)
 	}
 }
 
@@ -225,7 +246,7 @@ if (typeof exports !== "undefined"){
 	exports.mapWidth = mapWidth
 	exports.GameEvent = GameEvent
 	exports.GameState = GameState
-	exports.PlayerChangeVelocity = PlayerChangeVelocity
+	exports.PlayerChangeAcceleration = PlayerChangeAcceleration
 	exports.PlayerJoin = PlayerJoin
 	exports.PlayerLeave = PlayerLeave
 	exports.SimpleVector = SimpleVector
