@@ -216,6 +216,8 @@ class PlayerLeave extends GameEvent {
 	}
 }
 
+//this code only runs on the server
+//"exports" is nodejs-specific
 if (typeof exports !== "undefined"){
 	//if a variable is not in here, the server won't see it
 	exports.Player = Player

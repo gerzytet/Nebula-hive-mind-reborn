@@ -6,32 +6,6 @@
 */
 
 var socket
-class ClientPlayer extends Player {
-	constructor(id, pos) {
-		super(id, pos)
-	}
-
-	static fromPlayer(player) {
-		return new ClientPlayer(player.id, player.pos)
-		this.size = player.size
-		this.vel = player.vel
-	}
-
-	show() {
-		push()
-		fill(255, 0, 0)
-		ellipse(this.pos.x - camera.x, this.pos.y - camera.y, this.size * 2, this.size * 2)
-		pop()
-
-		push()
-		fill(255);
-		textAlign(CENTER);
-		textSize(15);
-		text(42, this.pos.x - camera.x, this.pos.y - camera.y + (this.size / 3))
-		pop()
-	}
-}
-
 var cnv
 var camera
 var state
@@ -76,24 +50,12 @@ function setup() {
 			events.push(GameEvent.deserialize(eventsSerialized[i]))
 		}
 
-		//HACK
-		for (var i = 0; i < events.length; i++) {
-			if (events[i] instanceof PlayerJoin) {
-				events[i].player = ClientPlayer.fromPlayer(events[i].player)
-			}
-		}
-
 		state.advance(events)
 		socket.emit('tickReply', {});
 	})
 
 	socket.on("state", function (stateSerialized) {
 		state = GameState.deserialize(stateSerialized)
-
-		//HACK
-		for (var i = 0; i < state.players.length; i++) {
-			state.players[i] = ClientPlayer.fromPlayer(state.players[i])
-		}
 	})
 
 	lastvx = 0
@@ -181,6 +143,21 @@ function moveCamera(player) {
 	camera.y = newCameraY
 }
 
+function showPlayer(player) {
+	push()
+	fill(255, 0, 0)
+	ellipse(player.pos.x - camera.x, player.pos.y - camera.y, player.size * 2, player.size * 2)
+	pop()
+
+	push()
+	fill(255);
+	textAlign(CENTER);
+	textSize(15);
+	text(42, player.pos.x - camera.x, player.pos.y - camera.y + (player.size / 3))
+	pop()
+}
+
+
 function draw() {
 	if (state === undefined) {
 		//we are still waiting for initial state packet
@@ -200,6 +177,6 @@ function draw() {
 
 	
 	for (var i = 0; i < state.players.length; i++) {
-		state.players[i].show()
+		showPlayer(state.players[i])
 	}
 }
