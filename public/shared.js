@@ -1,11 +1,86 @@
-const mapWidth = 3000;
-const mapHeight = 2000;
+const mapWidth = 3000
+const mapHeight = 2000
 
-//does not need to be serialized
+class Assert {
+	static defined(value) {
+		if (value === undefined) {
+			throw new Error("Assertion failed: expected not undefined");
+		}
+	}
+
+	static definedAndNotNull(value) {
+		Assert.defined(value);
+		if (value === null) {
+			throw new Error("Assertion failed: expected defined and not null");
+		}
+	}
+
+	static boolean(bool) {
+		if (typeof bool !== 'boolean') {
+			throw new Error(`Assertion failed: expected boolean, got ${bool}`)
+		}
+	}
+
+	static true(bool) {
+		Assert.boolean(bool);
+		if (!bool) {
+			throw new Error("Assertion failed: expected true")
+		}
+	}
+
+	static false(bool) {
+		Assert.boolean(bool)
+		if (bool) {
+			throw new Error("Assertion failed: expected false")
+		}
+	}
+
+	static instanceOf(obj, type) {
+		Assert.definedAndNotNull(obj);
+		Assert.definedAndNotNull(type);
+		if (!(obj instanceof type)) {
+			throw new Error(`Assertion failed: expected instance of ${type.name}`)
+		}
+	}
+
+	static number(num) {
+		if (typeof num !== 'number' || isNaN(num)) {
+			throw new Error(`Assertion failed: expected number, got ${num}`)
+		}
+	}
+
+	static string(str) {
+		if (typeof str !== 'string') {
+			throw new Error(`Assertion failed: expected string, got ${str}`)
+		}
+	}
+  
+}
+
 class SimpleVector {
 	constructor(x, y) {
 		this.x = x;
 		this.y = y;
+		SimpleVector.assertValid(this);
+	}
+
+	serialize() {
+		return {
+			x: this.x,
+			y: this.y
+		}
+	}
+
+	static deserialize(data) {
+		var vec = new SimpleVector(data.x, data.y)
+		SimpleVector.assertValid(vec);
+		return vec;
+	}
+
+	static assertValid(vec) {
+		Assert.instanceOf(vec, SimpleVector);
+		Assert.number(vec.x);
+		Assert.number(vec.y);
 	}
 }
 
@@ -13,6 +88,7 @@ class SimpleVector {
 class GameState {
 	constructor() {
 		this.players = []
+		GameState.assertValid(this);
 	}
 
 	//returns player object having the id, or null if not found
@@ -52,17 +128,27 @@ class GameState {
 		for (var i = 0; i < data.players.length; i++) {
 			state.players.push(Player.deserialize(data.players[i]));
 		}
+		GameState.assertValid(state);
 		return state;
+	}
+
+	static assertValid(state) {
+		Assert.instanceOf(state, GameState);
+		for (var i = 0; i < state.players.length; i++) {
+			Player.assertValid(state.players[i]);
+		}
 	}
 }
 
+const playerSize = 20
 class Player {
 	constructor(id, pos) {
 		this.pos = pos
-		this.size = 20
+		this.size = playerSize
 		this.vel = new SimpleVector(0, 0)
 		this.acc = new SimpleVector(0, 0)
 		this.id = id
+		Player.assertValid(this);
 	}
 
 	limitMagnitude(vec, max) {
@@ -93,21 +179,34 @@ class Player {
 
 	serialize() {
 		return {
-			pos: this.pos,
-			vel: this.vel,
-			acc: this.acc,
-			size: this.size,
+			pos: this.pos.serialize(),
+			vel: this.vel.serialize(),
+			acc: this.acc.serialize(),
 			id: this.id	
 		}
 	}
 
 	static deserialize(data) {
 		var player = new Player(data.id, data.pos)
-		player.acc = data.acc
-		player.vel = data.vel
-		player.size = data.size
+		player.acc = SimpleVector.deserialize(data.acc)
+		player.vel = SimpleVector.deserialize(data.vel)
+		player.size = playerSize
+		Player.assertValid(player);
 		return player
 	}
+
+	static assertValid(player) {
+		Assert.instanceOf(player, Player);
+		Assert.number(player.pos.x);
+		Assert.number(player.pos.y);
+		Assert.number(player.vel.x);
+		Assert.number(player.vel.y);
+		Assert.number(player.acc.x);
+		Assert.number(player.acc.y);
+		Assert.number(player.size);
+		Assert.string(player.id);
+	}
+
 }
 
 //base class for all primary game events
@@ -151,6 +250,7 @@ class PlayerChangeAcceleration extends GameEvent {
 		super()
 		this.id = id
 		this.acc = acc
+		PlayerChangeAcceleration.assertValid(this);
 	}
 
 	apply(state) {
@@ -164,13 +264,21 @@ class PlayerChangeAcceleration extends GameEvent {
 	serialize() {
 		return {
 			id: this.id,
-			acc: this.acc,
+			acc: this.acc.serialize(),
 			type: "PlayerChangeAcceleration"
 		}
 	}
 
 	static deserialize(data) {
-		return new PlayerChangeAcceleration(data.id, data.acc)
+		var event = new PlayerChangeAcceleration(data.id, SimpleVector.deserialize(data.acc))
+		PlayerChangeAcceleration.assertValid(event);
+		return event
+	}
+
+	static assertValid(event) {
+		Assert.instanceOf(event, PlayerChangeAcceleration);
+		Assert.string(event.id);
+		SimpleVector.assertValid(event.acc);
 	}
 }
 
@@ -182,6 +290,7 @@ class PlayerJoin extends GameEvent {
 	constructor(player) {
 		super()
 		this.player = player
+		PlayerJoin.assertValid(this);
 	}
 
 	apply(state) {
@@ -196,7 +305,14 @@ class PlayerJoin extends GameEvent {
 	}
 
 	static deserialize(data) {
-		return new PlayerJoin(Player.deserialize(data.player))
+		var event = new PlayerJoin(Player.deserialize(data.player))
+		PlayerJoin.assertValid(event);
+		return event
+	}
+
+	static assertValid(event) {
+		Assert.instanceOf(event, PlayerJoin);
+		Player.assertValid(event.player);
 	}
 }
 
@@ -208,6 +324,7 @@ class PlayerLeave extends GameEvent {
 	constructor(id) {
 		super()
 		this.id = id
+		PlayerLeave.assertValid(this);
 	}
 
 	apply(state) {
@@ -233,13 +350,20 @@ class PlayerLeave extends GameEvent {
 	}
 
 	static deserialize(data) {
-		return new PlayerLeave(data.id)
+		var event = new PlayerLeave(data.id)
+		PlayerLeave.assertValid(event);
+		return event
+	}
+
+	static assertValid(event) {
+		Assert.instanceOf(event, PlayerLeave);
+		Assert.string(event.id);
 	}
 }
 
 //this code only runs on the server
 //"exports" is nodejs-specific
-if (typeof exports !== "undefined"){
+if (typeof exports !== "undefined") {
 	//if a variable is not in here, the server won't see it
 	exports.Player = Player
 	exports.mapHeight = mapHeight
@@ -250,4 +374,5 @@ if (typeof exports !== "undefined"){
 	exports.PlayerJoin = PlayerJoin
 	exports.PlayerLeave = PlayerLeave
 	exports.SimpleVector = SimpleVector
+	exports.Assert = Assert
 }

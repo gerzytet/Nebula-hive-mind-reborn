@@ -25,27 +25,25 @@ io.sockets.on('connection', newConnection)
 setInterval(tick, 33);
 
 const timeoutMillis = 10000;
-class ServerPlayer extends shared.Player {
-    constructor(id, pos) {
-        super(id, pos)
-        this.lastPing = Date.now()
-    }
-
-    updatePing() {
-        this.lastPing = Date.now()
-    }
-
-    isTimedOut() {
-        return Date.now() - this.lastPing > timeoutMillis
-    }
-}
 
 var state = new shared.GameState()
 var events = []
 
+var playerTimeouts = {}
+
+//id does not have to exist in playerTimeouts
+function updatePing(id) {
+    playerTimeouts[id] = Date.now()
+}
+
+function isTimedOut(id) {
+    shared.Assert.defined(playerTimeouts[id])
+    return Date.now() - playerTimeouts[id] > timeoutMillis
+}
+
 function tick() {
     for (var i = 0; i < state.players.length; i++) {
-        if (state.players[i].isTimedOut()) {
+        if (isTimedOut(state.players[i].id)) {
             events.push(
                 new shared.PlayerLeave(state.players[i].id)
             )
@@ -67,7 +65,7 @@ function newConnection(socket) {
     socket.on('changeAcceleration', changeAcceleration)
     socket.on('tickReply', tickReply)
 
-    var player = new ServerPlayer(socket.id, new shared.SimpleVector(
+    var player = new shared.Player(socket.id, new shared.SimpleVector(
         Math.floor(Math.random() * /*shared.mapWidth*/ 400),
         Math.floor(Math.random() * /*shared.mapHeight*/ 400))
     )
@@ -77,20 +75,17 @@ function newConnection(socket) {
     socket.emit("state", state.serialize())
 
     function tickReply(data) {
-        var player = state.playerById(socket.id)
-        if (player === null) {
-            return
-        }
-        player.updatePing()
+        updatePing(socket.id)
     }
 
     function changeAcceleration(data) {
+        shared.Assert.number(data.acc.x)
+        shared.Assert.number(data.acc.y)
         var player = state.playerById(socket.id)
         if (player === null) {
             console.log(state)
             return
         }
-        console.log("change acceleration " + data.acc.x + " " + data.acc.y)
-        events.push(new shared.PlayerChangeAcceleration(player.id, data.acc))
+        events.push(new shared.PlayerChangeAcceleration(player.id, new shared.SimpleVector(data.acc.x, data.acc.y)))
     }
 }
