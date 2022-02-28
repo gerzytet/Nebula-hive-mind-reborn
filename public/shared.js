@@ -54,7 +54,12 @@ class Assert {
 			throw new Error(`Assertion failed: expected string, got ${str}`)
 		}
 	}
-  
+
+	static function(value) {
+		if (typeof value !== 'function') {
+			throw new Error(`Assertion failed: expected function, got ${value}`)
+		}
+	}
 }
 
 class SimpleVector {
@@ -84,10 +89,20 @@ class SimpleVector {
 	}
 }
 
+function mulberry32(a) {
+    return function() {
+      var t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return (t ^ t >>> 14) >>> 0;
+    }
+}
+
 //holds everything in the game
 class GameState {
 	constructor() {
 		this.players = []
+		this.rng = mulberry32(0)
 		GameState.assertValid(this);
 	}
 
@@ -95,10 +110,10 @@ class GameState {
 	playerById(id) {
 		for (var i = 0; i < this.players.length; i++) {
 			if (this.players[i].id == id) {
-				return this.players[i];
+				return this.players[i]
 			}
 		}
-		return null;
+		return null
 	}
 
 	//events is a list of GameEvent
@@ -109,7 +124,7 @@ class GameState {
 		}
 
 		for (var i = 0; i < this.players.length; i++) {
-			this.players[i].smoothMove();
+			this.players[i].smoothMove()
 		}
 	}
 
@@ -137,6 +152,20 @@ class GameState {
 		for (var i = 0; i < state.players.length; i++) {
 			Player.assertValid(state.players[i]);
 		}
+		Assert.function(state.rng)
+	}
+
+	//returns a random number between min and max
+	randint(min, max) {
+		Assert.true(min <= max);
+		var range = max - min + 1;
+		var r = this.rng() % range;
+		return r + min;
+	}
+	
+	//seed the rng with a number
+	seed(seed) {
+		this.rng = mulberry32(seed);
 	}
 }
 

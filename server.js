@@ -28,6 +28,7 @@ const timeoutMillis = 10000;
 
 var state = new shared.GameState()
 var events = []
+var colors = [(255)]
 
 var playerTimeouts = {}
 
@@ -49,6 +50,8 @@ function tick() {
             )
         }
     }
+    var seed = Math.floor(Math.random() * (1 << 30))
+    state.seed(seed)
     state.advance(events)
 
     eventsSerialized = []
@@ -57,14 +60,21 @@ function tick() {
     }
     events = []
 
-    io.sockets.emit("tick", eventsSerialized)
+    io.sockets.emit("tick", {
+        events: eventsSerialized,
+        seed: seed
+    })
 }
 
 function newConnection(socket) {
     console.log('New connection: ' + socket.id)
     socket.on('changeAcceleration', changeAcceleration)
     socket.on('tickReply', tickReply)
-
+    //var c = (255i)
+    //while (colors.includes(c)) {
+    //    c = new Color(Math.floor(Math.random() * 255) + 1, Math.floor(Math.random() * 255) + 1, Math.floor(Math.random() * 255) + 1)
+    //}
+    //colors.push(c)
     var player = new shared.Player(socket.id, new shared.SimpleVector(
         Math.floor(Math.random() * /*shared.mapWidth*/ 400),
         Math.floor(Math.random() * /*shared.mapHeight*/ 400))

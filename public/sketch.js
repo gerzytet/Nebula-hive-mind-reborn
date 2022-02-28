@@ -96,15 +96,19 @@ function setup() {
 		y: 0
 	}
 
-	socket.on('tick', function (eventsSerialized) {
+	socket.on('tick', function (data) {
+		var eventsSerialized = data.events
+		var seed = data.seed
 		if (eventsSerialized.length !== 0) {
 			console.log(eventsSerialized)
 		}
+
 		var events = []
 		for (var i = 0; i < eventsSerialized.length; i++) {
 			events.push(GameEvent.deserialize(eventsSerialized[i]))
 		}
 
+		state.seed(seed)
 		state.advance(events)
 		socket.emit('tickReply', {});
 	})
