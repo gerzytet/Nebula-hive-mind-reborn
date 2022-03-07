@@ -28,7 +28,27 @@ const timeoutMillis = 10000;
 
 var state = new shared.GameState()
 var events = []
-var colors = [(255)]
+var colors = [new shared.Color(255, 255, 255)]
+
+function colorUsed(c) {
+    for (var i = 0; i < state.players.length; i++) {
+        if (state.players[i].color.equals(c)) {
+            return true
+        }
+    }
+    return false
+}
+
+function getUnusedColor() {
+    do {
+        var color = new shared.Color(
+            Math.floor(Math.random() * 255),
+            Math.floor(Math.random() * 255),
+            Math.floor(Math.random() * 255)
+        )
+    } while (colorUsed(color))
+    return color
+}
 
 var playerTimeouts = {}
 
@@ -38,7 +58,9 @@ function updatePing(id) {
 }
 
 function isTimedOut(id) {
-    shared.Assert.defined(playerTimeouts[id])
+    if (playerTimeouts[id] === undefined) {
+        return
+    }
     return Date.now() - playerTimeouts[id] > timeoutMillis
 }
 
@@ -70,14 +92,11 @@ function newConnection(socket) {
     console.log('New connection: ' + socket.id)
     socket.on('changeAcceleration', changeAcceleration)
     socket.on('tickReply', tickReply)
-    //var c = (255i)
-    //while (colors.includes(c)) {
-    //    c = new Color(Math.floor(Math.random() * 255) + 1, Math.floor(Math.random() * 255) + 1, Math.floor(Math.random() * 255) + 1)
-    //}
-    //colors.push(c)
+    
     var player = new shared.Player(socket.id, new shared.SimpleVector(
         Math.floor(Math.random() * /*shared.mapWidth*/ 400),
-        Math.floor(Math.random() * /*shared.mapHeight*/ 400))
+        Math.floor(Math.random() * /*shared.mapHeight*/ 400)),
+        getUnusedColor()
     )
     events.push(
         new shared.PlayerJoin(player)

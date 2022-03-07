@@ -207,7 +207,7 @@ function showPlayer(player) {
 	angleMode(DEGREES)
 	translate(player.pos.x - camera.x, player.pos.y - camera.y);
 	rotate(-player.angle + 90);
-	//tint(player.teamColor.r, player.teamColor.g, player.teamColor.b);
+	tint(player.color.r, player.color.g, player.color.b);
 	imageMode(CENTER);
 	image(pship, 0, 0, player.size * 2, player.size * 2);
 	pop()

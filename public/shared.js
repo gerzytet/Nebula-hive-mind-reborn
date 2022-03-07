@@ -171,12 +171,13 @@ class GameState {
 
 const playerSize = 20
 class Player {
-	constructor(id, pos) {
+	constructor(id, pos, color) {
 		this.pos = pos
 		this.size = playerSize
 		this.vel = new SimpleVector(0, 0)
 		this.acc = new SimpleVector(0, 0)
 		this.id = id
+		this.color = color
 		Player.assertValid(this);
 	}
 
@@ -211,12 +212,13 @@ class Player {
 			pos: this.pos.serialize(),
 			vel: this.vel.serialize(),
 			acc: this.acc.serialize(),
-			id: this.id	
+			id: this.id,
+			color: this.color.serialize()
 		}
 	}
 
 	static deserialize(data) {
-		var player = new Player(data.id, data.pos)
+		var player = new Player(data.id, SimpleVector.deserialize(data.pos), Color.deserialize(data.color))
 		player.acc = SimpleVector.deserialize(data.acc)
 		player.vel = SimpleVector.deserialize(data.vel)
 		player.size = playerSize
@@ -226,14 +228,12 @@ class Player {
 
 	static assertValid(player) {
 		Assert.instanceOf(player, Player);
-		Assert.number(player.pos.x);
-		Assert.number(player.pos.y);
-		Assert.number(player.vel.x);
-		Assert.number(player.vel.y);
-		Assert.number(player.acc.x);
-		Assert.number(player.acc.y);
+		SimpleVector.assertValid(player.pos);
+		SimpleVector.assertValid(player.vel);
+		SimpleVector.assertValid(player.acc);
 		Assert.number(player.size);
 		Assert.string(player.id);
+		Color.assertValid(player.color);
 	}
 
 }
@@ -390,6 +390,38 @@ class PlayerLeave extends GameEvent {
 	}
 }
 
+class Color {
+	constructor(r, g, b) {
+		this.r = r
+		this.g = g
+		this.b = b
+		Color.assertValid(this);
+	}
+
+	static assertValid(color) {
+		Assert.instanceOf(color, Color);
+		Assert.number(color.r);
+		Assert.number(color.g);
+		Assert.number(color.b);
+	}
+
+	static deserialize(data) {
+		return new Color(data.r, data.g, data.b)
+	}
+
+	serialize() {
+		return {
+			r: this.r,
+			g: this.g,
+			b: this.b
+		}
+	}
+
+	equals(other) {
+		return this.r === other.r && this.g === other.g && this.b === other.b
+	}
+}
+
 //this code only runs on the server
 //"exports" is nodejs-specific
 if (typeof exports !== "undefined") {
@@ -404,4 +436,5 @@ if (typeof exports !== "undefined") {
 	exports.PlayerLeave = PlayerLeave
 	exports.SimpleVector = SimpleVector
 	exports.Assert = Assert
+	exports.Color = Color
 }
