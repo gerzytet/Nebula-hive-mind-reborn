@@ -5,7 +5,12 @@
 @brief File that sets up server
 */
 
-var express = require('express')
+import {Assert, SimpleVector, Color} from './public/shared/utilities.js'
+import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration} from './public/shared/events.js'
+import {Player} from './public/shared/entities.js'
+import {GameState} from './public/shared/gamestate.js'
+import express from 'express'
+import {Server} from 'socket.io'
 
 var app = express()
 var server = app.listen(3000)
@@ -14,10 +19,7 @@ app.use(express.static('public'))
 
 console.log('My server is running')
 
-var socket = require('socket.io')
-var io = socket(server)
-var shared = require('./public/shared.js')
-console.log(shared)
+var io = new Server(server)
 
 var players = []
 io.sockets.on('connection', newConnection)
@@ -26,9 +28,9 @@ setInterval(tick, 33);
 
 const timeoutMillis = 10000;
 
-var state = new shared.GameState()
+var state = new GameState()
 var events = []
-var colors = [new shared.Color(255, 255, 255)]
+var colors = [new Color(255, 255, 255)]
 
 function colorUsed(c) {
     for (var i = 0; i < state.players.length; i++) {
@@ -41,7 +43,7 @@ function colorUsed(c) {
 
 function getUnusedColor() {
     do {
-        var color = new shared.Color(
+        var color = new Color(
             Math.floor(Math.random() * 255),
             Math.floor(Math.random() * 255),
             Math.floor(Math.random() * 255)
@@ -68,7 +70,7 @@ function tick() {
     for (var i = 0; i < state.players.length; i++) {
         if (isTimedOut(state.players[i].id)) {
             events.push(
-                new shared.PlayerLeave(state.players[i].id)
+                new PlayerLeave(state.players[i].id)
             )
         }
     }
@@ -76,7 +78,7 @@ function tick() {
     state.seed(seed)
     state.advance(events)
 
-    eventsSerialized = []
+    var eventsSerialized = []
     for (var i = 0; i < events.length; i++) {
         eventsSerialized.push(events[i].serialize())
     }
@@ -93,13 +95,13 @@ function newConnection(socket) {
     socket.on('changeAcceleration', changeAcceleration)
     socket.on('tickReply', tickReply)
     
-    var player = new shared.Player(socket.id, new shared.SimpleVector(
-        Math.floor(Math.random() * /*shared.mapWidth*/ 400),
-        Math.floor(Math.random() * /*shared.mapHeight*/ 400)),
+    var player = new Player(socket.id, new SimpleVector(
+        Math.floor(Math.random() * /*mapWidth*/ 400),
+        Math.floor(Math.random() * /*mapHeight*/ 400)),
         getUnusedColor()
     )
     events.push(
-        new shared.PlayerJoin(player)
+        new PlayerJoin(player)
     )
     socket.emit("state", state.serialize())
 
@@ -108,13 +110,13 @@ function newConnection(socket) {
     }
 
     function changeAcceleration(data) {
-        shared.Assert.number(data.acc.x)
-        shared.Assert.number(data.acc.y)
+        Assert.number(data.acc.x)
+        Assert.number(data.acc.y)
         var player = state.playerById(socket.id)
         if (player === null) {
             console.log(state)
             return
         }
-        events.push(new shared.PlayerChangeAcceleration(player.id, new shared.SimpleVector(data.acc.x, data.acc.y)))
+        events.push(new PlayerChangeAcceleration(player.id, new SimpleVector(data.acc.x, data.acc.y)))
     }
 }

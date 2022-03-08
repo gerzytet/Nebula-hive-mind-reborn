@@ -10,15 +10,12 @@ var cnv
 var camera
 var state
 
-function centerCanvas() {
-	x = width / 2
-	y = height / 2
-	background(0, 0, 0)
-}
+import {GameState} from './shared/gamestate.js'
+import {GameEvent} from './shared/events.js'
+import {mapWidth, mapHeight, SimpleVector} from './shared/utilities.js'
 
 function windowResized() {
 	cnv = resizeCanvas(windowWidth - 20, windowHeight - 20)
-	centerCanvas()
 }
 
 function preload() {
@@ -61,23 +58,21 @@ function preload() {
 		console.log("failed to load sword");
 	});
 }
+var bg
+var pship, eship, asteroid_full, asteroid_medium, asteroid_low
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg
 
 //change name to input value
 function changeName() {
 	const name = input.value();
 	input.value('');
-	//data = name
-	//player.name = name;
-	//socket.emit('changeName', data);
 }
 
+var input, button
 function setup() {
 	cnv = createCanvas(20, 20);
 	cnv.parent("sketch-container")
 	windowResized()
-	centerCanvas()
-	x = width / 2
-	y = height / 2
 	background(51)
 
 	input = createInput();
@@ -243,3 +238,9 @@ function draw() {
 		showPlayer(state.players[i])
 	}
 }
+
+//this is necessary because p5.js needs to see these functions in the global scope, which doesn't happen with a module
+window.draw = draw
+window.preload = preload
+window.setup = setup
+window.windowResized = windowResized
