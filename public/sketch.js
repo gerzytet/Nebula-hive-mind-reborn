@@ -150,10 +150,6 @@ function moveCamera(player) {
 	//the closest distance a player can get to edge of the screen without the camera attempting to move
 	var playerEdgeSoftLimitWidth = (windowWidth / 2) + 1;
 	var playerEdgeSoftLimitHeight = (windowHeight / 2) + 1;
-	var oldcamera = {
-		x: camera.x,
-		y: camera.y
-	}
 
 	//case when player is at the bottom or right of the screen
 	var edgeX = camera.x + windowWidth
@@ -173,9 +169,6 @@ function moveCamera(player) {
 
 	camera.x = newCameraX
 	camera.y = newCameraY
-	/*if (camera.x != oldcamera.x || camera.y != oldcamera.y) {
-		console.log("camera: " + camera.x + " " +  camera.y);
-	}*/
 
 	//case when player is at the top or left of the screen
 	var edgeX = camera.x
@@ -211,7 +204,7 @@ function showPlayer(player) {
 	fill(255);
 	textAlign(CENTER);
 	textSize(15);
-	text(42, player.pos.x - camera.x, player.pos.y - camera.y + (player.size / 3))
+	text(player.health, player.pos.x - camera.x, player.pos.y - camera.y + (player.size / 3))
 	pop()
 }
 

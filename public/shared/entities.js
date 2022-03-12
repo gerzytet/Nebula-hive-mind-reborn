@@ -31,13 +31,21 @@ export class Entity {
 		this.pos.x = Math.min((mapWidth-this.size), this.pos.x)
 		this.pos.y = Math.min((mapHeight-this.size), this.pos.y)
 	}
+
+	isColliding(other) {
+		var maxDist = other.size + this.size
+		var dist = this.pos.dist(other.pos)
+		return dist < maxDist
+	}
 }
 
 const playerSize = 20
+export const playerMaxHealth = 100
 export class Player extends Entity {
 	constructor(id, pos, color) {
 		super(pos, playerSize, color);
 		this.id = id
+		this.health = playerMaxHealth
 		Player.assertValid(this);
 	}
 
@@ -47,7 +55,8 @@ export class Player extends Entity {
 			vel: this.vel.serialize(),
 			acc: this.acc.serialize(),
 			id: this.id,
-			color: this.color.serialize()
+			color: this.color.serialize(),
+			health: this.health
 		}
 	}
 
@@ -56,6 +65,7 @@ export class Player extends Entity {
 		player.acc = SimpleVector.deserialize(data.acc)
 		player.vel = SimpleVector.deserialize(data.vel)
 		player.size = playerSize
+		player.health = data.health
 		Player.assertValid(player);
 		return player
 	}
@@ -64,6 +74,8 @@ export class Player extends Entity {
 		Entity.assertValid(player)
 		Assert.instanceOf(player, Player);
 		Assert.string(player.id);
+		Assert.number(player.health);
+		Assert.true(player.health >= 0 && player.health <= playerMaxHealth);
 	}
 
 	move() {
@@ -72,12 +84,32 @@ export class Player extends Entity {
 		this.vel.y = this.vel.y * 0.99
 		super.move()
 	}
+
+	isDead() {
+		return this.health <= 0
+	}
+
+	damage(amount) {
+		this.health -= amount
+		if (this.health < 0) {
+			this.health = 0
+		}
+	}
+
+	heal(amount) {
+		this.health += amount
+		if (this.health > playerMaxHealth) {
+			this.health = playerMaxHealth
+		}
+	}
 }
 
+const baseProjectileDamage = 10
 export class Projectile extends Entity {
 	constructor(pos, vel, size, color) {
 		super(pos, size, color)
 		this.vel = vel
+		this.damage = baseProjectileDamage
 	}
 
 	static assertValid(projectile) {
@@ -95,12 +127,14 @@ export class Projectile extends Entity {
 	}
 
 	static deserialize(data) {
-		return new Projectile (
+		var projectile = new Projectile (
 			SimpleVector.deserialize(data.pos),
 			SimpleVector.deserialize(data.vel),
 			data.size,
 			Color.deserialize(data.color)
 		)
+		projectile.damage = baseProjectileDamage
+		return projectile
 	}
 
 	move() {

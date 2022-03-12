@@ -1,5 +1,5 @@
 import {Assert, SimpleVector} from "./utilities.js"
-import {Player, Projectile} from "./entities.js"
+import {Player, Projectile, playerMaxHealth} from "./entities.js"
 
 function mulberry32(a) {
     return function() {
@@ -29,6 +29,26 @@ export class GameState {
 		return null
 	}
 
+	killPlayer(player, damageColor) {
+		player.color = damageColor
+		player.health = playerMaxHealth
+	}
+
+	doCollision() {
+		for (var i = 0; i < this.players.length; i++) {
+			for (var j = 0; j < this.projectiles.length; j++) {
+				if (!this.players[i].color.equals(this.projectiles[j].color) && this.players[i].isColliding(this.projectiles[j])) {
+					this.players[i].damage(this.projectiles[j].damage)
+					if (this.players[i].isDead()) {
+						this.killPlayer(this.players[i], this.projectiles[j].color)
+					}
+					this.projectiles.splice(j, 1)
+					j--
+				}
+			}
+		}
+	}
+
 	//events is a list of GameEvent
 	//applies each game event to this state
 	advance(events) {
@@ -50,6 +70,8 @@ export class GameState {
 		for (var i = 0; i < this.projectiles.length; i++) {
 			this.projectiles[i].move()
 		}
+
+		this.doCollision()
 	}
 
 	serialize() {
@@ -72,7 +94,7 @@ export class GameState {
 			state.players.push(Player.deserialize(data.players[i]));
 		}
 		for (var i = 0; i < data.projectiles.length; i++) {
-			state.projectiles.push(Player.deserialize(data.projectiles[i]));
+			state.projectiles.push(Projectile.deserialize(data.projectiles[i]));
 		}
 		GameState.assertValid(state);
 		return state;

@@ -131,4 +131,10 @@ export class SimpleVector {
 			this.y *= max
 		}
 	}
+
+	dist(other) {
+		var dx = this.x - other.x
+		var dy = this.y - other.y
+		return Math.sqrt(dx * dx + dy * dy)
+	}
 }
