@@ -1,5 +1,5 @@
-import {Assert} from "./utilities.js"
-import {Player} from "./entities.js"
+import {Assert, SimpleVector} from "./utilities.js"
+import {Player, Projectile} from "./entities.js"
 
 function mulberry32(a) {
     return function() {
@@ -14,6 +14,7 @@ function mulberry32(a) {
 export class GameState {
 	constructor() {
 		this.players = []
+		this.projectiles = []
 		this.rng = mulberry32(0)
 		GameState.assertValid(this);
 	}
@@ -36,16 +37,31 @@ export class GameState {
 		}
 
 		for (var i = 0; i < this.players.length; i++) {
-			this.players[i].smoothMove()
+			this.players[i].move()
+			if (this.randint(1, 80) == 1) {
+				this.projectiles.push(new Projectile(
+					new SimpleVector(this.players[i].pos.x, this.players[i].pos.y),
+					new SimpleVector(this.randint(1, 50) / 10, this.randint(1, 50) / 10),
+					10,
+					this.players[i].color
+				))
+			}
+		}
+		for (var i = 0; i < this.projectiles.length; i++) {
+			this.projectiles[i].move()
 		}
 	}
 
 	serialize() {
 		var data = {
-			players: []
+			players: [],
+			projectiles: []
 		};
 		for (var i = 0; i < this.players.length; i++) {
 			data.players.push(this.players[i].serialize());
+		}
+		for (var i = 0; i < this.projectiles.length; i++) {
+			data.projectiles.push(this.projectiles[i].serialize());
 		}
 		return data;
 	}
@@ -55,6 +71,9 @@ export class GameState {
 		for (var i = 0; i < data.players.length; i++) {
 			state.players.push(Player.deserialize(data.players[i]));
 		}
+		for (var i = 0; i < data.projectiles.length; i++) {
+			state.projectiles.push(Player.deserialize(data.projectiles[i]));
+		}
 		GameState.assertValid(state);
 		return state;
 	}
@@ -63,6 +82,9 @@ export class GameState {
 		Assert.instanceOf(state, GameState);
 		for (var i = 0; i < state.players.length; i++) {
 			Player.assertValid(state.players[i]);
+		}
+		for (var i = 0; i < state.projectiles.length; i++) {
+			Projectile.assertValid(state.projectiles[i]);
 		}
 		Assert.function(state.rng)
 	}

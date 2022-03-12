@@ -165,8 +165,8 @@ function moveCamera(player) {
 	var cameraMoveX = max(playerEdgeSoftLimitWidth - distFromEdgeX, 0)
 	var cameraMoveY = max(playerEdgeSoftLimitHeight - distFromEdgeY, 0)
 	
-	var cameraLimitX = mapWidth - windowWidth;
-	var cameraLimitY = mapHeight - windowHeight;
+	var cameraLimitX = mapWidth - width;
+	var cameraLimitY = mapHeight - height;
 	
 	var newCameraX = min(camera.x + cameraMoveX, cameraLimitX)
 	var newCameraY = min(camera.y + cameraMoveY, cameraLimitY)
@@ -215,6 +215,14 @@ function showPlayer(player) {
 	pop()
 }
 
+function showProjecile(projectile) {
+	push()
+	var c = projectile.color
+	fill(c.r, c.g, c.b)
+	ellipse(projectile.pos.x - camera.x, projectile.pos.y - camera.y, projectile.size*2)
+	pop()
+}
+
 
 function draw() {
 	if (state === undefined) {
@@ -236,6 +244,10 @@ function draw() {
 	
 	for (var i = 0; i < state.players.length; i++) {
 		showPlayer(state.players[i])
+	}
+
+	for (var i = 0; i < state.projectiles.length; i++) {
+		showProjecile(state.projectiles[i])
 	}
 }
 
