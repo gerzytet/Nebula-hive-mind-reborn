@@ -105,16 +105,20 @@ export class Player extends Entity {
 }
 
 const baseProjectileDamage = 10
+const bulletLifetimeTicks = 150
 export class Projectile extends Entity {
 	constructor(pos, vel, size, color) {
 		super(pos, size, color)
 		this.vel = vel
 		this.damage = baseProjectileDamage
+		this.life = bulletLifetimeTicks
 	}
 
 	static assertValid(projectile) {
 		Entity.assertValid(projectile)
 		Assert.instanceOf(projectile, Projectile)
+		Assert.number(projectile.damage)
+		Assert.number(projectile.life)
 	}
 
 	serialize() {
@@ -122,7 +126,8 @@ export class Projectile extends Entity {
 			pos: this.pos.serialize(),
 			vel: this.vel.serialize(),
 			size: this.size,
-			color: this.color.serialize()
+			color: this.color.serialize(),
+			life: this.life
 		}
 	}
 
@@ -134,16 +139,20 @@ export class Projectile extends Entity {
 			Color.deserialize(data.color)
 		)
 		projectile.damage = baseProjectileDamage
+		projectile.life = data.life
 		return projectile
+	}
+
+	isExpired() {
+		return this.life == 0 || this.pos.x == this.size || this.pos.x == mapWidth - this.size || this.pos.y == this.size || this.pos.y == mapHeight - this.size
+	}
+
+	tick() {
+		this.move()
+		this.life--
 	}
 
 	move() {
 		super.move()
-		if (this.pos.x < 0.01 || mapWidth - this.pos.x < 0.01) {
-		    this.vel.x = -this.vel.x
-		}
-		if (this.pos.y < 0.01 || mapHeight - this.pos.y < 0.01) {
-		    this.vel.y = -this.vel.y
-		}
 	}
 }

@@ -61,14 +61,18 @@ export class GameState {
 			if (this.randint(1, 80) == 1) {
 				this.projectiles.push(new Projectile(
 					new SimpleVector(this.players[i].pos.x, this.players[i].pos.y),
-					new SimpleVector(this.randint(1, 50) / 10, this.randint(1, 50) / 10),
+					new SimpleVector(this.randint(-50, 50) / 10, this.randint(-50, 50) / 10),
 					10,
 					this.players[i].color
 				))
 			}
 		}
 		for (var i = 0; i < this.projectiles.length; i++) {
-			this.projectiles[i].move()
+			this.projectiles[i].tick()
+			if (this.projectiles[i].isExpired()) {
+				this.projectiles.splice(i, 1)
+				i--
+			}
 		}
 
 		this.doCollision()
