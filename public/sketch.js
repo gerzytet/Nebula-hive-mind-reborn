@@ -216,21 +216,23 @@ function showProjecile(projectile) {
 	pop()
 }
 
+var lastAngle;
 function doRotation(player) {
 	//the angle determined by mouse position
 	var newAngle = Math.atan2(mouseY - (player.pos.y - camera.y), mouseX - (player.pos.x - camera.x));
-
-	//value needs to be wrangled because of differing coordinate systems
 	newAngle *= (180 / Math.PI);
 	newAngle = -newAngle;
 	if (newAngle < 0) {
 		newAngle += 360;
 	}
-	if (!isNaN(newAngle)) {
-		socket.emit("changeAngle", {
-			angle: newAngle
-		});
+	if (isNaN(newAngle) || lastAngle === newAngle) {
+		return
 	}
+
+	socket.emit("changeAngle", {
+		angle: newAngle
+	})
+	lastAngle = newAngle
 }
 
 
