@@ -216,6 +216,23 @@ function showProjecile(projectile) {
 	pop()
 }
 
+function doRotation(player) {
+	//the angle determined by mouse position
+	var newAngle = Math.atan2(mouseY - (player.pos.y - camera.y), mouseX - (player.pos.x - camera.x));
+
+	//value needs to be wrangled because of differing coordinate systems
+	newAngle *= (180 / Math.PI);
+	newAngle = -newAngle;
+	if (newAngle < 0) {
+		newAngle += 360;
+	}
+	if (!isNaN(newAngle)) {
+		socket.emit("changeAngle", {
+			angle: newAngle
+		});
+	}
+}
+
 
 function draw() {
 	if (state === undefined) {
@@ -230,6 +247,7 @@ function draw() {
 
 	doMovement()
 	moveCamera(player)
+	doRotation(player)
 
 	background(51)
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
@@ -244,8 +262,13 @@ function draw() {
 	}
 }
 
+function mouseClicked(){
+	socket.emit('shoot', {})
+}
+
 //this is necessary because p5.js needs to see these functions in the global scope, which doesn't happen with a module
 window.draw = draw
 window.preload = preload
 window.setup = setup
 window.windowResized = windowResized
+window.mouseClicked = mouseClicked

@@ -24,6 +24,10 @@ export class GameEvent {
 				return PlayerJoin.deserialize(data)
 			case "PlayerLeave":
 				return PlayerLeave.deserialize(data)
+			case "PlayerChangeAngle":
+				return PlayerChangeAngle.deserialize(data)
+			case "PlayerShoot":
+				return PlayerShoot.deserialize(data)
 			default:
 				throw new Error("Unknown event type: " + data.type)
 		}
@@ -149,6 +153,88 @@ export class PlayerLeave extends GameEvent {
 
 	static assertValid(event) {
 		Assert.instanceOf(event, PlayerLeave);
+		Assert.string(event.id);
+	}
+}
+
+/*
+for when a player changes angle
+packet sent to server is:
+angle: new angle
+*/
+export class PlayerChangeAngle extends GameEvent {
+	constructor(id, angle) {
+		super()
+		this.id = id
+		this.angle = angle
+		PlayerChangeAngle.assertValid(this);
+	}
+
+	apply(state) {
+		var player = state.playerById(this.id);
+		if (player === null) {
+			return
+		}
+		player.angle = this.angle
+	}
+
+	serialize() {
+		return {
+			id: this.id,
+			angle: this.angle,
+			type: "PlayerChangeAngle"
+		}
+	}
+
+	static deserialize(data) {
+		var event = new PlayerChangeAngle(data.id, data.angle)
+		PlayerChangeAngle.assertValid(event);
+		return event
+	}
+
+	static assertValid(event) {
+		Assert.instanceOf(event, PlayerChangeAngle);
+		Assert.string(event.id);
+		Assert.number(event.angle);
+		Assert.true(event.angle >= 0 && event.angle < 360);
+	}
+}
+
+/*
+for when a player shoots:
+the client sends an empty object to the server
+'shoot'
+*/
+export class PlayerShoot extends GameEvent {
+	constructor(id) {
+		super()
+		this.id = id
+		PlayerShoot.assertValid(this);
+	}
+
+	apply(state) {
+		var player = state.playerById(this.id);
+		if (player === null) {
+			return
+		}
+		player.shoot(state)
+	}
+
+	serialize() {
+		return {
+			id: this.id,
+			type: "PlayerShoot"
+		}
+	}
+
+	static deserialize(data) {
+		var event = new PlayerShoot(data.id)
+		PlayerShoot.assertValid(event);
+		return event
+	}
+
+	static assertValid(event) {
+		Assert.instanceOf(event, PlayerShoot);
 		Assert.string(event.id);
 	}
 }

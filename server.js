@@ -6,7 +6,7 @@
 */
 
 import {Assert, SimpleVector, Color} from './public/shared/utilities.js'
-import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration} from './public/shared/events.js'
+import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
 import {GameState} from './public/shared/gamestate.js'
 import express from 'express'
@@ -94,7 +94,9 @@ function newConnection(socket) {
     console.log('New connection: ' + socket.id)
     socket.on('changeAcceleration', changeAcceleration)
     socket.on('tickReply', tickReply)
-    
+    socket.on('changeAngle', changeAngle)
+    socket.on('shoot', shoot)
+
     var player = new Player(socket.id, new SimpleVector(
         Math.floor(Math.random() * /*mapWidth*/ 400),
         Math.floor(Math.random() * /*mapHeight*/ 400)),
@@ -114,9 +116,24 @@ function newConnection(socket) {
         Assert.number(data.acc.y)
         var player = state.playerById(socket.id)
         if (player === null) {
-            console.log(state)
             return
         }
         events.push(new PlayerChangeAcceleration(player.id, new SimpleVector(data.acc.x, data.acc.y)))
+    }
+
+    function changeAngle(data) {
+        Assert.number(data.angle)
+        if (player === null) {
+            return
+        }
+        events.push(new PlayerChangeAngle(player.id, data.angle))
+    }
+
+    function shoot(data) {
+        var player = state.playerById(socket.id)
+        if (player === null) {
+            return
+        }
+        events.push(new PlayerShoot(player.id))
     }
 }

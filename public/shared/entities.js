@@ -8,6 +8,7 @@ export class Entity {
 		this.vel = new SimpleVector(0, 0)
 		this.acc = new SimpleVector(0, 0)
 		this.color = color
+		this.angle = 0
 		Entity.assertValid(this)
 	}
 
@@ -17,7 +18,10 @@ export class Entity {
 		Assert.instanceOf(entity.vel, SimpleVector)
 		Assert.instanceOf(entity.acc, SimpleVector)
 		Assert.number(entity.size)
+		Assert.true(entity.size > 0)
 		Color.assertValid(entity.color)
+		Assert.number(entity.angle)
+		Assert.true(entity.angle >= 0 && entity.angle < 360)
 	}
 
 	move() {
@@ -40,6 +44,7 @@ export class Entity {
 }
 
 const playerSize = 20
+const playerBulletVel = 10
 export const playerMaxHealth = 100
 export class Player extends Entity {
 	constructor(id, pos, color) {
@@ -56,7 +61,8 @@ export class Player extends Entity {
 			acc: this.acc.serialize(),
 			id: this.id,
 			color: this.color.serialize(),
-			health: this.health
+			health: this.health,
+			angle: this.angle
 		}
 	}
 
@@ -66,6 +72,7 @@ export class Player extends Entity {
 		player.vel = SimpleVector.deserialize(data.vel)
 		player.size = playerSize
 		player.health = data.health
+		player.angle = data.angle
 		Player.assertValid(player);
 		return player
 	}
@@ -101,6 +108,16 @@ export class Player extends Entity {
 		if (this.health > playerMaxHealth) {
 			this.health = playerMaxHealth
 		}
+	}
+
+	shoot(state) {
+		var radians = this.angle * Math.PI / 180
+		state.projectiles.push(new Projectile(
+			new SimpleVector(this.pos.x, this.pos.y),
+			new SimpleVector(Math.cos(radians) * playerBulletVel, -Math.sin(radians) * playerBulletVel),
+			10,
+			this.color
+		))
 	}
 }
 
