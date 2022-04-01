@@ -97,11 +97,16 @@ export class Player extends Entity {
 		return this.health <= 0
 	}
 
-	damage(amount) {
+	damage(amount, color) {
 		this.health -= amount
-		if (this.health < 0) {
-			this.health = 0
+		if (this.isDead()) {
+			this.kill(color)
 		}
+	}
+	
+	kill(color) {
+		this.color = color
+		this.health = playerMaxHealth
 	}
 
 	heal(amount) {
@@ -166,8 +171,12 @@ export class Projectile extends Entity {
 		return projectile
 	}
 
-	isExpired() {
+	isDead() {
 		return this.life == 0 || this.pos.x == this.size || this.pos.x == mapWidth - this.size || this.pos.y == this.size || this.pos.y == mapHeight - this.size
+	}
+
+	kill() {
+		this.life = 0
 	}
 
 	tick() {
@@ -184,6 +193,7 @@ const minAsteroidSize = 50
 const maxAsteroidSize = 150
 const minAsteroidSpeed = 2
 const maxAsteroidSpeed = 5
+export const asteroidImpactDamagePerTick = 1
 export class Asteroid extends Entity {
 	constructor (pos, vel, size) {
 		super(pos, size)
@@ -244,19 +254,31 @@ export class Asteroid extends Entity {
 		)
 		state.asteroids.push(new Asteroid(pos, vel, size))
 	}
+
+	damage(amount) {
+		this.health -= amount
+		if (this.health <= 0) {
+			this.health = 0
+		}
+	}
+
+	isDead() {
+		return this.health <= 0
+	}
 }
 
 const powerupSize = 12
 export class Powerup extends Entity {
-	SPEED = 0
-	HEAL = 1
-	ATTACK = 2
+	static SPEED = 0
+	static HEAL = 1
+	static ATTACK = 2
 	//ADD 1 TO THIS IF YOU ADD A NEW POWERUP TYPE:
-	MAX_TYPE = 2
+	static MAX_TYPE = 2
 
 	constructor(pos, size, type) {
 		super(pos, size)
 		this.type = type
+		this.dead = false
 
 		Powerup.assertValid(this)
 	}
@@ -265,7 +287,8 @@ export class Powerup extends Entity {
 		Entity.assertValid(powerup)
 		Assert.instanceOf(powerup, Powerup)
 		Assert.number(powerup.type)
-		Assert.true(powerup.type >= 0 && powerup.type <= powerup.MAX_TYPE)
+		Assert.boolean(powerup.dead)
+		Assert.true(powerup.type >= 0 && powerup.type <= Powerup.MAX_TYPE)
 	}
 
 	serialize() {
@@ -282,4 +305,25 @@ export class Powerup extends Entity {
 	}
 
 	tick() {}
+
+	static addRandomPowerup(state) {
+		var type = state.randint(0, Powerup.MAX_TYPE)
+		var pos = new SimpleVector(
+			state.randint(powerupSize, mapWidth - powerupSize),
+			state.randint(powerupSize, mapHeight - powerupSize)
+		)
+		state.powerups.push(new Powerup(pos, powerupSize, type))
+	}
+
+	isDead() {
+		return this.dead
+	}
+
+	kill() {
+		this.dead = true
+	}
+
+	apply(player) {
+		//TODO
+	}
 }

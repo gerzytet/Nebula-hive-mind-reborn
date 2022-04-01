@@ -13,6 +13,7 @@ var state
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector} from './shared/utilities.js'
+import { Powerup } from './shared/entities.js'
 
 function windowResized() {
 	cnv = resizeCanvas(windowWidth - 20, windowHeight - 20)
@@ -224,6 +225,27 @@ function showAsteroid(asteroid) {
 	pop()
 }
 
+function imageFromPowerupType(type) {
+	switch(type) {
+		case Powerup.HEAL:
+			return powerupHealth
+		case Powerup.SPEED:
+			return powerupSpeed
+		case Powerup.ATTACK:
+			return powerupAttack
+		default:
+			throw new Error("Unknown powerup type: " + type)
+	}
+}
+
+function showPowerup(powerup) {
+	push()
+	translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y);
+	imageMode(CENTER);
+	image(imageFromPowerupType(powerup.type), 0, 0, powerup.size * 2, powerup.size * 2);
+	pop()
+}
+
 var lastAngle;
 function doRotation(player) {
 	//the angle determined by mouse position
@@ -273,6 +295,10 @@ function draw() {
 
 	for (var i = 0; i < state.asteroids.length; i++) {
 		showAsteroid(state.asteroids[i])
+	}
+
+	for (var i = 0; i < state.powerups.length; i++) {
+		showPowerup(state.powerups[i])
 	}
 }
 

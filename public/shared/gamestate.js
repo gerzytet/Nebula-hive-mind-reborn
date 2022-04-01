@@ -1,5 +1,5 @@
-import {Assert, SimpleVector} from "./utilities.js"
-import {Player, Projectile, playerMaxHealth, Asteroid} from "./entities.js"
+import {Assert, neutralColor, SimpleVector} from "./utilities.js"
+import {Player, Projectile, playerMaxHealth, Asteroid, Powerup, asteroidImpactDamagePerTick} from "./entities.js"
 
 function mulberry32(a) {
     return function() {
@@ -16,6 +16,7 @@ export class GameState {
 		this.players = []
 		this.projectiles = []
 		this.asteroids = []
+		this.powerups = []
 		this.rng = mulberry32(0)
 		GameState.assertValid(this);
 	}
@@ -36,16 +37,61 @@ export class GameState {
 	}
 
 	doCollision() {
-		for (var i = 0; i < this.players.length; i++) {
-			for (var j = 0; j < this.projectiles.length; j++) {
-				if (!this.players[i].color.equals(this.projectiles[j].color) && this.players[i].isColliding(this.projectiles[j])) {
-					this.players[i].damage(this.projectiles[j].damage)
-					if (this.players[i].isDead()) {
-						this.killPlayer(this.players[i], this.projectiles[j].color)
+		function collisionHelper(array1, array2, onCollision) {
+			for (var i = 0; i < array1.length; i++) {
+				for (var j = 0; j < array2.length; j++) {
+					if (array1[i].isColliding(array2[j]) && !array1[i].color.equals(array2[j].color)) {
+						onCollision(array1[i], array2[j])
 					}
-					this.projectiles.splice(j, 1)
-					j--
 				}
+			}
+		}
+
+		//players and projectiles:
+		//damage the player by projectile.damage, kill the projectile
+		collisionHelper(this.players, this.projectiles, function(player, projectile) {
+			player.damage(projectile.damage, projectile.color)
+			projectile.kill()
+		})
+
+		//asteroids and players:
+		//damage the player by asteroidImpactDamagePerTick
+		collisionHelper(this.players, this.asteroids, function(player, asteroid) {
+			player.damage(asteroidImpactDamagePerTick, neutralColor)
+		})
+
+		//projectiles and asteroids:
+		//kill the projectile, damage the asteroid by projectile.damage
+		collisionHelper(this.projectiles, this.asteroids, function(projectile, asteroid) {
+			projectile.kill()
+			asteroid.damage(projectile.damage, neutralColor)
+		})
+
+		//players and powerups:
+		//apply the powerup to the player, kill the powerup
+		collisionHelper(this.players, this.powerups, function(player, powerup) {
+			powerup.apply(player)
+			powerup.kill()
+		})
+	}
+
+	cleanDeadEntities() {
+		for (var i = 0; i < this.projectiles.length; i++) {
+			if (this.projectiles[i].isDead()) {
+				this.projectiles.splice(i, 1)
+				i--
+			}
+		}
+		for (var i = 0; i < this.asteroids.length; i++) {
+			if (this.asteroids[i].isDead()) {
+				this.asteroids.splice(i, 1)
+				i--
+			}
+		}
+		for (var i = 0; i < this.powerups.length; i++) {
+			if (this.powerups[i].isDead()) {
+				this.powerups.splice(i, 1)
+				i--
 			}
 		}
 	}
@@ -56,20 +102,24 @@ export class GameState {
 
 		if (this.asteroids.length < asteroidLimit && this.random() < newAsteroidChancePerTick) {
 			Asteroid.addRandomAsteroid(this);
-			console.log("new asteroid: " + this.asteroids[this.asteroids.length - 1])	
+		}
+	}
+
+	doNewPowerups() {
+		const newPowerupChancePerTick = 0.1
+		const powerupLimit = 10
+
+		if (this.powerups.length < powerupLimit && this.random() < newPowerupChancePerTick) {
+			Powerup.addRandomPowerup(this);
 		}
 	}
 
 	moveEntities() {
 		for (var i = 0; i < this.players.length; i++) {
-			this.players[i].move()
+			this.players[i].tick()
 		}
 		for (var i = 0; i < this.projectiles.length; i++) {
 			this.projectiles[i].tick()
-			if (this.projectiles[i].isExpired()) {
-				this.projectiles.splice(i, 1)
-				i--
-			}
 		}
 		for (var i = 0; i < this.asteroids.length; i++) {
 			this.asteroids[i].tick()
@@ -84,54 +134,59 @@ export class GameState {
 		}
 
 		this.doNewAsteroids()
+		this.doNewPowerups()
 		this.moveEntities()
 		this.doCollision()
+		this.cleanDeadEntities()
 	}
 
 	serialize() {
 		var data = {
 			players: [],
 			projectiles: [],
-			asteroids: []
+			asteroids: [],
+			powerups: []
 		};
-		for (var i = 0; i < this.players.length; i++) {
-			data.players.push(this.players[i].serialize());
+		function serializeHelper(dataArray, stateArray) {
+			for (var i = 0; i < stateArray.length; i++) {
+				dataArray.push(stateArray[i].serialize());
+			}
 		}
-		for (var i = 0; i < this.projectiles.length; i++) {
-			data.projectiles.push(this.projectiles[i].serialize());
-		}
-		for (var i = 0; i < this.asteroids.length; i++) {
-			data.asteroids.push(this.asteroids[i].serialize());
-		}
+		serializeHelper(data.players, this.players)
+		serializeHelper(data.projectiles, this.projectiles)
+		serializeHelper(data.asteroids, this.asteroids)
+		serializeHelper(data.powerups, this.powerups)
 		return data;
 	}
 
 	static deserialize(data) {
 		var state = new GameState();
-		for (var i = 0; i < data.players.length; i++) {
-			state.players.push(Player.deserialize(data.players[i]));
+		function deserializeHelper(dataArray, stateArray, clazz) {
+			for (var i = 0; i < dataArray.length; i++) {
+				stateArray.push(clazz.deserialize(dataArray[i]));
+			}
 		}
-		for (var i = 0; i < data.projectiles.length; i++) {
-			state.projectiles.push(Projectile.deserialize(data.projectiles[i]));
-		}
-		for (var i = 0; i < data.asteroids.length; i++) {
-			state.asteroids.push(Asteroid.deserialize(data.asteroids[i]));
-		}
+		deserializeHelper(data.players, state.players, Player)
+		deserializeHelper(data.projectiles, state.projectiles, Projectile)
+		deserializeHelper(data.asteroids, state.asteroids, Asteroid)
+		deserializeHelper(data.powerups, state.powerups, Powerup)
+
 		GameState.assertValid(state);
 		return state;
 	}
 
 	static assertValid(state) {
 		Assert.instanceOf(state, GameState);
-		for (var i = 0; i < state.players.length; i++) {
-			Player.assertValid(state.players[i]);
+		function assertHelper(array, clazz) {
+			for (var i = 0; i < array.length; i++) {
+				clazz.assertValid(array[i]);
+			}
 		}
-		for (var i = 0; i < state.projectiles.length; i++) {
-			Projectile.assertValid(state.projectiles[i]);
-		}
-		for (var i = 0; i < state.asteroids.length; i++) {
-			Asteroid.assertValid(state.asteroids[i]);
-		}
+		assertHelper(state.players, Player)
+		assertHelper(state.projectiles, Projectile)
+		assertHelper(state.asteroids, Asteroid)
+		assertHelper(state.powerups, Powerup)
+
 		Assert.function(state.rng)
 	}
 
