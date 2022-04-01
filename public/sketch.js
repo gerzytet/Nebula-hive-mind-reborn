@@ -216,6 +216,14 @@ function showProjecile(projectile) {
 	pop()
 }
 
+function showAsteroid(asteroid) {
+	push()
+	translate(asteroid.pos.x - camera.x, asteroid.pos.y - camera.y);
+	imageMode(CENTER);
+	image(asteroid_full, 0, 0, asteroid.size * 2, asteroid.size * 2);
+	pop()
+}
+
 var lastAngle;
 function doRotation(player) {
 	//the angle determined by mouse position
@@ -261,6 +269,10 @@ function draw() {
 
 	for (var i = 0; i < state.projectiles.length; i++) {
 		showProjecile(state.projectiles[i])
+	}
+
+	for (var i = 0; i < state.asteroids.length; i++) {
+		showAsteroid(state.asteroids[i])
 	}
 }
 

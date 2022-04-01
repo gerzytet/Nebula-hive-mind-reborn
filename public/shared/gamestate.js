@@ -1,5 +1,5 @@
 import {Assert, SimpleVector} from "./utilities.js"
-import {Player, Projectile, playerMaxHealth} from "./entities.js"
+import {Player, Projectile, playerMaxHealth, Asteroid} from "./entities.js"
 
 function mulberry32(a) {
     return function() {
@@ -15,6 +15,7 @@ export class GameState {
 	constructor() {
 		this.players = []
 		this.projectiles = []
+		this.asteroids = []
 		this.rng = mulberry32(0)
 		GameState.assertValid(this);
 	}
@@ -49,13 +50,17 @@ export class GameState {
 		}
 	}
 
-	//events is a list of GameEvent
-	//applies each game event to this state
-	advance(events) {
-		for (var i = 0; i < events.length; i++) {
-			events[i].apply(this)
-		}
+	doNewAsteroids() {
+		const newAsteroidChancePerTick = 0.1
+		const asteroidLimit = 10
 
+		if (this.asteroids.length < asteroidLimit && this.random() < newAsteroidChancePerTick) {
+			Asteroid.addRandomAsteroid(this);
+			console.log("new asteroid: " + this.asteroids[this.asteroids.length - 1])	
+		}
+	}
+
+	moveEntities() {
 		for (var i = 0; i < this.players.length; i++) {
 			this.players[i].move()
 		}
@@ -66,20 +71,37 @@ export class GameState {
 				i--
 			}
 		}
+		for (var i = 0; i < this.asteroids.length; i++) {
+			this.asteroids[i].tick()
+		}
+	}
 
+	//events is a list of GameEvent
+	//applies each game event to this state
+	advance(events) {
+		for (var i = 0; i < events.length; i++) {
+			events[i].apply(this)
+		}
+
+		this.doNewAsteroids()
+		this.moveEntities()
 		this.doCollision()
 	}
 
 	serialize() {
 		var data = {
 			players: [],
-			projectiles: []
+			projectiles: [],
+			asteroids: []
 		};
 		for (var i = 0; i < this.players.length; i++) {
 			data.players.push(this.players[i].serialize());
 		}
 		for (var i = 0; i < this.projectiles.length; i++) {
 			data.projectiles.push(this.projectiles[i].serialize());
+		}
+		for (var i = 0; i < this.asteroids.length; i++) {
+			data.asteroids.push(this.asteroids[i].serialize());
 		}
 		return data;
 	}
@@ -91,6 +113,9 @@ export class GameState {
 		}
 		for (var i = 0; i < data.projectiles.length; i++) {
 			state.projectiles.push(Projectile.deserialize(data.projectiles[i]));
+		}
+		for (var i = 0; i < data.asteroids.length; i++) {
+			state.asteroids.push(Asteroid.deserialize(data.asteroids[i]));
 		}
 		GameState.assertValid(state);
 		return state;
@@ -104,6 +129,9 @@ export class GameState {
 		for (var i = 0; i < state.projectiles.length; i++) {
 			Projectile.assertValid(state.projectiles[i]);
 		}
+		for (var i = 0; i < state.asteroids.length; i++) {
+			Asteroid.assertValid(state.asteroids[i]);
+		}
 		Assert.function(state.rng)
 	}
 
@@ -113,6 +141,10 @@ export class GameState {
 		var range = max - min + 1;
 		var r = this.rng() % range;
 		return r + min;
+	}
+
+	random() {
+		return this.rng() / 4294967296
 	}
 	
 	//seed the rng with a number

@@ -5,7 +5,7 @@
 @brief File that sets up server
 */
 
-import {Assert, SimpleVector, Color} from './public/shared/utilities.js'
+import {Assert, SimpleVector, Color, neutralColor} from './public/shared/utilities.js'
 import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
 import {GameState} from './public/shared/gamestate.js'
@@ -30,7 +30,7 @@ const timeoutMillis = 10000;
 
 var state = new GameState()
 var events = []
-var colors = [new Color(255, 255, 255)]
+var colors = [neutralColor]
 
 function colorUsed(c) {
     for (var i = 0; i < state.players.length; i++) {

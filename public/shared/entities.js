@@ -1,4 +1,4 @@
-import {SimpleVector, Color, Assert, mapHeight, mapWidth} from "./utilities.js"
+import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor} from "./utilities.js"
 
 const maxPlayerVelocity = 10
 export class Entity {
@@ -22,6 +22,7 @@ export class Entity {
 		Color.assertValid(entity.color)
 		Assert.number(entity.angle)
 		Assert.true(entity.angle >= 0 && entity.angle < 360)
+		Assert.true(entity.pos.x <= mapWidth && entity.pos.x >= 0 && entity.pos.y <= mapHeight && entity.pos.y >= 0)
 	}
 
 	move() {
@@ -119,6 +120,10 @@ export class Player extends Entity {
 			this.color
 		))
 	}
+
+	tick() {
+		this.move()
+	}
 }
 
 const baseProjectileDamage = 10
@@ -129,6 +134,7 @@ export class Projectile extends Entity {
 		this.vel = vel
 		this.damage = baseProjectileDamage
 		this.life = bulletLifetimeTicks
+		Projectile.assertValid(this)
 	}
 
 	static assertValid(projectile) {
@@ -171,5 +177,71 @@ export class Projectile extends Entity {
 
 	move() {
 		super.move()
+	}
+}
+
+const minAsteroidSize = 50
+const maxAsteroidSize = 150
+const minAsteroidSpeed = 2
+const maxAsteroidSpeed = 5
+export class Asteroid extends Entity {
+	constructor (pos, vel, size) {
+		super(pos, size, neutralColor)
+		this.vel = vel
+		this.health = size
+		Asteroid.assertValid(this)
+	}
+
+	serialize() {
+		return {
+			pos: this.pos.serialize(),
+			size: this.size,
+			vel: this.vel.serialize(),
+			health: this.health
+		}
+	}
+
+	static deserialize(data) {
+		var asteroid = new Asteroid(SimpleVector.deserialize(data.pos), SimpleVector.deserialize(data.vel), data.size)
+		asteroid.health = data.health
+		Asteroid.assertValid(asteroid)
+		return asteroid
+	}
+
+	static assertValid(asteroid) {
+		Entity.assertValid(asteroid)
+		Assert.instanceOf(asteroid, Asteroid)
+		Assert.number(asteroid.health)
+	}
+
+	move() {
+		super.move()
+		//if we collide with a wall, reverse direction
+		if (this.pos.x === this.size || this.pos.x === mapWidth - this.size) {
+			this.vel.x = -this.vel.x
+		}
+		if (this.pos.y === this.size || this.pos.y === mapHeight - this.size) {
+			this.vel.y = -this.vel.y
+		}
+	}
+
+	tick() {
+		this.move()
+	}
+
+	static addRandomAsteroid(state) {
+		var size = state.randint(minAsteroidSize, maxAsteroidSize)
+		var speed = state.randint(minAsteroidSpeed, maxAsteroidSpeed)
+		var angle = state.randint(0, 360)
+		var radians = angle * Math.PI / 180
+		var pos = new SimpleVector(
+			state.randint(size, mapWidth - size),
+			state.randint(size, mapHeight - size)
+		)
+		var vel = new SimpleVector(
+			Math.cos(radians) * speed,
+			Math.sin(radians) * speed
+		)
+		state.asteroids.push(new Asteroid(pos, vel, size))
 	}
 }

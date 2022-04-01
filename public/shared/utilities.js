@@ -1,38 +1,6 @@
 export const mapWidth = 3000
 export const mapHeight = 2000
 
-export class Color {
-	constructor(r, g, b) {
-		this.r = r
-		this.g = g
-		this.b = b
-		Color.assertValid(this);
-	}
-
-	static assertValid(color) {
-		Assert.instanceOf(color, Color);
-		Assert.number(color.r);
-		Assert.number(color.g);
-		Assert.number(color.b);
-	}
-
-	static deserialize(data) {
-		return new Color(data.r, data.g, data.b)
-	}
-
-	serialize() {
-		return {
-			r: this.r,
-			g: this.g,
-			b: this.b
-		}
-	}
-
-	equals(other) {
-		return this.r === other.r && this.g === other.g && this.b === other.b
-	}
-}
-
 export class Assert {
 	static defined(value) {
 		if (value === undefined) {
@@ -93,6 +61,39 @@ export class Assert {
 		}
 	}
 }
+
+export class Color {
+	constructor(r, g, b) {
+		this.r = r
+		this.g = g
+		this.b = b
+		Color.assertValid(this);
+	}
+
+	static assertValid(color) {
+		Assert.instanceOf(color, Color);
+		Assert.number(color.r);
+		Assert.number(color.g);
+		Assert.number(color.b);
+	}
+
+	static deserialize(data) {
+		return new Color(data.r, data.g, data.b)
+	}
+
+	serialize() {
+		return {
+			r: this.r,
+			g: this.g,
+			b: this.b
+		}
+	}
+
+	equals(other) {
+		return this.r === other.r && this.g === other.g && this.b === other.b
+	}
+}
+export const neutralColor = new Color(255, 255, 255)
 
 export class SimpleVector {
 	constructor(x, y) {
