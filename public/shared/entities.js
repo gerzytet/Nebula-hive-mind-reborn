@@ -2,7 +2,7 @@ import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor} from "./
 
 const maxPlayerVelocity = 10
 export class Entity {
-	constructor(pos, size, color) {
+	constructor(pos, size, color=neutralColor) {
 		this.pos = pos
 		this.size = size
 		this.vel = new SimpleVector(0, 0)
@@ -186,7 +186,7 @@ const minAsteroidSpeed = 2
 const maxAsteroidSpeed = 5
 export class Asteroid extends Entity {
 	constructor (pos, vel, size) {
-		super(pos, size, neutralColor)
+		super(pos, size)
 		this.vel = vel
 		this.health = size
 		Asteroid.assertValid(this)
@@ -244,4 +244,42 @@ export class Asteroid extends Entity {
 		)
 		state.asteroids.push(new Asteroid(pos, vel, size))
 	}
+}
+
+const powerupSize = 12
+export class Powerup extends Entity {
+	SPEED = 0
+	HEAL = 1
+	ATTACK = 2
+	//ADD 1 TO THIS IF YOU ADD A NEW POWERUP TYPE:
+	MAX_TYPE = 2
+
+	constructor(pos, size, type) {
+		super(pos, size)
+		this.type = type
+
+		Powerup.assertValid(this)
+	}
+
+	static assertValid(powerup) {
+		Entity.assertValid(powerup)
+		Assert.instanceOf(powerup, Powerup)
+		Assert.number(powerup.type)
+		Assert.true(powerup.type >= 0 && powerup.type <= powerup.MAX_TYPE)
+	}
+
+	serialize() {
+		return {
+			pos: this.pos.serialize(),
+			type: this.type
+		}
+	}
+
+	static deserialize(data) {
+		var powerup = new Powerup(SimpleVector.deserialize(data.pos), powerupSize, data.type)
+		Powerup.assertValid(powerup)
+		return powerup
+	}
+
+	tick() {}
 }
