@@ -97,10 +97,11 @@ function newConnection(socket) {
     socket.on('changeAngle', changeAngle)
     socket.on('shoot', shoot)
 
+    //players are created!
     var player = new Player(socket.id, new SimpleVector(
         Math.floor(Math.random() * /*mapWidth*/ 400),
         Math.floor(Math.random() * /*mapHeight*/ 400)),
-        getUnusedColor()
+        getUnusedColor(),"Player" + players.length
     )
     events.push(
         new PlayerJoin(player)

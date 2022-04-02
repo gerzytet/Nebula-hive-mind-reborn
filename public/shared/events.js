@@ -5,8 +5,9 @@
 @brief Handles random events
 */
 
+//TODO Create change name event
 import {Assert, SimpleVector} from "./utilities.js"
-import {Player} from "./entities.js"
+import {Player, playerBaseAcceleration} from "./entities.js"
 
 //base class for all primary game events
 export class GameEvent {
@@ -65,10 +66,9 @@ export class PlayerChangeAcceleration extends GameEvent {
 			this.acc.x * player.speed * playerBaseAcceleration,
 			this.acc.y * player.speed * playerBaseAcceleration
 		)
-		player.acc = this.newAcc
+		player.acc = newAcc
 	}
 
-	//
 	serialize() {
 		return {
 			id: this.id,
@@ -91,8 +91,51 @@ export class PlayerChangeAcceleration extends GameEvent {
 	}
 }
 
+export class PlayerTeleport extends GameEvent {
+	constructor(id, pos) {
+		super()
+		this.id = id
+		this.pos = pos
+		PlayerTeleport.assertValid(this);
+	}
+
+	apply(state) {
+		var player = state.playerById(this.id);
+		if (player === null) {
+			return
+		}
+		var newPos = new SimpleVector(
+			this.pos.x + player.angle * player.speed,
+			this.pos.y + player.angle * player.speed 
+		)
+		player.pos = newPos
+	}
+
+	serialize() {
+		return {
+			id: this.id,
+			acc: this.pos.serialize(),
+			type: "PlayerTeleport"
+		}
+	}
+
+	static deserialize(data) {
+		var event = new PlayerTeleport(data.id, SimpleVector.deserialize(data.pos))
+		PlayerTeleport.assertValid(event);
+		return event
+	}
+
+	//makes sure event object properties are valid
+	static assertValid(event) {
+		Assert.instanceOf(event, PlayerTeleport);
+		Assert.string(event.id);
+		SimpleVector.assertValid(event.pos);
+	}
+}
+
+
 /*
-for when a player joins a game
+for when a player joins a game (creates new player object)
 client does not need to send a packet, the server will infer this from a new connection
 */
 export class PlayerJoin extends GameEvent {

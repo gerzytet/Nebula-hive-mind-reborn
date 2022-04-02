@@ -69,7 +69,13 @@ export class GameState {
 		//asteroids and players:
 		//damage the player by asteroidImpactDamagePerTick
 		collisionHelper(this.players, this.asteroids, function(player, asteroid) {
-			player.damage(asteroidImpactDamagePerTick, neutralColor)
+			try {
+			    player.damage(asteroidImpactDamagePerTick, neutralColor)
+			}
+			catch (e) {
+			    console.log(e)
+				console.log(player)
+			}
 		})
 
 		//projectiles and asteroids:
@@ -111,7 +117,7 @@ export class GameState {
 
 	doNewAsteroids() {
 		const newAsteroidChancePerTick = 0.1
-		const asteroidLimit = 10
+		const asteroidLimit = 0
 
 		if (this.asteroids.length < asteroidLimit && this.random() < newAsteroidChancePerTick) {
 			Asteroid.addRandomAsteroid(this);

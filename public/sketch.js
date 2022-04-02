@@ -63,6 +63,7 @@ var bg
 var pship, eship, asteroid_full, asteroid_medium, asteroid_low
 var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg
 
+//Emitt this name
 //change name to input value
 function changeName() {
 	const name = input.value();
@@ -130,15 +131,18 @@ function doMovement() {
 	}
 
 	if (keyIsDown(UP_ARROW) || keyIsDown(code('w')) || keyIsDown(code('W'))) {
-		ay = -0.1
+		ay = -1
 	} else if (keyIsDown(DOWN_ARROW) || keyIsDown(code('s')) || keyIsDown(code('S'))) {
-		ay = 0.1
+		ay = 1
 	}
 	if (keyIsDown(LEFT_ARROW) || keyIsDown(code('a')) || keyIsDown(code('A'))) {
-		ax = -0.1
+		ax = -1
 	} else if (keyIsDown(RIGHT_ARROW) || keyIsDown(code('d')) || keyIsDown(code('D'))) {
-		ax = 0.1
+		ax = 1
 	}
+
+	//if press space teleport at the rotation and add to the posision 
+	
 
 	if (lastay !== ay || lastax !== ax) {
 		socket.emit("changeAcceleration", {
@@ -206,6 +210,8 @@ function showPlayer(player) {
 	//max health bar (dark-grey)
 	fill(40);
 	rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, playerMaxHealth/2, 10);
+
+	//draw name tag below player above health bar
 
 	//current health bar (same as player color)
 	fill(player.color.r, player.color.g, player.color.b);
@@ -288,7 +294,12 @@ function draw() {
 
 	
 	for (var i = 0; i < state.players.length; i++) {
-		showPlayer(state.players[i])
+		var dx = (screen.width/2 - camera.x) - (state.players[i].pos.x - camera.x);
+		var dy = (screen.height/2 - camera.y) - (state.players[i].pos.y - camera.y);
+		var dist = Math.sqrt(dx * dx + dy * dy);
+		//if (dist < 200) {
+			showPlayer(state.players[i])
+		//}
 	}
 
 	for (var i = 0; i < state.projectiles.length; i++) {

@@ -141,7 +141,6 @@ export class SimpleVector {
 		}
 	}
 
-	//? Not used? 
 	dist(other) {
 		var dx = this.x - other.x
 		var dy = this.y - other.y

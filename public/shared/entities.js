@@ -5,6 +5,8 @@
 @brief defines behvaior for entity objects
 */
 
+//TODO Implement Name Change
+
 import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor} from "./utilities.js"
 
 export class Entity {
@@ -57,7 +59,7 @@ const playerBaseBulletSize = 10
 const playerBaseProjectileDamage = 10
 const playerBaseSpeed = 10
 //multiply this by speed to get acceleration:
-const playerBaseAcceleration = 0.01
+export const playerBaseAcceleration = 0.01
 export const playerMaxHealth = 100
 export class Player extends Entity {
 	constructor(id, pos, color) {
@@ -67,6 +69,7 @@ export class Player extends Entity {
 		this.attack = playerBaseProjectileDamage
 		this.speed = playerBaseSpeed
 		this.effects = []
+		this.name = ""
 		Player.assertValid(this);
 	}
 
@@ -117,7 +120,7 @@ export class Player extends Entity {
 	}
 
 	move() {
-		this.vel.limitMagnitude(playerBaseSpeed)
+		this.vel.limitMagnitude(this.speed)
 		this.vel.x = this.vel.x * 0.99
 		this.vel.y = this.vel.y * 0.99
 		super.move()
@@ -206,7 +209,7 @@ export class Projectile extends Entity {
 			Color.deserialize(data.color),
 			data.damage
 		)
-		projectile.damage = baseProjectileDamage
+		projectile.damage = data.damage
 		projectile.life = data.life
 		return projectile
 	}
@@ -387,10 +390,10 @@ export class Powerup extends Entity {
 	apply(player) {
 		switch (this.type) {
 			case Powerup.SPEED:
-				player.speed *= 2
+				player.speed *= 4
 				break
 			case Powerup.ATTACK:
-				player.damage *= 2
+				player.attack *= 2
 				break
 			case Powerup.HEAL:
 				player.heal(playerMaxHealth / 2)
@@ -443,11 +446,96 @@ class ActiveEffect {
 	expire(player) {
 		switch (this.type) {
 			case Powerup.SPEED:
-				player.speed /= 2
+				player.speed /= 4
 				break
 			case Powerup.ATTACK:
-				player.damage /= 2
+				player.attack /= 2
 				break
 		}
+	}
+}
+
+const enemyProjectileDamage = 10
+const enemyMaxHealth = 50
+const enemySize = 20
+const enemyTurnPerTick = 1
+const enemySpeed = 5
+const enemyBaseAcceleration = 0.01
+class Enemy extends Entity {
+	constructor (pos) {
+		super(pos, enemySize, neutralColor)
+		this.health = enemyMaxHealth
+	}
+
+	serialize() {
+		return {
+			pos: this.pos.serialize(),
+			angle: this.angle,
+			vel: this.vel,
+			health: this.health
+		}
+	}
+
+	static deserialize(data) {
+		var enemy = new Enemy(SimpleVector.deserialize(data.pos))
+		enemy.angle = data.angle
+		enemy.vel = SimpleVector.deserialize(data.vel)
+		enemy.health = data.health
+		Enemy.assertValid(enemy)
+		return enemy
+	}
+
+	static assertValid(enemy) {
+		Entity.assertValid(enemy)
+		Assert.number(enemy.health)
+		Assert.true(enemy.health >= 0 && enemy.health <= enemyMaxHealth)
+	}
+
+	move() {
+		super.move()
+
+		this.vel.limitMagnitude(enemySpeed)
+		this.vel.x *= 0.99
+		this.vel.y *= 0.99
+	}
+
+	damage(amount) {
+		this.health -= amount
+		if (this.health <= 0) {
+			this.health = 0
+		}
+	}
+
+	isDead() {
+		return this.health <= 0
+	}
+
+	tick(state) {
+		var closestPlayer = null
+		var closestPlayerDist = Infinity
+		for (var i = 0; i < state.players.length; i++) {
+			var player = state.players[i]
+			var dist = this.pos.dist(player.pos)
+			if (dist < closestPlayerDist) {
+				closestPlayer = player
+				closestPlayerDist = dist
+			}
+		}
+
+		if (closestPlayer !== null) {
+			var dx = closestPlayer.pos.x - this.pos.x
+			var dy = closestPlayer.pos.y - this.pos.y
+			var radians = Math.atan2(dy, dx) 
+			var angle = radians * 180 / Math.PI
+			this.angle = angle
+
+			var newAcc = new SimpleVector(
+				Math.cos(radians) * enemySpeed * enemyBaseAcceleration,
+				-Math.sin(radians) * enemySpeed * enemyBaseAcceleration
+			)
+			this.acc = newAcc
+		}
+
+		this.move()
 	}
 }
