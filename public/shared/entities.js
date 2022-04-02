@@ -1,6 +1,12 @@
+/*
+@file entities.js
+@author Craig
+@date 4/1/2022
+@brief defines behvaior for entity objects
+*/
+
 import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor} from "./utilities.js"
 
-const maxPlayerVelocity = 10
 export class Entity {
 	constructor(pos, size, color=neutralColor) {
 		this.pos = pos
@@ -12,6 +18,7 @@ export class Entity {
 		Entity.assertValid(this)
 	}
 
+	//throws error if entity object data members aren't correct
 	static assertValid(entity) {
 		Assert.instanceOf(entity, Entity)
 		Assert.instanceOf(entity.pos, SimpleVector)
@@ -40,22 +47,34 @@ export class Entity {
 	isColliding(other) {
 		var maxDist = other.size + this.size
 		var dist = this.pos.dist(other.pos)
-		return dist < maxDist
+		return (dist < maxDist)
 	}
 }
 
 const playerSize = 20
 const playerBulletVel = 10
+const playerBaseBulletSize = 10
+const playerBaseProjectileDamage = 10
+const playerBaseSpeed = 10
+//multiply this by speed to get acceleration:
+const playerBaseAcceleration = 0.01
 export const playerMaxHealth = 100
 export class Player extends Entity {
 	constructor(id, pos, color) {
 		super(pos, playerSize, color);
 		this.id = id
 		this.health = playerMaxHealth
+		this.attack = playerBaseProjectileDamage
+		this.speed = playerBaseSpeed
+		this.effects = []
 		Player.assertValid(this);
 	}
 
 	serialize() {
+		var serializedEffects = []
+		for (var i = 0; i < this.effects.length; i++) {
+			serializedEffects.push(this.effects[i].serialize())
+		}
 		return {
 			pos: this.pos.serialize(),
 			vel: this.vel.serialize(),
@@ -63,7 +82,9 @@ export class Player extends Entity {
 			id: this.id,
 			color: this.color.serialize(),
 			health: this.health,
-			angle: this.angle
+			angle: this.angle,
+			speed: this.speed,
+			effects: serializedEffects
 		}
 	}
 
@@ -74,20 +95,29 @@ export class Player extends Entity {
 		player.size = playerSize
 		player.health = data.health
 		player.angle = data.angle
-		Player.assertValid(player);
+		player.speed = data.speed
+		player.effects = []
+		for (var i = 0; i < data.effects.length; i++) {
+			player.effects.push(ActiveEffect.deserialize(data.effects[i]))
+		}
+		Player.assertValid(player)
 		return player
 	}
 
 	static assertValid(player) {
 		Entity.assertValid(player)
-		Assert.instanceOf(player, Player);
-		Assert.string(player.id);
-		Assert.number(player.health);
-		Assert.true(player.health >= 0 && player.health <= playerMaxHealth);
+		Assert.instanceOf(player, Player)
+		Assert.string(player.id)
+		Assert.number(player.health)
+		Assert.number(player.speed)
+		Assert.true(player.health >= 0 && player.health <= playerMaxHealth)
+		for (var i = 0; i < player.effects.length; i++) {
+			ActiveEffect.assertValid(player.effects[i])
+		}
 	}
 
 	move() {
-		this.vel.limitMagnitude(maxPlayerVelocity)
+		this.vel.limitMagnitude(playerBaseSpeed)
 		this.vel.x = this.vel.x * 0.99
 		this.vel.y = this.vel.y * 0.99
 		super.move()
@@ -121,23 +151,31 @@ export class Player extends Entity {
 		state.projectiles.push(new Projectile(
 			new SimpleVector(this.pos.x, this.pos.y),
 			new SimpleVector(Math.cos(radians) * playerBulletVel, -Math.sin(radians) * playerBulletVel),
-			10,
-			this.color
+			playerBaseBulletSize,
+			this.color,
+			this.attack
 		))
 	}
 
 	tick() {
 		this.move()
+		for (var i = 0; i < this.effects.length; i++) {
+			this.effects[i].tick()
+			if (this.effects[i].isDead()) {
+				this.effects[i].expire(this)
+				this.effects.splice(i, 1)
+				i--
+			}
+		}
 	}
 }
 
-const baseProjectileDamage = 10
 const bulletLifetimeTicks = 150
 export class Projectile extends Entity {
-	constructor(pos, vel, size, color) {
+	constructor(pos, vel, size, color, damage) {
 		super(pos, size, color)
 		this.vel = vel
-		this.damage = baseProjectileDamage
+		this.damage = damage
 		this.life = bulletLifetimeTicks
 		Projectile.assertValid(this)
 	}
@@ -155,7 +193,8 @@ export class Projectile extends Entity {
 			vel: this.vel.serialize(),
 			size: this.size,
 			color: this.color.serialize(),
-			life: this.life
+			life: this.life,
+			damage: this.damage
 		}
 	}
 
@@ -164,7 +203,8 @@ export class Projectile extends Entity {
 			SimpleVector.deserialize(data.pos),
 			SimpleVector.deserialize(data.vel),
 			data.size,
-			Color.deserialize(data.color)
+			Color.deserialize(data.color),
+			data.damage
 		)
 		projectile.damage = baseProjectileDamage
 		projectile.life = data.life
@@ -172,7 +212,15 @@ export class Projectile extends Entity {
 	}
 
 	isDead() {
-		return this.life == 0 || this.pos.x == this.size || this.pos.x == mapWidth - this.size || this.pos.y == this.size || this.pos.y == mapHeight - this.size
+		if (this.life == 0 ||
+			this.pos.x == this.size || 
+			this.pos.x == mapWidth - this.size || 
+			this.pos.y == this.size || 
+			this.pos.y == mapHeight - this.size){
+				return true;
+			} else {
+				return false;
+			}
 	}
 
 	kill() {
@@ -194,6 +242,7 @@ const maxAsteroidSize = 150
 const minAsteroidSpeed = 2
 const maxAsteroidSpeed = 5
 export const asteroidImpactDamagePerTick = 1
+
 export class Asteroid extends Entity {
 	constructor (pos, vel, size) {
 		super(pos, size)
@@ -263,11 +312,12 @@ export class Asteroid extends Entity {
 	}
 
 	isDead() {
-		return this.health <= 0
+		return (this.health <= 0)
 	}
 }
 
 const powerupSize = 12
+
 export class Powerup extends Entity {
 	static SPEED = 0
 	static HEAL = 1
@@ -283,6 +333,7 @@ export class Powerup extends Entity {
 		Powerup.assertValid(this)
 	}
 
+	//double checks the properties of powerup (check if they are valid)
 	static assertValid(powerup) {
 		Entity.assertValid(powerup)
 		Assert.instanceOf(powerup, Powerup)
@@ -291,6 +342,7 @@ export class Powerup extends Entity {
 		Assert.true(powerup.type >= 0 && powerup.type <= Powerup.MAX_TYPE)
 	}
 
+	//turns the powerup into a data packet
 	serialize() {
 		return {
 			pos: this.pos.serialize(),
@@ -298,6 +350,7 @@ export class Powerup extends Entity {
 		}
 	}
 
+	//turn the data packet into a powerup
 	static deserialize(data) {
 		var powerup = new Powerup(SimpleVector.deserialize(data.pos), powerupSize, data.type)
 		Powerup.assertValid(powerup)
@@ -316,14 +369,85 @@ export class Powerup extends Entity {
 	}
 
 	isDead() {
-		return this.dead
+		return (this.dead)
 	}
 
 	kill() {
 		this.dead = true
 	}
 
+	getActiveEffect() {
+		var hasActiveEffect = this.type === Powerup.SPEED || this.type === Powerup.ATTACK
+		if (!hasActiveEffect) {
+			return null
+		}
+		return new ActiveEffect(this.type)
+	}
+
 	apply(player) {
-		//TODO
+		switch (this.type) {
+			case Powerup.SPEED:
+				player.speed *= 2
+				break
+			case Powerup.ATTACK:
+				player.damage *= 2
+				break
+			case Powerup.HEAL:
+				player.heal(playerMaxHealth / 2)
+				break
+		}
+		var effect = this.getActiveEffect()
+		if (effect !== null) {
+			player.effects.push(effect)	
+		}
+	}
+}
+
+//this can be changed to be different for each powerup later
+const powerupEffectDurationTicks = 150
+
+//a lasting powerup effect
+class ActiveEffect {
+	constructor(type) {
+		this.type = type
+		this.life = powerupEffectDurationTicks
+	}
+
+	serialize() {
+		return {
+			type: this.type,
+			life: this.life
+		}
+	}
+
+	static deserialize(data) {
+		var effect = new ActiveEffect(data.type)
+		effect.life = data.life
+		return effect
+	}
+
+	static assertValid(effect) {
+		Assert.instanceOf(effect, ActiveEffect)
+		Assert.number(effect.type)
+		Assert.number(effect.life)
+	}
+
+	tick() {
+		this.life--
+	}
+
+	isDead() {
+		return this.life <= 0
+	}
+
+	expire(player) {
+		switch (this.type) {
+			case Powerup.SPEED:
+				player.speed /= 2
+				break
+			case Powerup.ATTACK:
+				player.damage /= 2
+				break
+		}
 	}
 }

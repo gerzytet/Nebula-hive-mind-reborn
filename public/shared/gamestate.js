@@ -1,6 +1,17 @@
+/*
+@file gamestate.js
+@author Craig
+@date 4/1/2022
+@brief Holds everything that client/server agrees on (arrays)
+*/
+
+//!DON'T USE MATH.RANDOM! USE OUR FUNCTIONS!
+//reference for mulberry32: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+
 import {Assert, neutralColor, SimpleVector} from "./utilities.js"
 import {Player, Projectile, playerMaxHealth, Asteroid, Powerup, asteroidImpactDamagePerTick} from "./entities.js"
 
+//random num generator
 function mulberry32(a) {
     return function() {
       var t = a += 0x6D2B79F5;
@@ -36,6 +47,7 @@ export class GameState {
 		player.health = playerMaxHealth
 	}
 
+	//calls collision function if two enemies collide
 	doCollision() {
 		function collisionHelper(array1, array2, onCollision) {
 			for (var i = 0; i < array1.length; i++) {
@@ -75,6 +87,7 @@ export class GameState {
 		})
 	}
 
+	//goes through entity array and gets rid of dead objects
 	cleanDeadEntities() {
 		for (var i = 0; i < this.projectiles.length; i++) {
 			if (this.projectiles[i].isDead()) {

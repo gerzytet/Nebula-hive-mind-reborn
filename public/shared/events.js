@@ -1,3 +1,10 @@
+/*
+@file events.js
+@author Craig
+@date 4/1/2022
+@brief Handles random events
+*/
+
 import {Assert, SimpleVector} from "./utilities.js"
 import {Player} from "./entities.js"
 
@@ -54,9 +61,14 @@ export class PlayerChangeAcceleration extends GameEvent {
 		if (player === null) {
 			return
 		}
-		player.acc = this.acc
+		var newAcc = new SimpleVector(
+			this.acc.x * player.speed * playerBaseAcceleration,
+			this.acc.y * player.speed * playerBaseAcceleration
+		)
+		player.acc = this.newAcc
 	}
 
+	//
 	serialize() {
 		return {
 			id: this.id,
@@ -71,6 +83,7 @@ export class PlayerChangeAcceleration extends GameEvent {
 		return event
 	}
 
+	//makes sure event object properties are valid
 	static assertValid(event) {
 		Assert.instanceOf(event, PlayerChangeAcceleration);
 		Assert.string(event.id);

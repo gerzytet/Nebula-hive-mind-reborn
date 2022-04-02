@@ -13,10 +13,10 @@ var state
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector} from './shared/utilities.js'
-import { Powerup } from './shared/entities.js'
+import {Powerup, playerMaxHealth} from './shared/entities.js'
 
 function windowResized() {
-	cnv = resizeCanvas(windowWidth - 20, windowHeight - 20)
+	cnv = resizeCanvas(windowWidth - 20, windowHeight - 40)
 }
 
 function preload() {
@@ -71,16 +71,16 @@ function changeName() {
 
 var input, button
 function setup() {
-	cnv = createCanvas(20, 20);
+	cnv = createCanvas(0, 0);
 	cnv.parent("sketch-container")
 	windowResized()
-	background(51)
+	background(0)
 
 	input = createInput();
-	input.position(0, 0);
+	input.position(5, 5);
 
 	button = createButton('Change Name');
-	button.position(input.x + input.width, 0);
+	button.position(input.x + input.width, 5);
 	button.mousePressed(changeName);
 
 	textAlign(CENTER);
@@ -119,6 +119,8 @@ function setup() {
 
 var lastax
 var lastay
+
+//handles user input
 function doMovement() {
 	var ay = 0;
 	var ax = 0;
@@ -149,8 +151,8 @@ function doMovement() {
 
 function moveCamera(player) {
 	//the closest distance a player can get to edge of the screen without the camera attempting to move
-	var playerEdgeSoftLimitWidth = (windowWidth / 2) + 1;
-	var playerEdgeSoftLimitHeight = (windowHeight / 2) + 1;
+	var playerEdgeSoftLimitWidth = (windowWidth / 2) + 1
+	var playerEdgeSoftLimitHeight = (windowHeight / 2) + 1
 
 	//case when player is at the bottom or right of the screen
 	var edgeX = camera.x + windowWidth
@@ -162,8 +164,8 @@ function moveCamera(player) {
 	var cameraMoveX = max(playerEdgeSoftLimitWidth - distFromEdgeX, 0)
 	var cameraMoveY = max(playerEdgeSoftLimitHeight - distFromEdgeY, 0)
 	
-	var cameraLimitX = mapWidth - width;
-	var cameraLimitY = mapHeight - height;
+	var cameraLimitX = mapWidth - width
+	var cameraLimitY = mapHeight - height
 	
 	var newCameraX = min(camera.x + cameraMoveX, cameraLimitX)
 	var newCameraY = min(camera.y + cameraMoveY, cameraLimitY)
@@ -194,19 +196,20 @@ function moveCamera(player) {
 function showPlayer(player) {
 	push()
 	angleMode(DEGREES)
-	translate(player.pos.x - camera.x, player.pos.y - camera.y);
-	rotate(-player.angle + 90);
-	tint(player.color.r, player.color.g, player.color.b);
-	imageMode(CENTER);
+	translate(player.pos.x - camera.x, player.pos.y - camera.y)
+	rotate(-player.angle + 90)
+	tint(player.color.r, player.color.g, player.color.b)
+	imageMode(CENTER)
 	image(pship, 0, 0, player.size * 2, player.size * 2);
 	pop()
 
-	push()
-	fill(255);
-	textAlign(CENTER);
-	textSize(15);
-	text(player.health, player.pos.x - camera.x, player.pos.y - camera.y + (player.size / 3))
-	pop()
+	//max health bar (dark-grey)
+	fill(40);
+	rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, playerMaxHealth/2, 10);
+
+	//current health bar (same as player color)
+	fill(player.color.r, player.color.g, player.color.b);
+	rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, player.health/2, 10);
 }
 
 function showProjecile(projectile) {
@@ -240,20 +243,20 @@ function imageFromPowerupType(type) {
 
 function showPowerup(powerup) {
 	push()
-	translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y);
-	imageMode(CENTER);
-	image(imageFromPowerupType(powerup.type), 0, 0, powerup.size * 2, powerup.size * 2);
+	translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y)
+	imageMode(CENTER)
+	image(imageFromPowerupType(powerup.type), 0, 0, powerup.size * 2, powerup.size * 2)
 	pop()
 }
 
 var lastAngle;
 function doRotation(player) {
 	//the angle determined by mouse position
-	var newAngle = Math.atan2(mouseY - (player.pos.y - camera.y), mouseX - (player.pos.x - camera.x));
-	newAngle *= (180 / Math.PI);
-	newAngle = -newAngle;
+	var newAngle = Math.atan2(mouseY - (player.pos.y - camera.y), mouseX - (player.pos.x - camera.x))
+	newAngle *= (180 / Math.PI)
+	newAngle = -newAngle
 	if (newAngle < 0) {
-		newAngle += 360;
+		newAngle += 360
 	}
 	if (isNaN(newAngle) || lastAngle === newAngle) {
 		return
@@ -264,7 +267,6 @@ function doRotation(player) {
 	})
 	lastAngle = newAngle
 }
-
 
 function draw() {
 	if (state === undefined) {

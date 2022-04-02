@@ -1,3 +1,10 @@
+/*
+@file utilities.js
+@author Craig
+@date 4/1/2022
+@brief 
+*/
+
 export const mapWidth = 3000
 export const mapHeight = 2000
 
@@ -93,6 +100,7 @@ export class Color {
 		return this.r === other.r && this.g === other.g && this.b === other.b
 	}
 }
+
 export const neutralColor = new Color(255, 255, 255)
 
 export class SimpleVector {
@@ -133,6 +141,7 @@ export class SimpleVector {
 		}
 	}
 
+	//? Not used? 
 	dist(other) {
 		var dx = this.x - other.x
 		var dy = this.y - other.y
