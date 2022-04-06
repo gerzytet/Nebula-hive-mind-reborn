@@ -44,6 +44,13 @@ export class Entity {
 		this.pos.y = Math.max(this.pos.y, this.size)
 		this.pos.x = Math.min((mapWidth-this.size), this.pos.x)
 		this.pos.y = Math.min((mapHeight-this.size), this.pos.y)
+
+		if (this.pos.x === this.size || this.pos.x === mapWidth-this.size) {
+			this.vel.x = 0
+		}
+		if (this.pos.y === this.size || this.pos.y === mapHeight-this.size) {
+			this.vel.y = 0
+		}
 	}
 
 	isColliding(other) {
@@ -87,7 +94,7 @@ export class Player extends Entity {
 		this.attack = playerBaseProjectileDamage
 		this.speed = playerBaseSpeed
 		this.effects = []
-		this.name = ""
+		this.name = id.substring(0, 5)
 		Player.assertValid(this);
 	}
 
@@ -105,7 +112,8 @@ export class Player extends Entity {
 			health: this.health,
 			angle: this.angle,
 			speed: this.speed,
-			effects: serializedEffects
+			effects: serializedEffects,
+			name: this.name
 		}
 	}
 
@@ -117,6 +125,7 @@ export class Player extends Entity {
 		player.health = data.health
 		player.angle = data.angle
 		player.speed = data.speed
+		player.name = data.name
 		player.effects = []
 		for (var i = 0; i < data.effects.length; i++) {
 			player.effects.push(ActiveEffect.deserialize(data.effects[i]))
@@ -131,6 +140,7 @@ export class Player extends Entity {
 		Assert.string(player.id)
 		Assert.number(player.health)
 		Assert.number(player.speed)
+		Assert.string(player.name)
 		Assert.true(player.health >= 0 && player.health <= playerMaxHealth)
 		for (var i = 0; i < player.effects.length; i++) {
 			ActiveEffect.assertValid(player.effects[i])
@@ -268,7 +278,7 @@ export class Asteroid extends Entity {
 	constructor (pos, vel, size) {
 		super(pos, size)
 		this.vel = vel
-		this.health = size
+		this.health = this.maxhealth()
 		Asteroid.assertValid(this)
 	}
 
@@ -295,13 +305,16 @@ export class Asteroid extends Entity {
 	}
 
 	move() {
+		var oldvelx = this.vel.x
+		var oldvely = this.vel.y
+
 		super.move()
 		//if we collide with a wall, reverse direction
 		if (this.pos.x === this.size || this.pos.x === mapWidth - this.size) {
-			this.vel.x = -this.vel.x
+			this.vel.x = -oldvelx
 		}
 		if (this.pos.y === this.size || this.pos.y === mapHeight - this.size) {
-			this.vel.y = -this.vel.y
+			this.vel.y = -oldvely
 		}
 	}
 
@@ -334,6 +347,10 @@ export class Asteroid extends Entity {
 
 	isDead() {
 		return (this.health <= 0)
+	}
+
+	maxhealth() {
+		return this.size
 	}
 }
 
@@ -409,6 +426,8 @@ export class Powerup extends Entity {
 		switch (this.type) {
 			case Powerup.SPEED:
 				player.speed *= 4
+				player.acc.x *= 4
+				player.acc.y *= 4
 				break
 			case Powerup.ATTACK:
 				player.attack *= 2

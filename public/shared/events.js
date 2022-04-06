@@ -36,6 +36,8 @@ export class GameEvent {
 				return PlayerChangeAngle.deserialize(data)
 			case "PlayerShoot":
 				return PlayerShoot.deserialize(data)
+			case "PlayerChangeName":
+				return PlayerChangeName.deserialize(data)
 			default:
 				throw new Error("Unknown event type: " + data.type)
 		}
@@ -294,3 +296,47 @@ export class PlayerShoot extends GameEvent {
 		Assert.string(event.id);
 	}
 }
+
+/*
+for when a player changes their name
+client sends packet:
+{
+	name: new name
+}
+*/
+export class PlayerChangeName extends GameEvent {
+	constructor(id, name) {
+		super()
+		this.id = id
+		this.name = name
+		PlayerChangeName.assertValid(this);
+	}
+
+	static assertValid(event) {
+		Assert.string(event.id);
+		Assert.string(event.name);
+	}
+
+	apply(state) {
+		var player = state.playerById(this.id);
+		if (player === null) {
+			return
+		}
+		player.name = this.name
+	}
+
+	serialize() {
+		return {
+			id: this.id,
+			name: this.name,
+			type: "PlayerChangeName"
+		}
+	}
+
+	static deserialize(data) {
+		var event = new PlayerChangeName(data.id, data.name)
+		PlayerChangeName.assertValid(event);
+		return event
+	}
+}
+
