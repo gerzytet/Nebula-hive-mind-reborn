@@ -354,6 +354,31 @@ function doRotation(player) {
 	lastAngle = newAngle
 }
 
+function ui(player) {
+	//UI background
+
+	//Health Bar
+
+	//"HP:" text
+	textAlign(CENTER);
+	textSize(12);
+	fill(255);
+	text("HP:", 20, windowHeight - 90);
+
+	//max health bar (dark-grey)
+	fill(40);
+	rect(30, windowHeight - 100, playerMaxHealth*2, 20);
+
+	//current health bar (same as player color)
+	fill(player.color.r, player.color.g, player.color.b);
+	rect(30, windowHeight - 100, player.health*2, 20);
+
+	//Dash indicator
+
+	//Ammo indicator
+
+}
+
 function draw() {
 	if (state === undefined) {
 		//we are still waiting for initial state packet
@@ -371,8 +396,6 @@ function draw() {
 
 	background(51)
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
-
-	
 	
 	for (var i = 0; i < state.projectiles.length; i++) {
 		showProjecile(state.projectiles[i]);
@@ -394,7 +417,7 @@ function draw() {
 		showAsteroid(state.asteroids[i])
 	}
 
-	
+	ui(player);
 }
 
 var lastShootTime = 0
