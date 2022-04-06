@@ -306,6 +306,16 @@ function draw() {
 	var screeny = ((windowHeight / 2));
 	var sightradius = Math.sqrt(((windowWidth/2)*(windowWidth/2)) + ((windowHeight/2)*(windowHeight/2)));
 	
+	for (var i = 0; i < state.projectiles.length; i++) {
+		let dx = (state.projectiles[i].pos.x - camera.x) - screenx;
+		let dy = (state.projectiles[i].pos.y - camera.y) - screeny;
+		let dist = Math.sqrt((dx * dx) + (dy * dy));
+		print(dist);
+		if (dist < sightradius + state.projectiles[i].size) {
+			showProjecile(state.projectiles[i]);
+		}
+	}
+
 	for (var i = 0; i < state.players.length; i++) {
 		let dx = (state.players[i].pos.x - camera.x) - screenx;
 		let dy = (state.players[i].pos.y - camera.y) - screeny;
@@ -316,13 +326,12 @@ function draw() {
 		}
 	}
 
-	for (var i = 0; i < state.projectiles.length; i++) {
-		let dx = (state.projectiles[i].pos.x - camera.x) - screenx;
-		let dy = (state.projectiles[i].pos.y - camera.y) - screeny;
+	for (var i = 0; i < state.enemies.length; i++) {
+		let dx = (state.enemies[i].pos.x - camera.x) - screenx;
+		let dy = (state.enemies[i].pos.y - camera.y) - screeny;
 		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		print(dist);
-		if (dist < sightradius + state.projectiles[i].size) {
-			showProjecile(state.projectiles[i]);
+		if (dist < sightradius + state.asteroids[i].size) {
+			showEnemy(state.enemies[i])
 		}
 	}
 
@@ -346,9 +355,7 @@ function draw() {
 		}
 	}
 
-	for (var i = 0; i < state.enemies.length; i++) {
-		showEnemy(state.enemies[i])
-	}
+	
 }
 
 function mouseClicked(){
