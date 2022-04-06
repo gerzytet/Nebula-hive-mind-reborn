@@ -494,7 +494,7 @@ class ActiveEffect {
 }
 
 const enemyProjectileDamage = 10
-const enemyMaxHealth = 50
+export const enemyMaxHealth = 50
 const enemySize = 20
 const enemySpeed = 5
 const enemyBaseAcceleration = 0.01
