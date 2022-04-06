@@ -87,14 +87,14 @@ const playerBaseSpeed = 10
 export const playerBaseAcceleration = 0.01
 export const playerMaxHealth = 100
 export class Player extends Entity {
-	constructor(id, pos, color) {
+	constructor(id, pos, color, nameNum) {
 		super(pos, playerSize, color);
 		this.id = id
 		this.health = playerMaxHealth
 		this.attack = playerBaseProjectileDamage
 		this.speed = playerBaseSpeed
 		this.effects = []
-		this.name = id.substring(0, 5)
+		this.name = "SpaceShip " + nameNum;
 		Player.assertValid(this);
 	}
 
@@ -166,7 +166,14 @@ export class Player extends Entity {
 	}
 	
 	kill(color) {
-		
+		var colors = [];
+		if (color.r === 255 && color.g === 255 && color.b === 255) {
+			for (var i = 0; i < state.players.length; i++) {
+				colors.push(state.players[i].color);
+			}
+		}
+		colors = new Set(colors);
+		color = colors[randint(0, colors.length - 1)];
 		this.color = color
 		this.health = playerMaxHealth
 	}
@@ -494,7 +501,7 @@ class ActiveEffect {
 }
 
 const enemyProjectileDamage = 10
-const enemyMaxHealth = 50
+export const enemyMaxHealth = 50
 const enemySize = 20
 const enemySpeed = 5
 const enemyBaseAcceleration = 0.01

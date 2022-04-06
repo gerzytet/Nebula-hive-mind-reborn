@@ -13,7 +13,7 @@ var state
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector} from './shared/utilities.js'
-import {Powerup, playerMaxHealth} from './shared/entities.js'
+import {Powerup, playerMaxHealth, enemyMaxHealth} from './shared/entities.js'
 
 function windowResized() {
 	cnv = resizeCanvas(windowWidth - 20, windowHeight - 40)
@@ -219,15 +219,15 @@ function showPlayer(player) {
 		image(pship, 0, 0, player.size * 2, player.size * 2);
 		pop()
 
-		//max health bar (dark-grey)
-		fill(40);
-		rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, playerMaxHealth / 2, 10);
-
 		//draw name tag below player above health bar
 		textAlign(CENTER);
 		textSize(12);
 		fill(255);
 		text(player.name, player.pos.x - camera.x, player.pos.y - camera.y + 25);
+
+		//max health bar (dark-grey)
+		fill(40);
+		rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, playerMaxHealth / 2, 10);
 
 		//current health bar (same as player color)
 		fill(player.color.r, player.color.g, player.color.b);
@@ -324,6 +324,14 @@ function showEnemy(enemy) {
 		imageMode(CENTER)
 		image(eship, 0, 0, enemy.size * 2, enemy.size * 2)
 		pop()
+
+		//max health bar (dark-grey)
+		fill(40);
+		rect((enemy.pos.x - camera.x) - 13, enemy.pos.y - camera.y + enemy.size + 5, enemyMaxHealth/2, 10);
+
+		//current health bar (same as player color)
+		fill(255, 255, 255);
+		rect((enemy.pos.x - camera.x) - 13, enemy.pos.y - camera.y + enemy.size + 5, enemy.health/2, 10);
 	}
 }
 
