@@ -201,54 +201,76 @@ function moveCamera(player) {
 	camera.y = newCameraY
 }
 
+var screenx = ((windowWidth / 2));
+var screeny = ((windowHeight / 2));
+var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
+
 function showPlayer(player) {
-	push()
-	angleMode(DEGREES)
-	translate(player.pos.x - camera.x, player.pos.y - camera.y)
-	rotate(-player.angle + 90)
-	tint(player.color.r, player.color.g, player.color.b)
-	imageMode(CENTER)
-	image(pship, 0, 0, player.size * 2, player.size * 2);
-	pop()
+	let dx = (state.players[i].pos.x - camera.x) - screenx;
+	let dy = (state.players[i].pos.y - camera.y) - screeny;
+	let dist = Math.sqrt((dx * dx) + (dy * dy));
+	//print(dist);
+	if (dist < sightradius + state.players[i].size) {
+		push()
+		angleMode(DEGREES)
+		translate(player.pos.x - camera.x, player.pos.y - camera.y)
+		rotate(-player.angle + 90)
+		tint(player.color.r, player.color.g, player.color.b)
+		imageMode(CENTER)
+		image(pship, 0, 0, player.size * 2, player.size * 2);
+		pop()
 
-	//max health bar (dark-grey)
-	fill(40);
-	rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, playerMaxHealth/2, 10);
+		//max health bar (dark-grey)
+		fill(40);
+		rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, playerMaxHealth / 2, 10);
 
-	//draw name tag below player above health bar
-	textAlign(CENTER);
-	textSize(12);
-	fill(255);
-	text(player.name, player.pos.x - camera.x, player.pos.y - camera.y + 25);
+		//draw name tag below player above health bar
+		textAlign(CENTER);
+		textSize(12);
+		fill(255);
+		text(player.name, player.pos.x - camera.x, player.pos.y - camera.y + 25);
 
-	//current health bar (same as player color)
-	fill(player.color.r, player.color.g, player.color.b);
-	rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, player.health/2, 10);
+		//current health bar (same as player color)
+		fill(player.color.r, player.color.g, player.color.b);
+		rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, player.health / 2, 10);
+	}
 }
 
 function showProjecile(projectile) {
-	push()
-	var c = projectile.color
-	fill(c.r, c.g, c.b)
-	ellipse(projectile.pos.x - camera.x, projectile.pos.y - camera.y, projectile.size*2)
-	pop()
+	let dx = (state.projectiles[i].pos.x - camera.x) - screenx;
+	let dy = (state.projectiles[i].pos.y - camera.y) - screeny;
+	let dist = Math.sqrt((dx * dx) + (dy * dy));
+	//print(dist);
+	if (dist < sightradius + state.projectiles[i].size) {
+		push()
+		var c = projectile.color
+		fill(c.r, c.g, c.b)
+		ellipse(projectile.pos.x - camera.x, projectile.pos.y - camera.y, projectile.size * 2)
+		pop()
+	}
 }
 
 function showAsteroid(asteroid) {
-	push()
-	translate(asteroid.pos.x - camera.x, asteroid.pos.y - camera.y);
-	imageMode(CENTER);
-	var asteroidImage
-	var healthPercent = asteroid.health / asteroid.maxhealth()
-	if (healthPercent > (2/3)) {
-		asteroidImage = asteroid_full
-	} else if (healthPercent > (1/3)) {
-		asteroidImage = asteroid_medium
-	} else {
-		asteroidImage = asteroid_low
+	let dx = (state.asteroids[i].pos.x - camera.x) - screenx;
+	let dy = (state.asteroids[i].pos.y - camera.y) - screeny;
+	let dist = Math.sqrt((dx * dx) + (dy * dy));
+	//print(dist);
+	if (dist < sightradius + state.asteroids[i].size) {
+		push()
+		translate(asteroid.pos.x - camera.x, asteroid.pos.y - camera.y);
+		imageMode(CENTER);
+		var asteroidImage
+		var healthPercent = asteroid.health / asteroid.maxhealth()
+		if (healthPercent > (2 / 3)) {
+			asteroidImage = asteroid_full
+		} else if (healthPercent > (1 / 3)) {
+			asteroidImage = asteroid_medium
+		} else {
+			asteroidImage = asteroid_low
+		}
+		image(asteroidImage, 0, 0, asteroid.size * 2, asteroid.size * 2);
+		pop()
 	}
-	image(asteroidImage, 0, 0, asteroid.size * 2, asteroid.size * 2);
-	pop()
 }
 
 function imageFromPowerupType(type) {
@@ -265,21 +287,33 @@ function imageFromPowerupType(type) {
 }
 
 function showPowerup(powerup) {
-	push()
-	translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y)
-	imageMode(CENTER)
-	image(imageFromPowerupType(powerup.type), 0, 0, powerup.size * 2, powerup.size * 2)
-	pop()
+	let dx = (state.powerups[i].pos.x - camera.x) - screenx;
+	let dy = (state.powerups[i].pos.y - camera.y) - screeny;
+	let dist = Math.sqrt((dx * dx) + (dy * dy));
+	//print(dist);
+	if (dist < sightradius + state.powerups[i].size) {
+		push()
+		translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y)
+		imageMode(CENTER)
+		image(imageFromPowerupType(powerup.type), 0, 0, powerup.size * 2, powerup.size * 2)
+		pop()
+	}
 }
 
 function showEnemy(enemy) {
-	push()
-	angleMode(DEGREES)
-	translate(enemy.pos.x - camera.x, enemy.pos.y - camera.y)
-	rotate(enemy.angle + 90)
-	imageMode(CENTER)
-	image(eship, 0, 0, enemy.size * 2, enemy.size * 2)
-	pop()
+	let dx = (state.enemies[i].pos.x - camera.x) - screenx;
+	let dy = (state.enemies[i].pos.y - camera.y) - screeny;
+	let dist = Math.sqrt((dx * dx) + (dy * dy));
+	//print(dist);
+	if (dist < sightradius + state.enemies[i].size) {
+		push()
+		angleMode(DEGREES)
+		translate(enemy.pos.x - camera.x, enemy.pos.y - camera.y)
+		rotate(enemy.angle + 90)
+		imageMode(CENTER)
+		image(eship, 0, 0, enemy.size * 2, enemy.size * 2)
+		pop()
+	}
 }
 
 var lastAngle;
@@ -319,58 +353,26 @@ function draw() {
 	background(51)
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
 
-	var screenx = ((windowWidth / 2));
-	var screeny = ((windowHeight / 2));
-	var sightradius = Math.sqrt(((windowWidth/2)*(windowWidth/2)) + ((windowHeight/2)*(windowHeight/2)));
+	
 	
 	for (var i = 0; i < state.projectiles.length; i++) {
-		let dx = (state.projectiles[i].pos.x - camera.x) - screenx;
-		let dy = (state.projectiles[i].pos.y - camera.y) - screeny;
-		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		//print(dist);
-		if (dist < sightradius + state.projectiles[i].size) {
-			showProjecile(state.projectiles[i]);
-		}
+		showProjecile(state.projectiles[i]);
 	}
 
 	for (var i = 0; i < state.players.length; i++) {
-		let dx = (state.players[i].pos.x - camera.x) - screenx;
-		let dy = (state.players[i].pos.y - camera.y) - screeny;
-		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		//print(dist);
-		if (dist < sightradius+state.players[i].size) {
-			showPlayer(state.players[i]);
-		}
+		showPlayer(state.players[i]);
 	}
 
 	for (var i = 0; i < state.enemies.length; i++) {
-		let dx = (state.enemies[i].pos.x - camera.x) - screenx;
-		let dy = (state.enemies[i].pos.y - camera.y) - screeny;
-		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		//print(dist);
-		if (dist < sightradius + state.enemies[i].size) {
-			showEnemy(state.enemies[i]);
-		}
+		showEnemy(state.enemies[i]);
 	}
 
 	for (var i = 0; i < state.powerups.length; i++) {
-		let dx = (state.powerups[i].pos.x - camera.x) - screenx;
-		let dy = (state.powerups[i].pos.y - camera.y) - screeny;
-		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		//print(dist);
-		if (dist < sightradius + state.powerups[i].size) {
-			showPowerup(state.powerups[i])
-		}
+		showPowerup(state.powerups[i])
 	}
 
 	for (var i = 0; i < state.asteroids.length; i++) {
-		let dx = (state.asteroids[i].pos.x - camera.x) - screenx;
-		let dy = (state.asteroids[i].pos.y - camera.y) - screeny;
-		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		//print(dist);
-		if (dist < sightradius + state.asteroids[i].size) {
-			showAsteroid(state.asteroids[i])
-		}
+		showAsteroid(state.asteroids[i])
 	}
 
 	
