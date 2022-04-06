@@ -201,16 +201,15 @@ function moveCamera(player) {
 	camera.y = newCameraY
 }
 
-var screenx = ((windowWidth / 2));
-var screeny = ((windowHeight / 2));
-var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
-
 function showPlayer(player) {
-	let dx = (state.players[i].pos.x - camera.x) - screenx;
-	let dy = (state.players[i].pos.y - camera.y) - screeny;
+	var screenx = ((windowWidth / 2));
+	var screeny = ((windowHeight / 2));
+	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
+	let dx = (player.pos.x - camera.x) - screenx;
+	let dy = (player.pos.y - camera.y) - screeny;
 	let dist = Math.sqrt((dx * dx) + (dy * dy));
 	//print(dist);
-	if (dist < sightradius + state.players[i].size) {
+	if (dist < sightradius + player.size) {
 		push()
 		angleMode(DEGREES)
 		translate(player.pos.x - camera.x, player.pos.y - camera.y)
@@ -237,11 +236,14 @@ function showPlayer(player) {
 }
 
 function showProjecile(projectile) {
-	let dx = (state.projectiles[i].pos.x - camera.x) - screenx;
-	let dy = (state.projectiles[i].pos.y - camera.y) - screeny;
+	var screenx = ((windowWidth / 2));
+	var screeny = ((windowHeight / 2));
+	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
+	let dx = (projectile.pos.x - camera.x) - screenx;
+	let dy = (projectile.pos.y - camera.y) - screeny;
 	let dist = Math.sqrt((dx * dx) + (dy * dy));
 	//print(dist);
-	if (dist < sightradius + state.projectiles[i].size) {
+	if (dist < sightradius + projectile.size) {
 		push()
 		var c = projectile.color
 		fill(c.r, c.g, c.b)
@@ -251,11 +253,14 @@ function showProjecile(projectile) {
 }
 
 function showAsteroid(asteroid) {
-	let dx = (state.asteroids[i].pos.x - camera.x) - screenx;
-	let dy = (state.asteroids[i].pos.y - camera.y) - screeny;
+	var screenx = ((windowWidth / 2));
+	var screeny = ((windowHeight / 2));
+	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
+	let dx = (asteroid.pos.x - camera.x) - screenx;
+	let dy = (asteroid.pos.y - camera.y) - screeny;
 	let dist = Math.sqrt((dx * dx) + (dy * dy));
 	//print(dist);
-	if (dist < sightradius + state.asteroids[i].size) {
+	if (dist < sightradius + asteroid.size) {
 		push()
 		translate(asteroid.pos.x - camera.x, asteroid.pos.y - camera.y);
 		imageMode(CENTER);
@@ -287,11 +292,14 @@ function imageFromPowerupType(type) {
 }
 
 function showPowerup(powerup) {
-	let dx = (state.powerups[i].pos.x - camera.x) - screenx;
-	let dy = (state.powerups[i].pos.y - camera.y) - screeny;
+	var screenx = ((windowWidth / 2));
+	var screeny = ((windowHeight / 2));
+	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
+	let dx = (powerup.pos.x - camera.x) - screenx;
+	let dy = (powerup.pos.y - camera.y) - screeny;
 	let dist = Math.sqrt((dx * dx) + (dy * dy));
 	//print(dist);
-	if (dist < sightradius + state.powerups[i].size) {
+	if (dist < sightradius + powerup.size) {
 		push()
 		translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y)
 		imageMode(CENTER)
@@ -301,11 +309,14 @@ function showPowerup(powerup) {
 }
 
 function showEnemy(enemy) {
-	let dx = (state.enemies[i].pos.x - camera.x) - screenx;
-	let dy = (state.enemies[i].pos.y - camera.y) - screeny;
+	var screenx = ((windowWidth / 2));
+	var screeny = ((windowHeight / 2));
+	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
+	let dx = (enemy.pos.x - camera.x) - screenx;
+	let dy = (enemy.pos.y - camera.y) - screeny;
 	let dist = Math.sqrt((dx * dx) + (dy * dy));
 	//print(dist);
-	if (dist < sightradius + state.enemies[i].size) {
+	if (dist < sightradius + enemy.size) {
 		push()
 		angleMode(DEGREES)
 		translate(enemy.pos.x - camera.x, enemy.pos.y - camera.y)
