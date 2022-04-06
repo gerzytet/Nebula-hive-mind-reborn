@@ -492,7 +492,8 @@ export class Enemy extends Entity {
 			pos: this.pos.serialize(),
 			angle: this.angle,
 			vel: this.vel,
-			health: this.health
+			health: this.health,
+			angle: this.angle
 		}
 	}
 
@@ -501,6 +502,7 @@ export class Enemy extends Entity {
 		enemy.angle = data.angle
 		enemy.vel = SimpleVector.deserialize(data.vel)
 		enemy.health = data.health
+		enemy.angle = data.angle
 		Enemy.assertValid(enemy)
 		return enemy
 	}
@@ -573,6 +575,9 @@ export class Enemy extends Entity {
 			var dy = closestPlayer.pos.y - this.pos.y
 			var radians = Math.atan2(dy, dx) 
 			var angle = radians * 180 / Math.PI
+			if (angle < 0) {
+				angle += 360
+			}
 			this.angle = angle
 
 			var newAcc = new SimpleVector(
