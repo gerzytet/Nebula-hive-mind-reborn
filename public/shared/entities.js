@@ -87,14 +87,14 @@ const playerBaseSpeed = 10
 export const playerBaseAcceleration = 0.01
 export const playerMaxHealth = 100
 export class Player extends Entity {
-	constructor(id, pos, color) {
+	constructor(id, pos, color, nameNum) {
 		super(pos, playerSize, color);
 		this.id = id
 		this.health = playerMaxHealth
 		this.attack = playerBaseProjectileDamage
 		this.speed = playerBaseSpeed
 		this.effects = []
-		this.name = id.substring(0, 5)
+		this.name = "SpaceShip " + nameNum;
 		Player.assertValid(this);
 	}
 

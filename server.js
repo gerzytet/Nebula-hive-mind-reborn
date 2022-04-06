@@ -22,6 +22,7 @@ console.log('My server is running')
 var io = new Server(server)
 
 var players = []
+var playercounter = 0
 io.sockets.on('connection', newConnection)
 
 setInterval(tick, 33);
@@ -102,8 +103,10 @@ function newConnection(socket) {
     var player = new Player(socket.id, new SimpleVector(
         Math.floor(Math.random() * /*mapWidth*/ 400),
         Math.floor(Math.random() * /*mapHeight*/ 400)),
-        getUnusedColor(),"Player" + players.length
+        getUnusedColor(), (playercounter + 1),
+        "Player" + players.length
     )
+    playercounter += 1;
     events.push(
         new PlayerJoin(player)
     )
