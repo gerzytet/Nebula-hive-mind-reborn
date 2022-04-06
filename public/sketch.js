@@ -354,29 +354,83 @@ function doRotation(player) {
 	lastAngle = newAngle
 }
 
-function ui(player) {
-	//UI background
+function ui(player, state) {
+	push()
+	//Bottom left
 
 	//Health Bar
+		//"HP:" text
+		textAlign(LEFT, TOP);
+		textSize(15);
+		fill(255);
+		text("HP:", 5, windowHeight - 97);
 
-	//"HP:" text
-	textAlign(CENTER);
-	textSize(12);
-	fill(255);
-	text("HP:", 20, windowHeight - 90);
+		//max health bar (dark-grey)
+		fill(40);
+		rect(70, windowHeight - 100, playerMaxHealth*2, 20);
 
-	//max health bar (dark-grey)
-	fill(40);
-	rect(30, windowHeight - 100, playerMaxHealth*2, 20);
-
-	//current health bar (same as player color)
-	fill(player.color.r, player.color.g, player.color.b);
-	rect(30, windowHeight - 100, player.health*2, 20);
+		//current health bar (same as player color)
+		fill(player.color.r, player.color.g, player.color.b);
+		rect(70, windowHeight - 100, player.health*2, 20);
 
 	//Dash indicator
+		//"Dashes:" text
+		textAlign(LEFT, TOP);
+		textSize(15);
+		fill(255);
+		text("Dashes:", 5, windowHeight - 77);
+		
+		//max Dash bar (dark-grey)
+		fill(40);
+		rect(70, windowHeight - 80, playerMaxHealth * 2, 20);
 
+		//current Dash bar (Light-blue/cyan)
+		fill(0, 255, 255);
+		rect(70, windowHeight - 80, playerMaxHealth * 2, 20);
+
+		//Dash seperator
+		fill(40);
+		rect(70 + ((playerMaxHealth*2) / 3), windowHeight - 80, 1, 20);
+		rect(70 + (2*((playerMaxHealth*2) / 3)), windowHeight - 80, 1, 20);
 	//Ammo indicator
+		//"Ammo:" text
+		textAlign(LEFT, TOP);
+		textSize(15);
+		fill(255);
+		text("Ammo:", 5, windowHeight - 57);
 
+		//max Ammo bar (dark-grey)
+		fill(40);
+		rect(70, windowHeight - 60, playerMaxHealth * 2, 20);
+
+		//current Ammo bar (Player colored sticks)
+		fill(player.color.r, player.color.g, player.color.b);
+		rect(70, windowHeight - 60, playerMaxHealth * 2, 20);
+
+		//Ammo seperator
+		fill(40);
+		for (var i = 1; i < 50; i++) {
+			rect(70 + (i * ((playerMaxHealth * 2) / 50)), windowHeight - 60, 1, 20);
+		}
+
+
+	//Top right
+
+	//Player Team Chart
+
+	//Player scoreboard
+
+
+	//Bottom right
+
+	//Chat output
+
+
+	//Top left
+
+	//Name?
+
+	pop()
 }
 
 function showPlayerConnections() {
@@ -440,7 +494,7 @@ function draw() {
 		showAsteroid(state.asteroids[i])
 	}
 
-	ui(player);
+	ui(player, state);
 }
 
 var lastShootTime = 0
