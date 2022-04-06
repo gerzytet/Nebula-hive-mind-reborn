@@ -74,6 +74,8 @@ function tick() {
             )
         }
     }
+    console.log("clients connected: " + io.engine.clientsCount)
+
     var seed = Math.floor(Math.random() * (1 << 30))
     state.seed(seed)
     state.advance(events)
@@ -97,6 +99,7 @@ function newConnection(socket) {
     socket.on('changeAngle', changeAngle)
     socket.on('shoot', shoot)
     socket.on('changeName', changeName)
+    socket.on('becomeServerCamera', becomeServerCamera)
 
     //players are created!
     var player = new Player(socket.id, new SimpleVector(
@@ -150,6 +153,16 @@ function newConnection(socket) {
         console.log('Got name change')
         events.push(
             new PlayerChangeName(player.id, data.name)
+        )
+    }
+
+    function becomeServerCamera(data) {
+        var player = state.playerById(socket.id)
+        if (player === null) {
+            return
+        }
+        events.push(
+            new PlayerLeave(player.id)
         )
     }
 }

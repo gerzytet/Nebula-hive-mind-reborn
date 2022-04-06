@@ -145,6 +145,11 @@ function doMovement() {
 		ax = 1
 	}
 
+	//TODO: TESTING PURPOSES ONLY:
+	if (keyIsDown(code('b')) || keyIsDown(code('B'))) {
+		becomeServerCamera()
+	}
+
 	//if press space teleport at the rotation and add to the posision 
 	
 
@@ -377,6 +382,10 @@ function showPlayerConnections() {
 }
 
 function draw() {
+	if (isServerCamera) {
+		serverCameraDraw()
+		return
+	}
 	if (state === undefined) {
 		//we are still waiting for initial state packet
 		return
@@ -393,8 +402,6 @@ function draw() {
 
 	background(51)
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
-
-	
 	
 	for (var i = 0; i < state.projectiles.length; i++) {
 		showProjecile(state.projectiles[i]);
@@ -433,9 +440,37 @@ function mouseClicked(){
 	tryShoot()
 }
 
+function serverCameraShowPlayer(player) {
+	push()
+	translate(player.pos.x / mapWidth * width, player.pos.y / mapHeight * height)
+	angleMode(DEGREES)
+	rotate(-player.angle + 90)
+	tint(player.color.r, player.color.g, player.color.b)
+	imageMode(CENTER)
+	image(pship, 0, 0, player.size * 1.5, player.size * 1.5)
+	pop()
+}
+
+function serverCameraDraw() {
+	background(51)
+	image(bg, 0, 0, width, height);
+
+	for (var i = 0; i < state.players.length; i++) {
+		serverCameraShowPlayer(state.players[i])
+	}
+}
+
+var isServerCamera = false
+function becomeServerCamera() {
+	console.log('becoming server camera')
+	isServerCamera = true
+	socket.emit("becomeServerCamera", {})
+}
+
 //this is necessary because p5.js needs to see these functions in the global scope, which doesn't happen with a module
 window.draw = draw
 window.preload = preload
 window.setup = setup
 window.windowResized = windowResized
 window.mouseClicked = mouseClicked
+window.becomeServerCamera = becomeServerCamera
