@@ -166,6 +166,7 @@ export class Player extends Entity {
 	}
 	
 	kill(color) {
+		
 		this.color = color
 		this.health = playerMaxHealth
 	}

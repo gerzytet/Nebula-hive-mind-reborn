@@ -327,7 +327,7 @@ function draw() {
 		let dx = (state.projectiles[i].pos.x - camera.x) - screenx;
 		let dy = (state.projectiles[i].pos.y - camera.y) - screeny;
 		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		print(dist);
+		//print(dist);
 		if (dist < sightradius + state.projectiles[i].size) {
 			showProjecile(state.projectiles[i]);
 		}
@@ -348,8 +348,8 @@ function draw() {
 		let dy = (state.enemies[i].pos.y - camera.y) - screeny;
 		let dist = Math.sqrt((dx * dx) + (dy * dy));
 		//print(dist);
-		if (dist < sightradius + state.projectiles[i].size) {
-			showProjecile(state.projectiles[i]);
+		if (dist < sightradius + state.enemies[i].size) {
+			showEnemy(state.enemies[i]);
 		}
 	}
 
