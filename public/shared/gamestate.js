@@ -8,7 +8,7 @@
 //!DON'T USE MATH.RANDOM! USE OUR FUNCTIONS!
 //reference for mulberry32: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 
-import {Assert, neutralColor, SimpleVector} from "./utilities.js"
+import {Assert, neutralColor, SimpleVector, connectionRadius} from "./utilities.js"
 import {Player, Projectile, playerMaxHealth, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy} from "./entities.js"
 
 //random num generator
@@ -71,9 +71,11 @@ export class GameState {
 		})
 
 		//asteroids and players:
-		//damage the player by asteroidImpactDamagePerTick
+		//damage the player by asteroidImpactDamagePerTick, push each other away
 		collisionHelper(this.players, this.asteroids, function(player, asteroid) {
 			player.damage(asteroidImpactDamagePerTick, neutralColor, state)
+			player.push(asteroid, 0.5)
+			asteroid.push(player, 3)
 		})
 
 		//projectiles and asteroids:
@@ -103,6 +105,20 @@ export class GameState {
 			enemy1.push(enemy2, 0.1)
 			enemy2.push(enemy1, 0.1)
 		}, false)
+
+		//asteroids and asteroids:
+		//push back both asteroids
+		collisionHelper(this.asteroids, this.asteroids, function(asteroid1, asteroid2) {
+			asteroid1.push(asteroid2, 6)
+			asteroid2.push(asteroid1, 6)
+		}, false)
+
+		//projectiles and projectiles:
+		//destroy both projectiles
+		collisionHelper(this.projectiles, this.projectiles, function(projectile1, projectile2) {
+			projectile1.kill()
+			projectile2.kill()
+		})
 	}
 
 	//goes through entity array and gets rid of dead objects
@@ -153,7 +169,7 @@ export class GameState {
 
 	doNewEnemies() {
 		const newEnemyChancePerTick = 0.1
-		const enemyLimit = 0
+		const enemyLimit = 5
 
 		if (this.enemies.length < enemyLimit && this.random() < newEnemyChancePerTick) {
 			Enemy.addRandomEnemy(this);
@@ -175,9 +191,33 @@ export class GameState {
 		}
 	}
 
+	applyPlayerConnections() {
+		const connectionHealPerTick = 0.4
+		for (var i = 0; i < this.players.length; i++) {
+			this.players[i].connections = 0
+			for (var j = 0; j < this.players.length; j++) {
+				if (i <= j) {
+					continue
+				}
+				if (!this.players[i].color.equals(this.players[j].color)) {
+					continue
+				}
+	
+				if (this.players[i].pos.dist(this.players[j].pos) < connectionRadius) {
+					this.players[i].heal(connectionHealPerTick)
+					this.players[j].heal(connectionHealPerTick)
+					this.players[i].connections++
+					this.players[j].connections++
+				}
+			}
+		}
+	}
+
 	//events is a list of GameEvent
 	//applies each game event to this state
 	advance(events) {
+		//this is run before the events are because it calculates the player's connections
+		this.applyPlayerConnections()
 		for (var i = 0; i < events.length; i++) {
 			events[i].apply(this)
 		}

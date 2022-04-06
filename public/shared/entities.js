@@ -67,11 +67,9 @@ export class Entity {
 		var dist = this.pos.dist(other.pos)
 		var pushVector = new SimpleVector(other.pos.x - this.pos.x, other.pos.y - this.pos.y)
 		
-		//strength scales linearly based on how close you are
-		var scaledStrength = strength * ((this.size + other.size - dist) / dist)
 		var scaledPushVector = new SimpleVector(
-			pushVector.x / pushVector.magnitude() * scaledStrength,
-			pushVector.y / pushVector.magnitude() * scaledStrength
+			pushVector.x / pushVector.magnitude() * strength,
+			pushVector.y / pushVector.magnitude() * strength
 		)
 		other.vel.x += scaledPushVector.x
 		other.vel.y += scaledPushVector.y
@@ -83,6 +81,7 @@ const playerBulletVel = 10
 const playerBaseBulletSize = 10
 const playerBaseProjectileDamage = 10
 const playerBaseSpeed = 10
+const playerBulletSizeBonusPerConnection = 10
 //multiply this by speed to get acceleration:
 export const playerBaseAcceleration = 0.01
 export const playerMaxHealth = 100
@@ -94,6 +93,7 @@ export class Player extends Entity {
 		this.attack = playerBaseProjectileDamage
 		this.speed = playerBaseSpeed
 		this.effects = []
+		this.connections = 0
 		this.name = "SpaceShip " + nameNum;
 		Player.assertValid(this);
 	}
@@ -141,6 +141,7 @@ export class Player extends Entity {
 		Assert.number(player.health)
 		Assert.number(player.speed)
 		Assert.string(player.name)
+		Assert.number(player.connections)
 		Assert.true(player.health >= 0 && player.health <= playerMaxHealth)
 		for (var i = 0; i < player.effects.length; i++) {
 			ActiveEffect.assertValid(player.effects[i])
@@ -194,7 +195,7 @@ export class Player extends Entity {
 		state.projectiles.push(new Projectile(
 			new SimpleVector(this.pos.x, this.pos.y),
 			new SimpleVector(Math.cos(radians) * playerBulletVel, -Math.sin(radians) * playerBulletVel),
-			playerBaseBulletSize,
+			playerBaseBulletSize + this.connections * playerBulletSizeBonusPerConnection,
 			this.color,
 			this.attack
 		))
@@ -328,6 +329,7 @@ export class Asteroid extends Entity {
 		if (this.pos.y === this.size || this.pos.y === mapHeight - this.size) {
 			this.vel.y = -oldvely
 		}
+		this.vel.limitMagnitude(maxAsteroidSpeed * 1.5)
 	}
 
 	tick() {
