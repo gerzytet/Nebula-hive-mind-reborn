@@ -354,6 +354,25 @@ function doRotation(player) {
 	lastAngle = newAngle
 }
 
+function showPlayerConnections() {
+	push()
+	const connectionRadius = 50
+	for (var i = 0; i < players.length; i++) {
+		for (var j = 0; j < players.length; j++) {
+			if (i <= j) {
+				continue
+			}
+
+			if (state.players[i].pos.dist(state.players[j].pos) < connectionRadius) {
+				stroke(players[i].color.r, players[i].color.g, players[i].color.b)
+				strokeWeight(2)
+				line(state.players[i].pos.x - camera.x, state.players[i].pos.y - camera.y, state.players[j].pos.x - camera.x, state.players[j].pos.y - camera.y)
+			}
+		}
+	}
+	pop()
+}
+
 function draw() {
 	if (state === undefined) {
 		//we are still waiting for initial state packet

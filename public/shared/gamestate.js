@@ -159,7 +159,7 @@ export class GameState {
 
 	doNewEnemies() {
 		const newEnemyChancePerTick = 0.1
-		const enemyLimit = 5
+		const enemyLimit = 0
 
 		if (this.enemies.length < enemyLimit && this.random() < newEnemyChancePerTick) {
 			Enemy.addRandomEnemy(this);
