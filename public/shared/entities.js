@@ -66,7 +66,11 @@ export class Entity {
 
 		var dist = this.pos.dist(other.pos)
 		var pushVector = new SimpleVector(other.pos.x - this.pos.x, other.pos.y - this.pos.y)
-		
+
+		if (pushVector.magnitude() === 0) {
+			pushVector = new SimpleVector(0.01, 0.01)
+		}
+
 		var scaledPushVector = new SimpleVector(
 			pushVector.x / pushVector.magnitude() * strength,
 			pushVector.y / pushVector.magnitude() * strength
