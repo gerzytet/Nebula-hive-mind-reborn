@@ -6,7 +6,7 @@
 */
 
 import {Assert, SimpleVector, Color, neutralColor} from './public/shared/utilities.js'
-import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot} from './public/shared/events.js'
+import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
 import {GameState} from './public/shared/gamestate.js'
 import express from 'express'
@@ -96,6 +96,7 @@ function newConnection(socket) {
     socket.on('tickReply', tickReply)
     socket.on('changeAngle', changeAngle)
     socket.on('shoot', shoot)
+    socket.on('changeName', changeName)
 
     //players are created!
     var player = new Player(socket.id, new SimpleVector(
@@ -136,5 +137,17 @@ function newConnection(socket) {
             return
         }
         events.push(new PlayerShoot(player.id))
+    }
+
+    function changeName(data) {
+        Assert.string(data.name)
+        var player = state.playerById(socket.id)
+        if (player === null) {
+            return
+        }
+        console.log('Got name change')
+        events.push(
+            new PlayerChangeName(player.id, data.name)
+        )
     }
 }

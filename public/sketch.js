@@ -67,6 +67,10 @@ var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, 
 //change name to input value
 function changeName() {
 	const name = input.value();
+	console.log(name)
+	socket.emit("changeName", {
+		name: name
+	})
 	input.value('');
 }
 
@@ -212,6 +216,10 @@ function showPlayer(player) {
 	rect(player.pos.x - camera.x - 23, player.pos.y - camera.y + 30, playerMaxHealth/2, 10);
 
 	//draw name tag below player above health bar
+	textAlign(CENTER);
+	textSize(12);
+	fill(255);
+	text(player.name, player.pos.x - camera.x, player.pos.y - camera.y + 25);
 
 	//current health bar (same as player color)
 	fill(player.color.r, player.color.g, player.color.b);
@@ -230,7 +238,16 @@ function showAsteroid(asteroid) {
 	push()
 	translate(asteroid.pos.x - camera.x, asteroid.pos.y - camera.y);
 	imageMode(CENTER);
-	image(asteroid_full, 0, 0, asteroid.size * 2, asteroid.size * 2);
+	var asteroidImage
+	var healthPercent = asteroid.health / asteroid.maxhealth()
+	if (healthPercent > (2/3)) {
+		asteroidImage = asteroid_full
+	} else if (healthPercent > (1/3)) {
+		asteroidImage = asteroid_medium
+	} else {
+		asteroidImage = asteroid_low
+	}
+	image(asteroidImage, 0, 0, asteroid.size * 2, asteroid.size * 2);
 	pop()
 }
 
@@ -320,7 +337,7 @@ function draw() {
 		let dx = (state.players[i].pos.x - camera.x) - screenx;
 		let dy = (state.players[i].pos.y - camera.y) - screeny;
 		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		print(dist);
+		//print(dist);
 		if (dist < sightradius+state.players[i].size) {
 			showPlayer(state.players[i]);
 		}
@@ -330,8 +347,9 @@ function draw() {
 		let dx = (state.enemies[i].pos.x - camera.x) - screenx;
 		let dy = (state.enemies[i].pos.y - camera.y) - screeny;
 		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		if (dist < sightradius + state.asteroids[i].size) {
-			showEnemy(state.enemies[i])
+		//print(dist);
+		if (dist < sightradius + state.projectiles[i].size) {
+			showProjecile(state.projectiles[i]);
 		}
 	}
 
@@ -339,7 +357,7 @@ function draw() {
 		let dx = (state.powerups[i].pos.x - camera.x) - screenx;
 		let dy = (state.powerups[i].pos.y - camera.y) - screeny;
 		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		print(dist);
+		//print(dist);
 		if (dist < sightradius + state.powerups[i].size) {
 			showPowerup(state.powerups[i])
 		}
@@ -349,7 +367,7 @@ function draw() {
 		let dx = (state.asteroids[i].pos.x - camera.x) - screenx;
 		let dy = (state.asteroids[i].pos.y - camera.y) - screeny;
 		let dist = Math.sqrt((dx * dx) + (dy * dy));
-		print(dist);
+		//print(dist);
 		if (dist < sightradius + state.asteroids[i].size) {
 			showAsteroid(state.asteroids[i])
 		}
