@@ -146,4 +146,8 @@ export class SimpleVector {
 		var dy = this.y - other.y
 		return Math.sqrt(dx * dx + dy * dy)
 	}
+
+	magnitude() {
+		return Math.sqrt(this.x * this.x + this.y * this.y)
+	}
 }

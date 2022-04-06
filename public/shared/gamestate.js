@@ -9,7 +9,7 @@
 //reference for mulberry32: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 
 import {Assert, neutralColor, SimpleVector} from "./utilities.js"
-import {Player, Projectile, playerMaxHealth, Asteroid, Powerup, asteroidImpactDamagePerTick} from "./entities.js"
+import {Player, Projectile, playerMaxHealth, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy} from "./entities.js"
 
 //random num generator
 function mulberry32(a) {
@@ -28,6 +28,7 @@ export class GameState {
 		this.projectiles = []
 		this.asteroids = []
 		this.powerups = []
+		this.enemies = []
 		this.rng = mulberry32(0)
 		GameState.assertValid(this);
 	}
@@ -49,10 +50,13 @@ export class GameState {
 
 	//calls collision function if two enemies collide
 	doCollision() {
-		function collisionHelper(array1, array2, onCollision) {
+		function collisionHelper(array1, array2, onCollision, checkColor=true) {
 			for (var i = 0; i < array1.length; i++) {
 				for (var j = 0; j < array2.length; j++) {
-					if (array1[i].isColliding(array2[j]) && !array1[i].color.equals(array2[j].color)) {
+					if (array1[i] === array2[j]) {
+						continue
+					}
+					if (array1[i].isColliding(array2[j]) && (!checkColor || !array1[i].color.equals(array2[j].color))) {
 						onCollision(array1[i], array2[j])
 					}
 				}
@@ -82,7 +86,7 @@ export class GameState {
 		//kill the projectile, damage the asteroid by projectile.damage
 		collisionHelper(this.projectiles, this.asteroids, function(projectile, asteroid) {
 			projectile.kill()
-			asteroid.damage(projectile.damage, neutralColor)
+			asteroid.damage(projectile.damage)
 		})
 
 		//players and powerups:
@@ -91,6 +95,20 @@ export class GameState {
 			powerup.apply(player)
 			powerup.kill()
 		})
+
+		//projectiles and enemies:
+		//kill the projectile, damage the enemy by projectile.damage
+		collisionHelper(this.projectiles, this.enemies, function(projectile, enemy) {
+			projectile.kill()
+			enemy.damage(projectile.damage)
+		})
+
+		//enemies and enemies:
+		//push back both enemies
+		collisionHelper(this.enemies, this.enemies, function(enemy1, enemy2) {
+			enemy1.push(enemy2, 0.1)
+			enemy2.push(enemy1, 0.1)
+		}, false)
 	}
 
 	//goes through entity array and gets rid of dead objects
@@ -110,6 +128,12 @@ export class GameState {
 		for (var i = 0; i < this.powerups.length; i++) {
 			if (this.powerups[i].isDead()) {
 				this.powerups.splice(i, 1)
+				i--
+			}
+		}
+		for (var i = 0; i < this.enemies.length; i++) {
+			if (this.enemies[i].isDead()) {
+				this.enemies.splice(i, 1)
 				i--
 			}
 		}
@@ -133,6 +157,15 @@ export class GameState {
 		}
 	}
 
+	doNewEnemies() {
+		const newEnemyChancePerTick = 0.1
+		const enemyLimit = 5
+
+		if (this.enemies.length < enemyLimit && this.random() < newEnemyChancePerTick) {
+			Enemy.addRandomEnemy(this);
+		}
+	}
+
 	moveEntities() {
 		for (var i = 0; i < this.players.length; i++) {
 			this.players[i].tick()
@@ -142,6 +175,9 @@ export class GameState {
 		}
 		for (var i = 0; i < this.asteroids.length; i++) {
 			this.asteroids[i].tick()
+		}
+		for (var i = 0; i < this.enemies.length; i++) {
+			this.enemies[i].tick(this)
 		}
 	}
 
@@ -155,6 +191,7 @@ export class GameState {
 		this.doNewAsteroids()
 		this.doNewPowerups()
 		this.moveEntities()
+		this.doNewEnemies()
 		this.doCollision()
 		this.cleanDeadEntities()
 	}
@@ -164,7 +201,8 @@ export class GameState {
 			players: [],
 			projectiles: [],
 			asteroids: [],
-			powerups: []
+			powerups: [],
+			enemies: []
 		};
 		function serializeHelper(dataArray, stateArray) {
 			for (var i = 0; i < stateArray.length; i++) {
@@ -175,6 +213,7 @@ export class GameState {
 		serializeHelper(data.projectiles, this.projectiles)
 		serializeHelper(data.asteroids, this.asteroids)
 		serializeHelper(data.powerups, this.powerups)
+		serializeHelper(data.enemies, this.enemies)
 		return data;
 	}
 
@@ -189,6 +228,7 @@ export class GameState {
 		deserializeHelper(data.projectiles, state.projectiles, Projectile)
 		deserializeHelper(data.asteroids, state.asteroids, Asteroid)
 		deserializeHelper(data.powerups, state.powerups, Powerup)
+		deserializeHelper(data.enemies, state.enemies, Enemy)
 
 		GameState.assertValid(state);
 		return state;
@@ -197,6 +237,7 @@ export class GameState {
 	static assertValid(state) {
 		Assert.instanceOf(state, GameState);
 		function assertHelper(array, clazz) {
+			Assert.definedAndNotNull(array)
 			for (var i = 0; i < array.length; i++) {
 				clazz.assertValid(array[i]);
 			}
@@ -205,6 +246,7 @@ export class GameState {
 		assertHelper(state.projectiles, Projectile)
 		assertHelper(state.asteroids, Asteroid)
 		assertHelper(state.powerups, Powerup)
+		assertHelper(state.enemies, Enemy)
 
 		Assert.function(state.rng)
 	}

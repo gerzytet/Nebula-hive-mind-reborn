@@ -51,6 +51,24 @@ export class Entity {
 		var dist = this.pos.dist(other.pos)
 		return (dist < maxDist)
 	}
+
+	push(other, strength) {
+		if (!this.isColliding(other)) {
+			return
+		}
+
+		var dist = this.pos.dist(other.pos)
+		var pushVector = new SimpleVector(other.pos.x - this.pos.x, other.pos.y - this.pos.y)
+		
+		//strength scales linearly based on how close you are
+		var scaledStrength = strength * ((this.size + other.size - dist) / dist)
+		var scaledPushVector = new SimpleVector(
+			pushVector.x / pushVector.magnitude() * scaledStrength,
+			pushVector.y / pushVector.magnitude() * scaledStrength
+		)
+		other.vel.x += scaledPushVector.x
+		other.vel.y += scaledPushVector.y
+	}
 }
 
 const playerSize = 20
@@ -458,10 +476,12 @@ class ActiveEffect {
 const enemyProjectileDamage = 10
 const enemyMaxHealth = 50
 const enemySize = 20
-const enemyTurnPerTick = 1
 const enemySpeed = 5
 const enemyBaseAcceleration = 0.01
-class Enemy extends Entity {
+const enemyShootChancePerTick = 0.02
+const enemyBulletVel = playerBulletVel / 1.5
+const enemyBulletSize = playerBaseBulletSize
+export class Enemy extends Entity {
 	constructor (pos) {
 		super(pos, enemySize, neutralColor)
 		this.health = enemyMaxHealth
@@ -510,6 +530,32 @@ class Enemy extends Entity {
 		return this.health <= 0
 	}
 
+	maybeShoot(state) {
+		if (state.random() < enemyShootChancePerTick) {
+			//pos vel size color damage
+			state.projectiles.push(
+				new Projectile(
+					new SimpleVector(this.pos.x, this.pos.y),
+					new SimpleVector(
+						enemyBulletVel * Math.cos(this.angle * Math.PI / 180),
+						enemyBulletVel * Math.sin(this.angle * Math.PI / 180)
+					),
+					enemyBulletSize,
+					neutralColor,
+					enemyProjectileDamage
+				)
+			)
+		}
+	}
+
+	static addRandomEnemy(state) {
+		var pos = new SimpleVector(
+			state.randint(enemySize, mapWidth - enemySize),
+			state.randint(enemySize, mapHeight - enemySize)
+		)
+		state.enemies.push(new Enemy(pos))
+	}
+
 	tick(state) {
 		var closestPlayer = null
 		var closestPlayerDist = Infinity
@@ -531,11 +577,14 @@ class Enemy extends Entity {
 
 			var newAcc = new SimpleVector(
 				Math.cos(radians) * enemySpeed * enemyBaseAcceleration,
-				-Math.sin(radians) * enemySpeed * enemyBaseAcceleration
+				Math.sin(radians) * enemySpeed * enemyBaseAcceleration
 			)
 			this.acc = newAcc
+		} else {
+			this.acc = new SimpleVector(0, 0)
 		}
 
 		this.move()
+		this.maybeShoot(state)
 	}
 }

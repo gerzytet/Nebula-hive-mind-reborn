@@ -255,6 +255,16 @@ function showPowerup(powerup) {
 	pop()
 }
 
+function showEnemy(enemy) {
+	push()
+	angleMode(DEGREES)
+	translate(enemy.pos.x - camera.x, enemy.pos.y - camera.y)
+	rotate(enemy.angle + 90)
+	imageMode(CENTER)
+	image(eship, 0, 0, enemy.size * 2, enemy.size * 2)
+	pop()
+}
+
 var lastAngle;
 function doRotation(player) {
 	//the angle determined by mouse position
@@ -312,6 +322,10 @@ function draw() {
 
 	for (var i = 0; i < state.powerups.length; i++) {
 		showPowerup(state.powerups[i])
+	}
+
+	for (var i = 0; i < state.enemies.length; i++) {
+		showEnemy(state.enemies[i])
 	}
 }
 
