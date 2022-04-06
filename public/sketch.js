@@ -416,8 +416,6 @@ function ui(player, state) {
 
 	//Top right
 
-	//Player Team Chart
-
 	//Player scoreboard
 
 
@@ -428,7 +426,7 @@ function ui(player, state) {
 
 	//Top left
 
-	//Name?
+	//Player Team Chart
 
 	pop()
 }
