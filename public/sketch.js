@@ -302,26 +302,48 @@ function draw() {
 	background(51)
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
 
+	var screenx = ((windowWidth / 2));
+	var screeny = ((windowHeight / 2));
+	var sightradius = Math.sqrt(((windowWidth/2)*(windowWidth/2)) + ((windowHeight/2)*(windowHeight/2)));
 	
 	for (var i = 0; i < state.players.length; i++) {
-		var dx = (screen.width/2 - camera.x) - (state.players[i].pos.x - camera.x);
-		var dy = (screen.height/2 - camera.y) - (state.players[i].pos.y - camera.y);
-		var dist = Math.sqrt(dx * dx + dy * dy);
-		//if (dist < 200) {
-			showPlayer(state.players[i])
-		//}
+		let dx = (state.players[i].pos.x - camera.x) - screenx;
+		let dy = (state.players[i].pos.y - camera.y) - screeny;
+		let dist = Math.sqrt((dx * dx) + (dy * dy));
+		print(dist);
+		if (dist < sightradius+state.players[i].size) {
+			showPlayer(state.players[i]);
+		}
 	}
 
 	for (var i = 0; i < state.projectiles.length; i++) {
-		showProjecile(state.projectiles[i])
-	}
-
-	for (var i = 0; i < state.asteroids.length; i++) {
-		showAsteroid(state.asteroids[i])
+		let dx = (state.projectiles[i].pos.x - camera.x) - screenx;
+		let dy = (state.projectiles[i].pos.y - camera.y) - screeny;
+		let dist = Math.sqrt((dx * dx) + (dy * dy));
+		print(dist);
+		if (dist < sightradius + state.projectiles[i].size) {
+			showProjecile(state.projectiles[i]);
+		}
 	}
 
 	for (var i = 0; i < state.powerups.length; i++) {
-		showPowerup(state.powerups[i])
+		let dx = (state.powerups[i].pos.x - camera.x) - screenx;
+		let dy = (state.powerups[i].pos.y - camera.y) - screeny;
+		let dist = Math.sqrt((dx * dx) + (dy * dy));
+		print(dist);
+		if (dist < sightradius + state.powerups[i].size) {
+			showPowerup(state.powerups[i])
+		}
+	}
+
+	for (var i = 0; i < state.asteroids.length; i++) {
+		let dx = (state.asteroids[i].pos.x - camera.x) - screenx;
+		let dy = (state.asteroids[i].pos.y - camera.y) - screeny;
+		let dist = Math.sqrt((dx * dx) + (dy * dy));
+		print(dist);
+		if (dist < sightradius + state.asteroids[i].size) {
+			showAsteroid(state.asteroids[i])
+		}
 	}
 
 	for (var i = 0; i < state.enemies.length; i++) {

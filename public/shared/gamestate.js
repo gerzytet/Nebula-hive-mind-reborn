@@ -141,7 +141,7 @@ export class GameState {
 
 	doNewAsteroids() {
 		const newAsteroidChancePerTick = 0.1
-		const asteroidLimit = 0
+		const asteroidLimit = 10
 
 		if (this.asteroids.length < asteroidLimit && this.random() < newAsteroidChancePerTick) {
 			Asteroid.addRandomAsteroid(this);
