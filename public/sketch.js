@@ -12,7 +12,7 @@ var state
 
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
-import {mapWidth, mapHeight, SimpleVector} from './shared/utilities.js'
+import {mapWidth, mapHeight, SimpleVector, connectionRadius} from './shared/utilities.js'
 import {Powerup, playerMaxHealth, enemyMaxHealth} from './shared/entities.js'
 
 function windowResized() {
@@ -379,6 +379,28 @@ function ui(player) {
 
 }
 
+function showPlayerConnections() {
+	push()
+	for (var i = 0; i < state.players.length; i++) {
+		for (var j = 0; j < state.players.length; j++) {
+			if (i <= j) {
+				continue
+			}
+			if (!state.players[i].color.equals(state.players[j].color)) {
+				continue
+			}
+
+			if (state.players[i].pos.dist(state.players[j].pos) < connectionRadius) {
+				stroke(state.players[i].color.r, state.players[i].color.g, state.players[i].color.b)
+				var dist = state.players[i].pos.dist(state.players[j].pos)
+				strokeWeight(20 * (1 - (dist / connectionRadius)))
+				line(state.players[i].pos.x - camera.x, state.players[i].pos.y - camera.y, state.players[j].pos.x - camera.x, state.players[j].pos.y - camera.y)
+			}
+		}
+	}
+	pop()
+}
+
 function draw() {
 	if (state === undefined) {
 		//we are still waiting for initial state packet
@@ -401,6 +423,7 @@ function draw() {
 		showProjecile(state.projectiles[i]);
 	}
 
+	showPlayerConnections()
 	for (var i = 0; i < state.players.length; i++) {
 		showPlayer(state.players[i]);
 	}

@@ -7,6 +7,7 @@
 
 export const mapWidth = 3000
 export const mapHeight = 2000
+export const connectionRadius = 300
 
 export class Assert {
 	static defined(value) {
