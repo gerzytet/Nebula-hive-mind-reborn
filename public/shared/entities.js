@@ -158,23 +158,27 @@ export class Player extends Entity {
 		return this.health <= 0
 	}
 
-	damage(amount, color) {
+	damage(amount, color, state) {
 		this.health -= amount
 		if (this.isDead()) {
-			this.kill(color)
+			this.kill(color, state)
 		}
 	}
 	
-	kill(color) {
+	kill(color, state) {
 		var colors = [];
 		if (color.r === 255 && color.g === 255 && color.b === 255) {
 			for (var i = 0; i < state.players.length; i++) {
 				colors.push(state.players[i].color);
 			}
+			//TODO: using a set might allow for different object references to equivalent colors that don't compare equal
+			var colors1 = new Set(colors);
+			colors = Array.from(colors1);
+			color = colors[state.randint(0, colors.length - 1)];
+			this.color = color
+		} else {
+			this.color = color
 		}
-		colors = new Set(colors);
-		color = colors[randint(0, colors.length - 1)];
-		this.color = color
 		this.health = playerMaxHealth
 	}
 
