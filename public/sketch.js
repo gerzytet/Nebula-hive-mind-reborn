@@ -462,7 +462,6 @@ function serverCameraDraw() {
 
 var isServerCamera = false
 function becomeServerCamera() {
-	console.log('becoming server camera')
 	isServerCamera = true
 	socket.emit("becomeServerCamera", {})
 }

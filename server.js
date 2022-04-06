@@ -74,7 +74,6 @@ function tick() {
             )
         }
     }
-    console.log("clients connected: " + io.engine.clientsCount)
 
     var seed = Math.floor(Math.random() * (1 << 30))
     state.seed(seed)
@@ -150,7 +149,6 @@ function newConnection(socket) {
         if (player === null) {
             return
         }
-        console.log('Got name change')
         events.push(
             new PlayerChangeName(player.id, data.name)
         )
