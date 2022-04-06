@@ -30,7 +30,6 @@ const timeoutMillis = 10000;
 
 var state = new GameState()
 var events = []
-var colors = [neutralColor]
 
 function colorUsed(c) {
     for (var i = 0; i < state.players.length; i++) {
@@ -102,7 +101,7 @@ function newConnection(socket) {
     var player = new Player(socket.id, new SimpleVector(
         Math.floor(Math.random() * /*mapWidth*/ 400),
         Math.floor(Math.random() * /*mapHeight*/ 400)),
-        getUnusedColor(),"Player" + players.length
+        getUnusedColor()
     )
     events.push(
         new PlayerJoin(player)

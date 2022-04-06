@@ -389,8 +389,18 @@ function draw() {
 	
 }
 
+var lastShootTime = 0
+const shootDelayMillis = 200
+
+function tryShoot() {
+	if (millis() - lastShootTime > shootDelayMillis) {
+		socket.emit("shoot", {})
+		lastShootTime = millis()
+	}
+}
+
 function mouseClicked(){
-	socket.emit('shoot', {})
+	tryShoot()
 }
 
 //this is necessary because p5.js needs to see these functions in the global scope, which doesn't happen with a module
