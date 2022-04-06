@@ -166,7 +166,14 @@ export class Player extends Entity {
 	}
 	
 	kill(color) {
-		
+		var colors = [];
+		if (color.r === 255 && color.g === 255 && color.b === 255) {
+			for (var i = 0; i < state.players.length; i++) {
+				colors.push(state.players[i].color);
+			}
+		}
+		colors = new Set(colors);
+		color = colors[randint(0, colors.length - 1)];
 		this.color = color
 		this.health = playerMaxHealth
 	}
