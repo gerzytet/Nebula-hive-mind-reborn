@@ -62,24 +62,18 @@ export class GameState {
 				}
 			}
 		}
-
+		var state = this;
 		//players and projectiles:
 		//damage the player by projectile.damage, kill the projectile
 		collisionHelper(this.players, this.projectiles, function(player, projectile) {
-			player.damage(projectile.damage, projectile.color)
+			player.damage(projectile.damage, projectile.color, state)
 			projectile.kill()
 		})
 
 		//asteroids and players:
 		//damage the player by asteroidImpactDamagePerTick
 		collisionHelper(this.players, this.asteroids, function(player, asteroid) {
-			try {
-			    player.damage(asteroidImpactDamagePerTick, neutralColor)
-			}
-			catch (e) {
-			    console.log(e)
-				console.log(player)
-			}
+			player.damage(asteroidImpactDamagePerTick, neutralColor, state)
 		})
 
 		//projectiles and asteroids:
