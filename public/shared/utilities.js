@@ -169,3 +169,12 @@ export class SimpleVector {
 		this.y *= scalar
 	}
 }
+
+var testing = false
+export function isTesting() {
+	return testing	
+}
+
+export function setTesting(value) {
+	testing = value
+}

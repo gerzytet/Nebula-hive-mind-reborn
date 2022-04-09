@@ -7,7 +7,7 @@
 
 //TODO Implement Name Change
 
-import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor} from "./utilities.js"
+import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor, isTesting} from "./utilities.js"
 
 export class Entity {
 	constructor(pos, size, color=neutralColor) {
@@ -640,6 +640,7 @@ const enemyBaseAcceleration = 0.01
 const enemyShootChancePerTick = 0.02
 const enemyBulletVel = playerBulletVel / 1.5
 const enemyBulletSize = playerBaseBulletSize
+const enemySightRange = 500
 export class Enemy extends Entity {
 	constructor (pos, color=neutralColor) {
 		super(pos, enemySize, color)
@@ -734,7 +735,8 @@ export class Enemy extends Entity {
 			}
 		}
 
-		if (closestPlayer !== null) {
+		//if there is at least one player, and that player is in the sight range if we are is testing mode
+		if (closestPlayer !== null && (isTesting() || closestPlayerDist < enemySightRange)) {
 			var dx = closestPlayer.pos.x - this.pos.x
 			var dy = closestPlayer.pos.y - this.pos.y
 			var radians = Math.atan2(dy, dx) 

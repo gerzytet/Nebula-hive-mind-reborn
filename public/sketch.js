@@ -12,7 +12,7 @@ var state
 
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
-import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor} from './shared/utilities.js'
+import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
 import {Powerup, playerMaxHealth, enemyMaxHealth} from './shared/entities.js'
 
 function windowResized() {
@@ -114,8 +114,9 @@ function setup() {
 		socket.emit('tickReply', {});
 	})
 
-	socket.on("state", function (stateSerialized) {
-		state = GameState.deserialize(stateSerialized)
+	socket.on("state", function (data) {
+		state = GameState.deserialize(data.state)
+		setTesting(data.testing)
 	})
 
 	lastax = 0
@@ -149,8 +150,7 @@ function doInput(player) {
 		tryShoot()
 	}
 
-	//TODO: TESTING PURPOSES ONLY:
-	if (keyIsDown(code('b')) || keyIsDown(code('B'))) {
+	if (isTesting() && (keyIsDown(code('b')) || keyIsDown(code('B')))) {
 		becomeServerCamera()
 	}
 

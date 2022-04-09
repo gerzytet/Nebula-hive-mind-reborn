@@ -5,7 +5,7 @@
 @brief File that sets up server
 */
 
-import {Assert, SimpleVector, Color, neutralColor} from './public/shared/utilities.js'
+import {Assert, SimpleVector, Color, neutralColor, isTesting, setTesting, mapWidth, mapHeight} from './public/shared/utilities.js'
 import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName, PlayerActivateAbility} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
 import {GameState} from './public/shared/gamestate.js'
@@ -24,6 +24,12 @@ var io = new Server(server)
 var players = []
 var playercounter = 0
 io.sockets.on('connection', newConnection)
+
+const args = process.argv.slice(2)
+setTesting(args[0] !== 'real')
+if (!isTesting()) {
+    console.log('Game expo mode enabled!')
+}
 
 setInterval(tick, 33);
 
@@ -103,16 +109,20 @@ function newConnection(socket) {
 
     //players are created!
     var player = new Player(socket.id, new SimpleVector(
-        Math.floor(Math.random() * /*mapWidth*/ 400),
-        Math.floor(Math.random() * /*mapHeight*/ 400)),
+        Math.floor(Math.random() * (isTesting() ? 400 : mapWidth)),
+        Math.floor(Math.random() * (isTesting() ? 400 : mapHeight))),
         getUnusedColor(), "Player: " + (playercounter + 1),
         Math.floor(Math.random() * (Player.MAX_ABILITY + 1))
     )
-    playercounter += 1;
+
+    playercounter += 1
     events.push(
         new PlayerJoin(player)
     )
-    socket.emit("state", state.serialize())
+    socket.emit("state", {
+        state: state.serialize(),
+        testing: isTesting()
+    })
 
     function tickReply(data) {
         updatePing(socket.id)
