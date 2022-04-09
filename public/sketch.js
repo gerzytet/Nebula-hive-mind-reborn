@@ -126,7 +126,7 @@ var lastax
 var lastay
 
 //handles user input
-function doMovement() {
+function doInput(player) {
 	var ay = 0;
 	var ax = 0;
 
@@ -152,6 +152,10 @@ function doMovement() {
 	//TODO: TESTING PURPOSES ONLY:
 	if (keyIsDown(code('b')) || keyIsDown(code('B'))) {
 		becomeServerCamera()
+	}
+
+	if (keyIsDown(code('p')) || keyIsDown(code('P'))) {
+		tryActivateAbility(player)
 	}
 
 	//if press space teleport at the rotation and add to the posision 
@@ -437,6 +441,14 @@ function ui(player, state) {
 
 	//Player Team Chart
 
+	//Ability info
+	//TODO: replace this with something prettier
+	textAlign(CENTER, CENTER);
+	textSize(15);
+	fill(255);
+
+	text(`Ability ${player.abilityName()}, Duration: ${player.abilityDuration}, Cooldown: ${player.abilityCooldown}`, width / 2, height - 20)
+
 	pop()
 }
 
@@ -477,7 +489,7 @@ function draw() {
 		return
 	}
 
-	doMovement()
+	doInput(player)
 	moveCamera(player)
 	doRotation(player)
 
@@ -522,6 +534,11 @@ function mouseClicked(){
 	tryShoot()
 }
 
+function tryActivateAbility(player) {
+	if (player.canActivateAbility()) {
+		socket.emit("activateAbility", {})
+	}
+}
 
 function serverCameraShowPlayer(player, serverCamScalex, serverCamScaley) {
 	push()

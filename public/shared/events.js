@@ -38,6 +38,8 @@ export class GameEvent {
 				return PlayerShoot.deserialize(data)
 			case "PlayerChangeName":
 				return PlayerChangeName.deserialize(data)
+			case "PlayerActivateAbility":
+				return PlayerActivateAbility.deserialize(data)
 			default:
 				throw new Error("Unknown event type: " + data.type)
 		}
@@ -340,3 +342,42 @@ export class PlayerChangeName extends GameEvent {
 	}
 }
 
+/*
+for when a player activates their ability
+the client sends an activeateAbility packet to the server with no data
+*/
+export class PlayerActivateAbility extends GameEvent {
+	constructor(id) {
+		super()
+		this.id = id
+		PlayerActivateAbility.assertValid(this);
+	}
+
+	apply(state) {
+		var player = state.playerById(this.id);
+		if (player === null) {
+			return
+		}
+		if (player.canActivateAbility()) {
+			player.activateAbility()
+		}
+	}
+
+	serialize() {
+		return {
+			id: this.id,
+			type: "PlayerActivateAbility"
+		}
+	}
+
+	static deserialize(data) {
+		var event = new PlayerActivateAbility(data.id)
+		PlayerActivateAbility.assertValid(event);
+		return event
+	}
+
+	static assertValid(event) {
+		Assert.instanceOf(event, PlayerActivateAbility);
+		Assert.string(event.id);
+	}
+}

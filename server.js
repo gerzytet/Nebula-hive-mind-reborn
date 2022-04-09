@@ -6,7 +6,7 @@
 */
 
 import {Assert, SimpleVector, Color, neutralColor} from './public/shared/utilities.js'
-import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName} from './public/shared/events.js'
+import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName, PlayerActivateAbility} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
 import {GameState} from './public/shared/gamestate.js'
 import express from 'express'
@@ -99,6 +99,7 @@ function newConnection(socket) {
     socket.on('shoot', shoot)
     socket.on('changeName', changeName)
     socket.on('becomeServerCamera', becomeServerCamera)
+    socket.on('activateAbility', activateAbility)
 
     //players are created!
     var player = new Player(socket.id, new SimpleVector(
@@ -162,5 +163,15 @@ function newConnection(socket) {
         events.push(
             new PlayerLeave(player.id)
         )
+    }
+
+    function activateAbility(data) {
+        var player = state.playerById(socket.id)
+        if (player === null) {
+            return
+        }
+        events.push(
+            new PlayerActivateAbility(player.id)
+        ) 
     }
 }
