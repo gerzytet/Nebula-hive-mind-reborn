@@ -359,7 +359,7 @@ export class PlayerActivateAbility extends GameEvent {
 			return
 		}
 		if (player.canActivateAbility()) {
-			player.activateAbility()
+			player.activateAbility(state)
 		}
 	}
 

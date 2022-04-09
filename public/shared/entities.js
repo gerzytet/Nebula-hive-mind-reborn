@@ -94,7 +94,7 @@ export class Player extends Entity {
 	static NECROMANCER = 1
 	static MAX_ABILITY = 1
 
-	constructor(id, pos, color, nameNum) {
+	constructor(id, pos, color, name, ability) {
 		super(pos, playerSize, color);
 		this.id = id
 		this.health = playerMaxHealth
@@ -102,10 +102,10 @@ export class Player extends Entity {
 		this.speed = playerBaseSpeed
 		this.effects = []
 		this.connections = 0
-		this.ability = Player.DOUBLE_SHOT
+		this.ability = ability
 		this.abilityCooldown = 0
 		this.abilityDuration = 0
-		this.name = "SpaceShip " + nameNum;
+		this.name = name;
 		Player.assertValid(this);
 	}
 
@@ -132,7 +132,7 @@ export class Player extends Entity {
 	}
 
 	static deserialize(data) {
-		var player = new Player(data.id, SimpleVector.deserialize(data.pos), Color.deserialize(data.color))
+		var player = new Player(data.id, SimpleVector.deserialize(data.pos), Color.deserialize(data.color), data.name, data.ability)
 		player.acc = SimpleVector.deserialize(data.acc)
 		player.vel = SimpleVector.deserialize(data.vel)
 		player.size = playerSize
@@ -140,7 +140,6 @@ export class Player extends Entity {
 		player.angle = data.angle
 		player.speed = data.speed
 		player.name = data.name
-		player.ability = data.ability
 		player.abilityCooldown = data.abilityCooldown
 		player.abilityDuration = data.abilityDuration
 		player.effects = []
@@ -295,9 +294,16 @@ export class Player extends Entity {
 		return this.abilityCooldown <= 0
 	}
 
-	activateAbility() {
+	activateAbility(state) {
 		this.abilityCooldown = this.maxCooldown(this.ability)
 		this.abilityDuration = this.maxDuration(this.ability)
+
+		if (this.ability === Player.NECROMANCER) {
+			state.enemies.push(new Enemy(
+				this.pos.clone(),
+				this.color
+			))
+		}
 	}
 
     maxCooldown() {
@@ -635,8 +641,8 @@ const enemyShootChancePerTick = 0.02
 const enemyBulletVel = playerBulletVel / 1.5
 const enemyBulletSize = playerBaseBulletSize
 export class Enemy extends Entity {
-	constructor (pos) {
-		super(pos, enemySize, neutralColor)
+	constructor (pos, color=neutralColor) {
+		super(pos, enemySize, color)
 		this.health = enemyMaxHealth
 	}
 
@@ -646,12 +652,13 @@ export class Enemy extends Entity {
 			angle: this.angle,
 			vel: this.vel,
 			health: this.health,
-			angle: this.angle
+			angle: this.angle,
+			color: this.color.serialize()
 		}
 	}
 
 	static deserialize(data) {
-		var enemy = new Enemy(SimpleVector.deserialize(data.pos))
+		var enemy = new Enemy(SimpleVector.deserialize(data.pos), Color.deserialize(data.color))
 		enemy.angle = data.angle
 		enemy.vel = SimpleVector.deserialize(data.vel)
 		enemy.health = data.health
@@ -696,7 +703,7 @@ export class Enemy extends Entity {
 						enemyBulletVel * Math.sin(this.angle * Math.PI / 180)
 					),
 					enemyBulletSize,
-					neutralColor,
+					this.color,
 					enemyProjectileDamage
 				)
 			)
@@ -716,6 +723,10 @@ export class Enemy extends Entity {
 		var closestPlayerDist = Infinity
 		for (var i = 0; i < state.players.length; i++) {
 			var player = state.players[i]
+			if (player.color.equals(this.color)) {
+				continue
+			}
+
 			var dist = this.pos.dist(player.pos)
 			if (dist < closestPlayerDist) {
 				closestPlayer = player

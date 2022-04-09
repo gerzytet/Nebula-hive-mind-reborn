@@ -105,8 +105,8 @@ function newConnection(socket) {
     var player = new Player(socket.id, new SimpleVector(
         Math.floor(Math.random() * /*mapWidth*/ 400),
         Math.floor(Math.random() * /*mapHeight*/ 400)),
-        getUnusedColor(), (playercounter + 1),
-        "Player" + players.length
+        getUnusedColor(), "Player: " + (playercounter + 1),
+        Math.floor(Math.random() * (Player.MAX_ABILITY + 1))
     )
     playercounter += 1;
     events.push(

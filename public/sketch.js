@@ -12,7 +12,7 @@ var state
 
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
-import {mapWidth, mapHeight, SimpleVector, connectionRadius} from './shared/utilities.js'
+import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor} from './shared/utilities.js'
 import {Powerup, playerMaxHealth, enemyMaxHealth} from './shared/entities.js'
 
 function windowResized() {
@@ -335,6 +335,9 @@ function showEnemy(enemy) {
 		translate(enemy.pos.x - camera.x, enemy.pos.y - camera.y)
 		rotate(enemy.angle + 90)
 		imageMode(CENTER)
+		if (!enemy.color.equals(neutralColor)) {
+			tint(enemy.color.r, enemy.color.g, enemy.color.b)
+		}
 		image(eship, 0, 0, enemy.size * 2, enemy.size * 2)
 		pop()
 
@@ -343,7 +346,7 @@ function showEnemy(enemy) {
 		rect((enemy.pos.x - camera.x) - 13, enemy.pos.y - camera.y + enemy.size + 5, enemyMaxHealth/2, 10);
 
 		//current health bar (same as player color)
-		fill(255, 255, 255);
+		fill(enemy.color.r, enemy.color.g, enemy.color.b);
 		rect((enemy.pos.x - camera.x) - 13, enemy.pos.y - camera.y + enemy.size + 5, enemy.health/2, 10);
 	}
 }
@@ -557,6 +560,9 @@ function serverCameraShowEnemy(enemy, serverCamScalex, serverCamScaley) {
 	angleMode(DEGREES)
 	rotate(-enemy.angle + 90)
 	imageMode(CENTER)
+	if (!enemy.color.equals(neutralColor)) {
+		tint(enemy.color.r, enemy.color.g, enemy.color.b)
+	}
 	image(eship, 0, 0, enemy.size * 2 * serverCamScalex, enemy.size * 2 * serverCamScaley)
 	pop()
 }
