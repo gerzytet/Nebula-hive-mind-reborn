@@ -151,4 +151,30 @@ export class SimpleVector {
 	magnitude() {
 		return Math.sqrt(this.x * this.x + this.y * this.y)
 	}
+
+	clone() {
+		return new SimpleVector(
+			this.x,
+			this.y
+		)
+	}
+
+	add(other) {
+		this.x += other.x
+		this.y += other.y
+	}
+
+	scale(scalar) {
+		this.x *= scalar
+		this.y *= scalar
+	}
+}
+
+var testing = false
+export function isTesting() {
+	return testing	
+}
+
+export function setTesting(value) {
+	testing = value
 }

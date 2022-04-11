@@ -7,7 +7,7 @@
 
 //TODO Implement Name Change
 
-import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor} from "./utilities.js"
+import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor, isTesting} from "./utilities.js"
 
 export class Entity {
 	constructor(pos, size, color=neutralColor) {
@@ -90,7 +90,11 @@ const playerBulletSizeBonusPerConnection = 10
 export const playerBaseAcceleration = 0.01
 export const playerMaxHealth = 100
 export class Player extends Entity {
-	constructor(id, pos, color, nameNum) {
+	static DOUBLE_SHOT = 0
+	static NECROMANCER = 1
+	static MAX_ABILITY = 1
+
+	constructor(id, pos, color, name, ability) {
 		super(pos, playerSize, color);
 		this.id = id
 		this.health = playerMaxHealth
@@ -98,7 +102,10 @@ export class Player extends Entity {
 		this.speed = playerBaseSpeed
 		this.effects = []
 		this.connections = 0
-		this.name = "SpaceShip " + nameNum;
+		this.ability = ability
+		this.abilityCooldown = 0
+		this.abilityDuration = 0
+		this.name = name;
 		Player.assertValid(this);
 	}
 
@@ -117,12 +124,15 @@ export class Player extends Entity {
 			angle: this.angle,
 			speed: this.speed,
 			effects: serializedEffects,
-			name: this.name
+			name: this.name,
+			ability: this.ability,
+			abilityCooldown: this.abilityCooldown,
+			abilityDuration: this.abilityDuration
 		}
 	}
 
 	static deserialize(data) {
-		var player = new Player(data.id, SimpleVector.deserialize(data.pos), Color.deserialize(data.color))
+		var player = new Player(data.id, SimpleVector.deserialize(data.pos), Color.deserialize(data.color), data.name, data.ability)
 		player.acc = SimpleVector.deserialize(data.acc)
 		player.vel = SimpleVector.deserialize(data.vel)
 		player.size = playerSize
@@ -130,6 +140,8 @@ export class Player extends Entity {
 		player.angle = data.angle
 		player.speed = data.speed
 		player.name = data.name
+		player.abilityCooldown = data.abilityCooldown
+		player.abilityDuration = data.abilityDuration
 		player.effects = []
 		for (var i = 0; i < data.effects.length; i++) {
 			player.effects.push(ActiveEffect.deserialize(data.effects[i]))
@@ -146,6 +158,13 @@ export class Player extends Entity {
 		Assert.number(player.speed)
 		Assert.string(player.name)
 		Assert.number(player.connections)
+		Assert.number(player.ability)
+		Assert.number(player.abilityCooldown)
+		Assert.number(player.abilityDuration)
+		Assert.true(player.abilityCooldown >= 0)
+		Assert.true(player.abilityDuration >= 0)
+
+		Assert.true(player.ability >= 0 && player.ability <= Player.MAX_ABILITY)
 		Assert.true(player.health >= 0 && player.health <= playerMaxHealth)
 		for (var i = 0; i < player.effects.length; i++) {
 			ActiveEffect.assertValid(player.effects[i])
@@ -154,8 +173,7 @@ export class Player extends Entity {
 
 	move() {
 		this.vel.limitMagnitude(this.speed)
-		this.vel.x = this.vel.x * 0.99
-		this.vel.y = this.vel.y * 0.99
+		this.vel.scale(0.99)
 		super.move()
 	}
 
@@ -194,15 +212,56 @@ export class Player extends Entity {
 		}
 	}
 
+	attackSize() {
+		return playerBaseBulletSize + this.connections * playerBulletSizeBonusPerConnection
+	}
+
 	shoot(state) {
 		var radians = this.angle * Math.PI / 180
-		state.projectiles.push(new Projectile(
-			new SimpleVector(this.pos.x, this.pos.y),
-			new SimpleVector(Math.cos(radians) * playerBulletVel, -Math.sin(radians) * playerBulletVel),
-			playerBaseBulletSize + this.connections * playerBulletSizeBonusPerConnection,
-			this.color,
-			this.attack
-		))
+
+		//list of starting positions to spawn bullets.
+		var bulletStartPositions = []
+
+		//if double shot is ative
+		if (this.isAbilityActive() && this.ability == Player.DOUBLE_SHOT) {
+
+			//amount to distance bullets, measured from the line shooting straight out from the player
+			var sideOffset = this.attackSize() + 4
+
+			//this position is: start at player angle, turn 90 degrees, go forward by sideOffset
+			//this is the difference between the player position and the bullet spawn position
+			var sideOffsetVec = new SimpleVector(
+				Math.cos(radians + (Math.PI / 2)) * sideOffset,
+				-Math.sin(radians + (Math.PI / 2)) * sideOffset
+			)
+
+			//calculate first bullet position
+			var base_vec = this.pos.clone()
+			var p1 = base_vec.clone()
+			p1.add(sideOffsetVec)
+
+			//calculate the seond one with the *negative* offset, to get a bullet on the other side
+			var p2 = base_vec.clone()
+			var sideOffsetNegative = sideOffsetVec.clone()
+			sideOffsetNegative.scale(-1)
+			p2.add(sideOffsetNegative)
+
+			bulletStartPositions.push(p1)
+			bulletStartPositions.push(p2)
+		} else {
+			bulletStartPositions = [this.pos.clone()]
+		}
+
+		//spawn in each bullet
+		for (var i = 0; i < bulletStartPositions.length; i++) {
+			state.projectiles.push(new Projectile(
+				bulletStartPositions[i],
+				new SimpleVector(Math.cos(radians) * playerBulletVel, -Math.sin(radians) * playerBulletVel),
+				this.attackSize(),
+				this.color,
+				this.attack
+			))
+		}
 	}
 
 	tick() {
@@ -214,6 +273,69 @@ export class Player extends Entity {
 				this.effects.splice(i, 1)
 				i--
 			}
+		}
+
+		this.abilityDuration--
+		if (this.abilityDuration < 0) {
+			this.abilityDuration = 0
+		}
+
+		this.abilityCooldown--
+		if (this.abilityCooldown < 0) {
+			this.abilityCooldown = 0
+		}
+	}
+
+	isAbilityActive() {
+		return this.abilityDuration > 0
+	}
+
+	canActivateAbility() {
+		return this.abilityCooldown <= 0
+	}
+
+	activateAbility(state) {
+		this.abilityCooldown = this.maxCooldown(this.ability)
+		this.abilityDuration = this.maxDuration(this.ability)
+
+		if (this.ability === Player.NECROMANCER) {
+			state.enemies.push(new Enemy(
+				this.pos.clone(),
+				this.color
+			))
+		}
+	}
+
+    maxCooldown() {
+		switch(this.ability) {
+			case Player.DOUBLE_SHOT:
+				return 600
+			case Player.NECROMANCER:
+				return 400
+			default:
+				throw new Error("unknown ability type!")
+		}
+	}
+
+	maxDuration() {
+		switch (this.ability) {
+			case Player.DOUBLE_SHOT:
+				return 200
+			case Player.NECROMANCER:
+				return 0
+			default:
+				throw new Error("unknown ability type!")
+		}
+	}
+
+	abilityName() {
+		switch (this.ability) {
+			case Player.DOUBLE_SHOT:
+				return "Double shot"
+			case Player.NECROMANCER:
+				return "Summon enemy"
+			default:
+				throw new Error("unknown ability type!")
 		}
 	}
 }
@@ -518,9 +640,10 @@ const enemyBaseAcceleration = 0.01
 const enemyShootChancePerTick = 0.02
 const enemyBulletVel = playerBulletVel / 1.5
 const enemyBulletSize = playerBaseBulletSize
+const enemySightRange = 500
 export class Enemy extends Entity {
-	constructor (pos) {
-		super(pos, enemySize, neutralColor)
+	constructor (pos, color=neutralColor) {
+		super(pos, enemySize, color)
 		this.health = enemyMaxHealth
 	}
 
@@ -530,12 +653,13 @@ export class Enemy extends Entity {
 			angle: this.angle,
 			vel: this.vel,
 			health: this.health,
-			angle: this.angle
+			angle: this.angle,
+			color: this.color.serialize()
 		}
 	}
 
 	static deserialize(data) {
-		var enemy = new Enemy(SimpleVector.deserialize(data.pos))
+		var enemy = new Enemy(SimpleVector.deserialize(data.pos), Color.deserialize(data.color))
 		enemy.angle = data.angle
 		enemy.vel = SimpleVector.deserialize(data.vel)
 		enemy.health = data.health
@@ -580,7 +704,7 @@ export class Enemy extends Entity {
 						enemyBulletVel * Math.sin(this.angle * Math.PI / 180)
 					),
 					enemyBulletSize,
-					neutralColor,
+					this.color,
 					enemyProjectileDamage
 				)
 			)
@@ -600,6 +724,10 @@ export class Enemy extends Entity {
 		var closestPlayerDist = Infinity
 		for (var i = 0; i < state.players.length; i++) {
 			var player = state.players[i]
+			if (player.color.equals(this.color)) {
+				continue
+			}
+
 			var dist = this.pos.dist(player.pos)
 			if (dist < closestPlayerDist) {
 				closestPlayer = player
@@ -607,7 +735,8 @@ export class Enemy extends Entity {
 			}
 		}
 
-		if (closestPlayer !== null) {
+		//if there is at least one player, and that player is in the sight range if we are is testing mode
+		if (closestPlayer !== null && (isTesting() || closestPlayerDist < enemySightRange)) {
 			var dx = closestPlayer.pos.x - this.pos.x
 			var dy = closestPlayer.pos.y - this.pos.y
 			var radians = Math.atan2(dy, dx) 
