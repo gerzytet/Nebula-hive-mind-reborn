@@ -1,4 +1,4 @@
-import {state, bg, socket, pship, asteroid_full, eship} from "./sketch.js"
+import {state, bg, socket, pship, asteroid_full, eship, gameStarted} from "./sketch.js"
 import {mapWidth, mapHeight, neutralColor} from "./shared/utilities.js"
 
 function serverCameraShowPlayer(player, serverCamScalex, serverCamScaley) {
@@ -38,13 +38,13 @@ function serverCameraShowAsteroid(asteroid, serverCamScalex, serverCamScaley) {
 	} else {
 		asteroidImage = asteroid_low
 	}
-	image(asteroidImage, 0, 0, asteroid.size * 2 * serverCamScalex, asteroid.size * 2 * serverCamScaley);
+	image(asteroidImage, 0, 0, asteroid.size * 2 * serverCamScalex, asteroid.size * 2 * serverCamScaley)
 	pop()
 }
 
 export function serverCameraDraw() {
 	background(51)
-	image(bg, 0, 0, width, height);
+	image(bg, 0, 0, width, height)
 
 	var serverCamScalex = (windowWidth / mapWidth)
 	var serverCamScaley = (windowHeight / mapHeight)
@@ -65,6 +65,9 @@ export function serverCameraDraw() {
 
 export var isServerCamera = false
 export function becomeServerCamera() {
+	if (!gameStarted) {
+		return
+	}
 	isServerCamera = true
 	socket.emit("becomeServerCamera", {})
 }

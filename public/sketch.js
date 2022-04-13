@@ -59,10 +59,17 @@ function preload() {
 	swordImg = loadImage('Sword.png', () => { }, () => {
 		console.log("failed to load sword");
 	});
+
+	startButtonImage = loadImage('startbuttonbad.png', () => { }, () => {
+		console.log('failed to load start button')
+	})
+	menuBackground = loadImage('menubackgroundbad.png', () => { }, () => {
+		console.log('failed to load menu background')
+	})
 }
 export var bg
 export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg, startButtonImage, menuBackground
 
 p5.Image.prototype.resizeNN = function (w, h) {
   "use strict";
@@ -115,25 +122,24 @@ function changeName() {
 	socket.emit("changeName", {
 		name: name
 	})
+	storeItem("namePreference", name)
 	input.value('');
 }
 
-var input, button
-function setup() {
-	cnv = createCanvas(0, 0);
-	cnv.parent("sketch-container")
-	windowResized()
-	background(0)
-
+export var gameStarted = false
+function transitionToGame() {
 	input = createInput();
 	input.position(5, 5);
+	input.attribute("placeholder", "Enter a name...")
 
 	button = createButton('Change Name');
 	button.position(input.x + input.width, 5);
 	button.mousePressed(changeName);
 
-	textAlign(CENTER);
-	textSize(50);
+	const name = menuInput.value();
+	menuInput.remove()
+	startButtonImgElem.remove()
+	startButton.remove()
 
 	socket = io.connect()
 	camera = {
@@ -163,15 +169,78 @@ function setup() {
 		setTesting(data.testing)
 	})
 
+	if (name) {
+		initialName = name
+		storeItem("namePreference", name)
+	} else {
+		initialName = undefined
+	}
+
 	lastax = 0
 	lastay = 0
+
+	gameStarted = true
+}
+
+var initialName
+var input, button
+var menuInput, startButton, startButtonImgElem
+function setup() {
+	//THIS IS MENU SETUP
+	//for game setup, put code in transitionToGame
+
+	cnv = createCanvas(0, 0);
+	cnv.parent("sketch-container")
+	windowResized()
+	background(0)
+
+	textAlign(CENTER);
+	textSize(50);
+
+	menuInput = createInput()
+	var namePreference = getItem("namePreference")
+	if (namePreference !== null) {
+		menuInput.value(namePreference)
+	}
+	menuInput.attribute("placeholder", "Enter a name...")
+	menuInput.size(400, 20)
+	
+	startButton = createButton("")
+	startButton.size(menuInput.width, 70)
+	startButton.style("padding", "0px")
+	startButton.style("margin", "0px")
+	startButton.style("border", "0px")
+	startButton.mouseClicked(transitionToGame)
+	startButtonImgElem = createImg("startbuttonbad.png", "Start")
+	startButtonImgElem.size(startButton.width, startButton.height)
+	startButtonImgElem.parent(startButton)
+}
+
+function menuDraw() {
+	background(0)
+	image(menuBackground, 0, 0, width, height);
+
+	menuInput.center()
+	startButton.center()
+	
+	menuInput.position(menuInput.x, menuInput.y + (height / 4))
+	startButton.position(startButton.x, startButton.y + (height / 4) + (startButton.height / 2) + (menuInput.height / 2))
 }
 
 var lastax
 var lastay
 
+function isCanvasFocused() {
+	return document.activeElement.tagName === "BODY"
+}
+
 //handles user input
 function doInput(player) {
+	//if we are not focused on the canvas, like if we are entering a name
+	if (!isCanvasFocused()) {
+		return
+	}
+
 	var ay = 0;
 	var ax = 0;
 
@@ -523,9 +592,22 @@ function showPlayerConnections() {
 	pop()
 }
 
+function handleInitialName() {
+	if (initialName !== undefined) {
+		socket.emit("changeName", {
+			name: initialName
+		})
+		initialName = undefined
+	}
+}
+
 function draw() {
 	if (isServerCamera) {
 		serverCameraDraw()
+		return
+	}
+	if (!gameStarted) {
+		menuDraw()
 		return
 	}
 	if (state === undefined) {
@@ -537,6 +619,7 @@ function draw() {
 		//we got initial state packet, but it will not have us as a player at first
 		return
 	}
+	handleInitialName()
 
 	doInput(player)
 	moveCamera(player)
@@ -546,11 +629,11 @@ function draw() {
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
 
 	showPlayerConnections()
+	state.powerups.map(p => showPowerup(p))
 	state.players.map(p => showPlayer(p))
 	state.projectiles.map(p => showProjecile(p))
 	state.enemies.map(e => showEnemy(e))
 	state.asteroids.map(a => showAsteroid(a))
-	state.powerups.map(p => showPowerup(p))
 
 	ui(player, state);
 }
@@ -566,7 +649,9 @@ function tryShoot() {
 }
 
 function mouseClicked(){
-	tryShoot()
+	if (gameStarted && isCanvasFocused()) {
+		tryShoot()
+	}
 }
 
 function tryActivateAbility(player) {

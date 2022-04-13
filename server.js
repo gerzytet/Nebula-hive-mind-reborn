@@ -157,6 +157,7 @@ function newConnection(socket) {
         Assert.string(data.name)
         var player = state.playerById(socket.id)
         if (player === null) {
+            console.log("player not found in change name")
             return
         }
         events.push(
