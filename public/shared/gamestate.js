@@ -8,8 +8,9 @@
 //!DON'T USE MATH.RANDOM! USE OUR FUNCTIONS!
 //reference for mulberry32: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 
-import {Assert, neutralColor, SimpleVector, connectionRadius} from "./utilities.js"
-import {Player, Projectile, playerMaxHealth, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy} from "./entities.js"
+import {Assert, neutralColor, connectionRadius} from "./utilities.js"
+import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy} from "./entities.js"
+import {playerMaxHealth, Player} from "./player.js"
 
 //random num generator
 function mulberry32(a) {
@@ -67,6 +68,7 @@ export class GameState {
 		//damage the player by projectile.damage, kill the projectile
 		collisionHelper(this.players, this.projectiles, function(player, projectile) {
 			player.damage(projectile.damage, projectile.color, state)
+			projectile.push(player, 3)
 			projectile.kill()
 		})
 
@@ -75,14 +77,15 @@ export class GameState {
 		collisionHelper(this.players, this.asteroids, function(player, asteroid) {
 			player.damage(asteroidImpactDamagePerTick, neutralColor, state)
 			player.push(asteroid, 0.5)
-			asteroid.push(player, 3)
+			asteroid.push(player, 2)
 		})
 
 		//projectiles and asteroids:
 		//kill the projectile, damage the asteroid by projectile.damage
 		collisionHelper(this.projectiles, this.asteroids, function(projectile, asteroid) {
-			projectile.kill()
 			asteroid.damage(projectile.damage)
+			projectile.push(asteroid, 2.5)
+			projectile.kill()
 		})
 
 		//players and powerups:
@@ -95,6 +98,7 @@ export class GameState {
 		//projectiles and enemies:
 		//kill the projectile, damage the enemy by projectile.damage
 		collisionHelper(this.projectiles, this.enemies, function(projectile, enemy) {
+			projectile.push(enemy, 2)
 			projectile.kill()
 			enemy.damage(projectile.damage)
 		})
@@ -119,34 +123,30 @@ export class GameState {
 			projectile1.kill()
 			projectile2.kill()
 		})
+
+		//enemies and projectiles
+		//push both
+		collisionHelper(this.enemies, this.asteroids, function(enemy, asteroid) {
+			asteroid.push(enemy, 1)
+			enemy.push(asteroid, 0.25)
+		}, false)
 	}
 
 	//goes through entity array and gets rid of dead objects
 	cleanDeadEntities() {
-		for (var i = 0; i < this.projectiles.length; i++) {
-			if (this.projectiles[i].isDead()) {
-				this.projectiles.splice(i, 1)
-				i--
+		function cleanHelper(array) {
+			for (var i = 0; i < array.length; i++) {
+				if (array[i].isDead()) {
+					array.splice(i, 1)
+					i--
+				}
 			}
 		}
-		for (var i = 0; i < this.asteroids.length; i++) {
-			if (this.asteroids[i].isDead()) {
-				this.asteroids.splice(i, 1)
-				i--
-			}
-		}
-		for (var i = 0; i < this.powerups.length; i++) {
-			if (this.powerups[i].isDead()) {
-				this.powerups.splice(i, 1)
-				i--
-			}
-		}
-		for (var i = 0; i < this.enemies.length; i++) {
-			if (this.enemies[i].isDead()) {
-				this.enemies.splice(i, 1)
-				i--
-			}
-		}
+
+		cleanHelper(this.projectiles)
+		cleanHelper(this.enemies)
+		cleanHelper(this.powerups)
+		cleanHelper(this.asteroids)
 	}
 
 	doNewAsteroids() {
@@ -177,18 +177,10 @@ export class GameState {
 	}
 
 	moveEntities() {
-		for (var i = 0; i < this.players.length; i++) {
-			this.players[i].tick()
-		}
-		for (var i = 0; i < this.projectiles.length; i++) {
-			this.projectiles[i].tick()
-		}
-		for (var i = 0; i < this.asteroids.length; i++) {
-			this.asteroids[i].tick()
-		}
-		for (var i = 0; i < this.enemies.length; i++) {
-			this.enemies[i].tick(this)
-		}
+		this.players.map(p => p.tick())
+		this.projectiles.map(p => p.tick())
+		this.asteroids.map(a => a.tick())
+		this.enemies.map(e => e.tick(this))
 	}
 
 	applyPlayerConnections() {

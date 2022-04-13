@@ -5,15 +5,17 @@
 @brief File that controls the graphics on the canvas
 */
 
-var socket
+export var socket
 var cnv
 var camera
-var state
+export var state
 
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
-import {Powerup, playerMaxHealth, enemyMaxHealth} from './shared/entities.js'
+import {Powerup, enemyMaxHealth} from './shared/entities.js'
+import {playerMaxHealth} from "./shared/player.js"
+import {serverCameraDraw, isServerCamera, becomeServerCamera} from "./serverCamera.js"
 
 function windowResized() {
 	cnv = resizeCanvas(windowWidth - 20, windowHeight - 40)
@@ -59,8 +61,8 @@ function preload() {
 		console.log("failed to load sword");
 	});
 }
-var bg
-var pship, eship, asteroid_full, asteroid_medium, asteroid_low
+export var bg
+export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
 var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg
 
 //Emitt this name
@@ -214,15 +216,18 @@ function moveCamera(player) {
 	camera.y = newCameraY
 }
 
-function showPlayer(player) {
+function isOnscreen(entity) {
 	var screenx = ((windowWidth / 2));
 	var screeny = ((windowHeight / 2));
 	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
-	let dx = (player.pos.x - camera.x) - screenx;
-	let dy = (player.pos.y - camera.y) - screeny;
+	let dx = (entity.pos.x - camera.x) - screenx;
+	let dy = (entity.pos.y - camera.y) - screeny;
 	let dist = Math.sqrt((dx * dx) + (dy * dy));
-	//print(dist);
-	if (dist < sightradius + player.size) {
+	return dist < sightradius + entity.size
+}
+
+function showPlayer(player) {
+	if (isOnscreen(player)) {
 		push()
 		angleMode(DEGREES)
 		translate(player.pos.x - camera.x, player.pos.y - camera.y)
@@ -249,14 +254,7 @@ function showPlayer(player) {
 }
 
 function showProjecile(projectile) {
-	var screenx = ((windowWidth / 2));
-	var screeny = ((windowHeight / 2));
-	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
-	let dx = (projectile.pos.x - camera.x) - screenx;
-	let dy = (projectile.pos.y - camera.y) - screeny;
-	let dist = Math.sqrt((dx * dx) + (dy * dy));
-	//print(dist);
-	if (dist < sightradius + projectile.size) {
+	if (isOnscreen(projectile)) {
 		push()
 		var c = projectile.color
 		fill(c.r, c.g, c.b)
@@ -266,16 +264,11 @@ function showProjecile(projectile) {
 }
 
 function showAsteroid(asteroid) {
-	var screenx = ((windowWidth / 2));
-	var screeny = ((windowHeight / 2));
-	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
-	let dx = (asteroid.pos.x - camera.x) - screenx;
-	let dy = (asteroid.pos.y - camera.y) - screeny;
-	let dist = Math.sqrt((dx * dx) + (dy * dy));
-	//print(dist);
-	if (dist < sightradius + asteroid.size) {
+	if (isOnscreen(asteroid)) {
 		push()
 		translate(asteroid.pos.x - camera.x, asteroid.pos.y - camera.y);
+		angleMode(DEGREES)
+		rotate(asteroid.angle)
 		imageMode(CENTER);
 		var asteroidImage
 		var healthPercent = asteroid.health / asteroid.maxhealth()
@@ -305,14 +298,7 @@ function imageFromPowerupType(type) {
 }
 
 function showPowerup(powerup) {
-	var screenx = ((windowWidth / 2));
-	var screeny = ((windowHeight / 2));
-	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
-	let dx = (powerup.pos.x - camera.x) - screenx;
-	let dy = (powerup.pos.y - camera.y) - screeny;
-	let dist = Math.sqrt((dx * dx) + (dy * dy));
-	//print(dist);
-	if (dist < sightradius + powerup.size) {
+	if (isOnscreen(powerup)) {
 		push()
 		translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y)
 		imageMode(CENTER)
@@ -322,14 +308,7 @@ function showPowerup(powerup) {
 }
 
 function showEnemy(enemy) {
-	var screenx = ((windowWidth / 2));
-	var screeny = ((windowHeight / 2));
-	var sightradius = Math.sqrt(((windowWidth / 2) * (windowWidth / 2)) + ((windowHeight / 2) * (windowHeight / 2)));
-	let dx = (enemy.pos.x - camera.x) - screenx;
-	let dy = (enemy.pos.y - camera.y) - screeny;
-	let dist = Math.sqrt((dx * dx) + (dy * dy));
-	//print(dist);
-	if (dist < sightradius + enemy.size) {
+	if (isOnscreen(enemy)) {
 		push()
 		angleMode(DEGREES)
 		translate(enemy.pos.x - camera.x, enemy.pos.y - camera.y)
@@ -462,15 +441,21 @@ function showPlayerConnections() {
 			if (i <= j) {
 				continue
 			}
-			if (!state.players[i].color.equals(state.players[j].color)) {
+			var player1 = state.players[i]
+			var player2 = state.players[j]
+
+			if (!isOnscreen(player1) && !player2.isOnscreen(player2)) {
+				continue
+			}
+			if (!player1.color.equals(player2.color)) {
 				continue
 			}
 
-			if (state.players[i].pos.dist(state.players[j].pos) < connectionRadius) {
-				stroke(state.players[i].color.r, state.players[i].color.g, state.players[i].color.b)
-				var dist = state.players[i].pos.dist(state.players[j].pos)
+			if (player1.pos.dist(player2.pos) < connectionRadius) {
+				stroke(player1.color.r, player1.color.g, player1.color.b)
+				var dist = player1.pos.dist(player2.pos)
 				strokeWeight(20 * (1 - (dist / connectionRadius)))
-				line(state.players[i].pos.x - camera.x, state.players[i].pos.y - camera.y, state.players[j].pos.x - camera.x, state.players[j].pos.y - camera.y)
+				line(player1.pos.x - camera.x, player1.pos.y - camera.y, player2.pos.x - camera.x, player2.pos.y - camera.y)
 			}
 		}
 	}
@@ -498,27 +483,12 @@ function draw() {
 
 	background(51)
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
-	
-	for (var i = 0; i < state.projectiles.length; i++) {
-		showProjecile(state.projectiles[i]);
-	}
 
 	showPlayerConnections()
-	for (var i = 0; i < state.players.length; i++) {
-		showPlayer(state.players[i]);
-	}
-
-	for (var i = 0; i < state.enemies.length; i++) {
-		showEnemy(state.enemies[i]);
-	}
-
-	for (var i = 0; i < state.powerups.length; i++) {
-		showPowerup(state.powerups[i])
-	}
-
-	for (var i = 0; i < state.asteroids.length; i++) {
-		showAsteroid(state.asteroids[i])
-	}
+	state.players.map(p => showPlayer(p))
+	state.projectiles.map(p => showProjecile(p))
+	state.enemies.map(e => showEnemy(e))
+	state.asteroids.map(a => showAsteroid(a))
 
 	ui(player, state);
 }
@@ -541,74 +511,6 @@ function tryActivateAbility(player) {
 	if (player.canActivateAbility()) {
 		socket.emit("activateAbility", {})
 	}
-}
-
-function serverCameraShowPlayer(player, serverCamScalex, serverCamScaley) {
-	push()
-	translate(player.pos.x / mapWidth * width, player.pos.y / mapHeight * height)
-	angleMode(DEGREES)
-	rotate(-player.angle + 90)
-	tint(player.color.r, player.color.g, player.color.b)
-	imageMode(CENTER)
-	image(pship, 0, 0, player.size * 2 * serverCamScalex, player.size * 2 * serverCamScaley)
-	pop()
-}
-
-function serverCameraShowEnemy(enemy, serverCamScalex, serverCamScaley) {
-	push()
-	translate(enemy.pos.x / mapWidth * width, enemy.pos.y / mapHeight * height)
-	angleMode(DEGREES)
-	rotate(-enemy.angle + 90)
-	imageMode(CENTER)
-	if (!enemy.color.equals(neutralColor)) {
-		tint(enemy.color.r, enemy.color.g, enemy.color.b)
-	}
-	image(eship, 0, 0, enemy.size * 2 * serverCamScalex, enemy.size * 2 * serverCamScaley)
-	pop()
-}
-
-function serverCameraShowAsteroid(asteroid, serverCamScalex, serverCamScaley) {
-	push()
-	translate(asteroid.pos.x / mapWidth * width, asteroid.pos.y / mapHeight * height)
-	imageMode(CENTER);
-	var asteroidImage
-	var healthPercent = asteroid.health / asteroid.maxhealth()
-	if (healthPercent > (2 / 3)) {
-		asteroidImage = asteroid_full
-	} else if (healthPercent > (1 / 3)) {
-		asteroidImage = asteroid_medium
-	} else {
-		asteroidImage = asteroid_low
-	}
-	image(asteroidImage, 0, 0, asteroid.size * 2 * serverCamScalex, asteroid.size * 2 * serverCamScaley);
-	pop()
-}
-
-function serverCameraDraw() {
-	background(51)
-	image(bg, 0, 0, width, height);
-
-	var serverCamScalex = (windowWidth / mapWidth)
-	var serverCamScaley = (windowHeight / mapHeight)
-	print(serverCamScalex)
-	print(serverCamScaley)
-	for (var i = 0; i < state.players.length; i++) {
-		serverCameraShowPlayer(state.players[i], serverCamScalex, serverCamScaley)
-	}
-
-	for (var i = 0; i < state.enemies.length; i++) {
-		serverCameraShowEnemy(state.enemies[i], serverCamScalex, serverCamScaley);
-	}
-
-	for (var i = 0; i < state.asteroids.length; i++) {
-		serverCameraShowAsteroid(state.asteroids[i], serverCamScalex, serverCamScaley)
-	}
-}
-
-var isServerCamera = false
-function becomeServerCamera() {
-	isServerCamera = true
-	socket.emit("becomeServerCamera", {})
 }
 
 //this is necessary because p5.js needs to see these functions in the global scope, which doesn't happen with a module
