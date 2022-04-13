@@ -13,7 +13,7 @@ export var state
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
-import {Powerup, enemyMaxHealth, playerMaxHealth} from './shared/entities.js'
+import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel} from './shared/entities.js'
 import {serverCameraDraw, isServerCamera, becomeServerCamera} from "./serverCamera.js"
 
 function windowResized() {
@@ -64,11 +64,54 @@ export var bg
 export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
 var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg
 
+p5.Image.prototype.resizeNN = function (w, h) {
+  "use strict";
+
+  // Locally cache current image's canvas' dimension properties:
+  const {width, height} = this.canvas;
+
+  // Sanitize dimension parameters:
+  w = ~~Math.abs(w), h = ~~Math.abs(h);
+
+  // Quit prematurely if both dimensions are equal or parameters are both 0:
+  if (w === width && h === height || !(w | h))  return this;
+
+  // Scale dimension parameters:
+  w || (w = h*width  / height | 0); // when only parameter w is 0
+  h || (h = w*height / width  | 0); // when only parameter h is 0
+
+  const img = new p5.Image(w, h), // creates temporary image
+        sx = w / width, sy = h / height; // scaled coords. for current image
+
+  this.loadPixels(), img.loadPixels(); // initializes both 8-bit RGBa pixels[]
+
+  // Create 32-bit viewers for current & temporary 8-bit RGBa pixels[]:
+  const pixInt = new Int32Array(this.pixels.buffer),
+        imgInt = new Int32Array(img.pixels.buffer);
+
+  // Transfer current to temporary pixels[] by 4 bytes (32-bit) at once:
+  for (let y = 0; y < h; ) {
+    const curRow = width * ~~(y/sy), tgtRow = w * y++;
+
+    for (let x = 0; x < w; ) {
+      const curIdx = curRow + ~~(x/sx), tgtIdx = tgtRow + x++;
+      imgInt[tgtIdx] = pixInt[curIdx];
+    }
+  }
+
+  img.updatePixels(); // updates temporary 8-bit RGBa pixels[] w/ its current state
+
+  // Resize current image to temporary image's dimensions:
+  this.canvas.width = this.width = w, this.canvas.height = this.height = h;
+  this.drawingContext.drawImage(img.canvas, 0, 0, w, h, 0, 0, w, h);
+
+  return this;
+};
+
 //Emitt this name
 //change name to input value
 function changeName() {
 	const name = input.value();
-	console.log(name)
 	socket.emit("changeName", {
 		name: name
 	})
@@ -252,8 +295,25 @@ function showPlayer(player) {
 	}
 }
 
+function showLaser(laser) {
+	push()
+	var c = laser.color
+	fill(c.r, c.g, c.b)
+	translate(laser.pos.x - camera.x, laser.pos.y - camera.y)
+	angleMode(DEGREES)
+	rotate(-laser.angle)
+	rectMode(CENTER)
+	rect(0, 0, playerBaseBulletSize * 3, laser.size * 2)
+	//ellipse(0, 0, laser.size * 2)
+	pop()
+}
+
 function showProjecile(projectile) {
 	if (isOnscreen(projectile)) {
+		if (projectile.type === Projectile.LASER) {
+			showLaser(projectile)
+			return
+		}
 		push()
 		var c = projectile.color
 		fill(c.r, c.g, c.b)
@@ -291,6 +351,8 @@ function imageFromPowerupType(type) {
 			return powerupSpeed
 		case Powerup.ATTACK:
 			return powerupAttack
+		case Powerup.FUEL:
+			return powerupFuel
 		default:
 			throw new Error("Unknown powerup type: " + type)
 	}
@@ -380,7 +442,7 @@ function ui(player, state) {
 
 		//current Dash bar (Light-blue/cyan)
 		fill(0, 255, 255);
-		rect(70, windowHeight - 80, playerMaxHealth * 2, 20);
+		rect(70, windowHeight - 80, (playerMaxHealth * 2) * (player.fuel / playerMaxFuel), 20);
 
 		//Dash seperator
 		fill(40);
@@ -443,7 +505,7 @@ function showPlayerConnections() {
 			var player1 = state.players[i]
 			var player2 = state.players[j]
 
-			if (!isOnscreen(player1) && !player2.isOnscreen(player2)) {
+			if (!isOnscreen(player1) && !isOnscreen(player2)) {
 				continue
 			}
 			if (!player1.color.equals(player2.color)) {
@@ -488,6 +550,7 @@ function draw() {
 	state.projectiles.map(p => showProjecile(p))
 	state.enemies.map(e => showEnemy(e))
 	state.asteroids.map(a => showAsteroid(a))
+	state.powerups.map(p => showPowerup(p))
 
 	ui(player, state);
 }

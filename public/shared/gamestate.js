@@ -67,8 +67,8 @@ export class GameState {
 		//damage the player by projectile.damage, kill the projectile
 		collisionHelper(this.players, this.projectiles, function(player, projectile) {
 			player.damage(projectile.damage, projectile.color, state)
-			projectile.push(player, 3)
-			projectile.kill()
+			projectile.pushIfNotLaser(player, 3)
+			projectile.killIfNotLaser()
 		})
 
 		//asteroids and players:
@@ -82,9 +82,9 @@ export class GameState {
 		//projectiles and asteroids:
 		//kill the projectile, damage the asteroid by projectile.damage
 		collisionHelper(this.projectiles, this.asteroids, function(projectile, asteroid) {
-			asteroid.damage(projectile.damage)
-			projectile.push(asteroid, 2.5)
-			projectile.kill()
+			asteroid.damage(projectile.damage, state)
+			projectile.pushIfNotLaser(asteroid, 2.5)
+			projectile.killIfNotLaser()
 		})
 
 		//players and powerups:
@@ -97,8 +97,8 @@ export class GameState {
 		//projectiles and enemies:
 		//kill the projectile, damage the enemy by projectile.damage
 		collisionHelper(this.projectiles, this.enemies, function(projectile, enemy) {
-			projectile.push(enemy, 2)
-			projectile.kill()
+			projectile.pushIfNotLaser(enemy, 2)
+			projectile.killIfNotLaser()
 			enemy.damage(projectile.damage)
 		})
 
@@ -119,8 +119,8 @@ export class GameState {
 		//projectiles and projectiles:
 		//destroy both projectiles
 		collisionHelper(this.projectiles, this.projectiles, function(projectile1, projectile2) {
-			projectile1.kill()
-			projectile2.kill()
+			projectile1.killIfNotLaser()
+			projectile2.killIfNotLaser()
 		})
 
 		//enemies and projectiles
@@ -176,7 +176,7 @@ export class GameState {
 	}
 
 	moveEntities() {
-		this.players.map(p => p.tick())
+		this.players.map(p => p.tick(this))
 		this.projectiles.map(p => p.tick())
 		this.asteroids.map(a => a.tick())
 		this.enemies.map(e => e.tick(this))

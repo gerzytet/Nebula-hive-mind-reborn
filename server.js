@@ -21,7 +21,6 @@ console.log('My server is running')
 
 var io = new Server(server)
 
-var players = []
 var playercounter = 0
 io.sockets.on('connection', newConnection)
 

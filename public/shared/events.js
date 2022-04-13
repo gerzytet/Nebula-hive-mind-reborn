@@ -7,7 +7,7 @@
 
 //TODO Create change name event
 import {Assert, SimpleVector} from "./utilities.js"
-import {Player, playerBaseAcceleration} from "./entities.js"
+import {Player, playerBaseAcceleration, playerLaserVel} from "./entities.js"
 
 
 //base class for all primary game events
@@ -96,12 +96,15 @@ export class PlayerChangeAcceleration extends GameEvent {
 	}
 }
 
-export class PlayerTeleport extends GameEvent {
+/*
+For when a player dashes
+*/
+//TODO
+export class PlayerDash extends GameEvent {
 	constructor(id, pos) {
 		super()
 		this.id = id
-		this.pos = pos
-		PlayerTeleport.assertValid(this);
+		PlayerDash.assertValid(this);
 	}
 
 	apply(state) {
@@ -109,32 +112,27 @@ export class PlayerTeleport extends GameEvent {
 		if (player === null) {
 			return
 		}
-		var newPos = new SimpleVector(
-			this.pos.x + player.angle * player.speed,
-			this.pos.y + player.angle * player.speed 
-		)
-		player.pos = newPos
+
+		player.dash()
 	}
 
 	serialize() {
 		return {
 			id: this.id,
-			acc: this.pos.serialize(),
-			type: "PlayerTeleport"
+			type: "PlayerDash"
 		}
 	}
 
 	static deserialize(data) {
-		var event = new PlayerTeleport(data.id, SimpleVector.deserialize(data.pos))
-		PlayerTeleport.assertValid(event);
+		var event = new PlayerDash(data.id)
+		PlayerDash.assertValid(event);
 		return event
 	}
 
 	//makes sure event object properties are valid
 	static assertValid(event) {
-		Assert.instanceOf(event, PlayerTeleport);
+		Assert.instanceOf(event, PlayerDash);
 		Assert.string(event.id);
-		SimpleVector.assertValid(event.pos);
 	}
 }
 

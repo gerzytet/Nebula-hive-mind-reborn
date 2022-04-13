@@ -82,6 +82,7 @@ export class Entity {
 
 const playerSize = 20
 export const playerBulletVel = 10
+export const playerLaserVel = 30
 export const playerBaseBulletSize = 10
 const playerBaseProjectileDamage = 10
 const playerBaseSpeed = 10
@@ -89,13 +90,16 @@ const playerBulletSizeBonusPerConnection = 10
 //multiply this by speed to get acceleration:
 export const playerBaseAcceleration = 0.01
 export const playerMaxHealth = 100
+const laserAttackFactor = 0.2
+export const playerMaxFuel = 3;
 export class Player extends Entity {
 	static DOUBLE_SHOT = 0
 	static NECROMANCER = 1
-	static MAX_ABILITY = 1
+	static LASER = 2
+	static MAX_ABILITY = 2
 
 	constructor(id, pos, color, name, ability) {
-		super(pos, playerSize, color);
+		super(pos, playerSize, color)
 		this.id = id
 		this.health = playerMaxHealth
 		this.attack = playerBaseProjectileDamage
@@ -106,6 +110,7 @@ export class Player extends Entity {
 		this.abilityCooldown = 0
 		this.abilityDuration = 0
 		this.name = name;
+		this.fuel = 0
 		Player.assertValid(this);
 	}
 
@@ -127,7 +132,8 @@ export class Player extends Entity {
 			name: this.name,
 			ability: this.ability,
 			abilityCooldown: this.abilityCooldown,
-			abilityDuration: this.abilityDuration
+			abilityDuration: this.abilityDuration,
+			fuel: this.fuel
 		}
 	}
 
@@ -143,6 +149,7 @@ export class Player extends Entity {
 		player.abilityCooldown = data.abilityCooldown
 		player.abilityDuration = data.abilityDuration
 		player.effects = []
+		player.fuel = data.fuel
 		for (var i = 0; i < data.effects.length; i++) {
 			player.effects.push(ActiveEffect.deserialize(data.effects[i]))
 		}
@@ -163,6 +170,8 @@ export class Player extends Entity {
 		Assert.number(player.abilityDuration)
 		Assert.true(player.abilityCooldown >= 0)
 		Assert.true(player.abilityDuration >= 0)
+		Assert.number(player.fuel)
+		Assert.true(player.fuel >= 0 && player.fuel <= playerMaxFuel)
 
 		Assert.true(player.ability >= 0 && player.ability <= Player.MAX_ABILITY)
 		Assert.true(player.health >= 0 && player.health <= playerMaxHealth)
@@ -192,7 +201,7 @@ export class Player extends Entity {
 		var colors = [];
 		if (color.r === 255 && color.g === 255 && color.b === 255) {
 			for (var i = 0; i < state.players.length; i++) {
-				colors.push(state.players[i].color);
+				colors.push(state.players[i].color)
 			}
 			//TODO: using a set might allow for different object references to equivalent colors that don't compare equal
 			var colors1 = new Set(colors);
@@ -222,8 +231,12 @@ export class Player extends Entity {
 		//list of starting positions to spawn bullets.
 		var bulletStartPositions = []
 
+		if (this.isAbilityActive() && this.ability === Player.LASER) {
+			return
+		}
+
 		//if double shot is ative
-		if (this.isAbilityActive() && this.ability == Player.DOUBLE_SHOT) {
+		if (this.isAbilityActive() && this.ability === Player.DOUBLE_SHOT) {
 
 			//amount to distance bullets, measured from the line shooting straight out from the player
 			var sideOffset = this.attackSize() + 4
@@ -264,7 +277,20 @@ export class Player extends Entity {
 		}
 	}
 
-	tick() {
+	shootLaser(state) {
+		var radians = this.angle * Math.PI / 180
+		state.projectiles.push(new Projectile(
+			this.pos.clone(),
+			new SimpleVector(Math.cos(radians) * playerLaserVel, -Math.sin(radians) * playerLaserVel),
+			this.attackSize(),
+			this.color,
+			this.attack * laserAttackFactor,
+			Projectile.LASER,
+			this.angle
+		))
+	}
+
+	tick(state) {
 		this.move()
 		for (var i = 0; i < this.effects.length; i++) {
 			this.effects[i].tick()
@@ -280,9 +306,17 @@ export class Player extends Entity {
 			this.abilityDuration = 0
 		}
 
-		this.abilityCooldown--
+		if (isTesting()) {
+			this.abilityCooldown -= 5
+		} else {
+			this.abilityCooldown--
+		}
 		if (this.abilityCooldown < 0) {
 			this.abilityCooldown = 0
+		}
+
+		if (this.isAbilityActive() && this.ability === Player.LASER) {
+			this.shootLaser(state)
 		}
 	}
 
@@ -312,6 +346,8 @@ export class Player extends Entity {
 				return 600
 			case Player.NECROMANCER:
 				return 400
+			case Player.LASER:
+				return 400
 			default:
 				throw new Error("unknown ability type!")
 		}
@@ -323,6 +359,8 @@ export class Player extends Entity {
 				return 200
 			case Player.NECROMANCER:
 				return 0
+			case Player.LASER:
+				return 50
 			default:
 				throw new Error("unknown ability type!")
 		}
@@ -334,20 +372,46 @@ export class Player extends Entity {
 				return "Double shot"
 			case Player.NECROMANCER:
 				return "Summon enemy"
+			case Player.LASER:
+				return "Laser beam"
 			default:
 				throw new Error("unknown ability type!")
 		}
 	}
+
+	addFuel() {
+		if (this.fuel < playerMaxFuel) {
+			this.fuel++
+		}
+	}
+
+	canDash() {
+		return this.fuel > 0
+	}
 }
 
 const bulletLifetimeTicks = 150
+const laserLifetimeTicks = 50
 export class Projectile extends Entity {
-	constructor(pos, vel, size, color, damage) {
+	static NORMAL = 0
+	static LASER = 1
+
+	constructor(pos, vel, size, color, damage, type=Projectile.NORMAL, angle=0) {
 		super(pos, size, color)
 		this.vel = vel
 		this.damage = damage
 		this.life = bulletLifetimeTicks
+		this.type = type
+		this.angle = angle
 		Projectile.assertValid(this)
+	}
+
+	maxLifetime() {
+		if (this.type === Projectile.NORMAL) {
+			return bulletLifetimeTicks
+		} else if (this.type === Projectile.LASER) {
+			return laserLifetimeTicks
+		}
 	}
 
 	static assertValid(projectile) {
@@ -355,17 +419,24 @@ export class Projectile extends Entity {
 		Assert.instanceOf(projectile, Projectile)
 		Assert.number(projectile.damage)
 		Assert.number(projectile.life)
+		Assert.number(projectile.type)
+		Assert.true(projectile.type === Projectile.NORMAL || projectile.type === Projectile.LASER)
 	}
 
 	serialize() {
-		return {
+		var data =  {
 			pos: this.pos.serialize(),
 			vel: this.vel.serialize(),
 			size: this.size,
 			color: this.color.serialize(),
 			life: this.life,
-			damage: this.damage
+			damage: this.damage,
+			type: this.type
 		}
+		if (this.type === Projectile.LASER) {
+			data.angle = this.angle
+		}
+		return data
 	}
 
 	static deserialize(data) {
@@ -374,8 +445,12 @@ export class Projectile extends Entity {
 			SimpleVector.deserialize(data.vel),
 			data.size,
 			Color.deserialize(data.color),
-			data.damage
+			data.damage,
+			data.type
 		)
+		if (data.type === Projectile.LASER) {
+			projectile.angle = data.angle
+		}
 		projectile.damage = data.damage
 		projectile.life = data.life
 		return projectile
@@ -397,6 +472,18 @@ export class Projectile extends Entity {
 		this.life = 0
 	}
 
+	killIfNotLaser() {
+		if (this.type !== Projectile.LASER) {
+			this.kill()
+		}
+	}
+
+	pushIfNotLaser(entity, strength) {
+		if (this.type !== Projectile.LASER) {
+			this.push(entity, strength)
+		}
+	}
+
 	tick() {
 		this.move()
 		this.life--
@@ -412,7 +499,7 @@ const maxAsteroidSize = 150
 const minAsteroidSpeed = 2
 const maxAsteroidSpeed = 5
 export const asteroidImpactDamagePerTick = 1
-
+const maxFuelSpawnOnAsteroidDeath = 3
 export class Asteroid extends Entity {
 	constructor (pos, vel, size) {
 		super(pos, size)
@@ -481,10 +568,25 @@ export class Asteroid extends Entity {
 		state.asteroids.push(new Asteroid(pos, vel, size))
 	}
 
-	damage(amount) {
+	spawnPowerups(state) {
+		var amountToSpawn = Math.round(((this.size - minAsteroidSize) / (maxAsteroidSize - minAsteroidSize)) * maxFuelSpawnOnAsteroidDeath)
+		for (var i = 0; i < amountToSpawn; i++) {
+			var pos = this.pos.clone()
+			pos.add(new SimpleVector(state.randint(-this.size/2, this.size/2), state.randint(-this.size/2, this.size/2)))
+			state.powerups.push(new Powerup(
+				pos, powerupSize, Powerup.FUEL
+			))
+		}
+	}
+
+	damage(amount, state) {
+		if (this.health === 0) {
+			return
+		}
 		this.health -= amount
 		if (this.health <= 0) {
 			this.health = 0
+			this.spawnPowerups(state)
 		}
 	}
 
@@ -503,8 +605,9 @@ export class Powerup extends Entity {
 	static SPEED = 0
 	static HEAL = 1
 	static ATTACK = 2
+	static FUEL = 3
 	//ADD 1 TO THIS IF YOU ADD A NEW POWERUP TYPE:
-	static MAX_TYPE = 2
+	static MAX_TYPE = 3
 
 	constructor(pos, size, type) {
 		super(pos, size)
@@ -541,7 +644,7 @@ export class Powerup extends Entity {
 	tick() {}
 
 	static addRandomPowerup(state) {
-		var type = state.randint(0, Powerup.MAX_TYPE)
+		var type = state.randint(0, Powerup.ATTACK)
 		var pos = new SimpleVector(
 			state.randint(powerupSize, mapWidth - powerupSize),
 			state.randint(powerupSize, mapHeight - powerupSize)
@@ -569,8 +672,7 @@ export class Powerup extends Entity {
 		switch (this.type) {
 			case Powerup.SPEED:
 				player.speed *= 4
-				player.acc.x *= 4
-				player.acc.y *= 4
+				player.acc.scale(4)
 				break
 			case Powerup.ATTACK:
 				player.attack *= 2
@@ -578,6 +680,8 @@ export class Powerup extends Entity {
 			case Powerup.HEAL:
 				player.heal(playerMaxHealth / 2)
 				break
+			case Powerup.FUEL:
+				player.addFuel(1)
 		}
 		var effect = this.getActiveEffect()
 		if (effect !== null) {
@@ -642,6 +746,7 @@ const enemySpeed = 5
 const enemyBaseAcceleration = 0.01
 const enemyShootChancePerTick = 0.02
 const enemySightRange = 500
+const enemyShotSpreadAngle = 20
 export class Enemy extends Entity {
 	constructor (pos, color=neutralColor) {
 		super(pos, enemySize, color)
@@ -696,15 +801,16 @@ export class Enemy extends Entity {
 
 	maybeShoot(state) {
 		if (state.random() < enemyShootChancePerTick) {
-			//pos vel size color damage
 			const enemyBulletVel = playerBulletVel / 1.5
 			const enemyBulletSize = playerBaseBulletSize
+			var shotAngle = this.angle + state.randint(-enemyShotSpreadAngle, enemyShotSpreadAngle)
+			var shotRadians = shotAngle * Math.PI / 180
 			state.projectiles.push(
 				new Projectile(
 					new SimpleVector(this.pos.x, this.pos.y),
 					new SimpleVector(
-						enemyBulletVel * Math.cos(this.angle * Math.PI / 180),
-						enemyBulletVel * Math.sin(this.angle * Math.PI / 180)
+						enemyBulletVel * Math.cos(shotRadians),
+						enemyBulletVel * Math.sin(shotRadians)
 					),
 					enemyBulletSize,
 					this.color,
