@@ -7,7 +7,7 @@
 
 //TODO Create change name event
 import {Assert, SimpleVector} from "./utilities.js"
-import {Player, playerBaseAcceleration} from "./player.js"
+import {Player, playerBaseAcceleration} from "./entities.js"
 
 
 //base class for all primary game events

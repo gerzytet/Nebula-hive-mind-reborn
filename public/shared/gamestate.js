@@ -9,8 +9,7 @@
 //reference for mulberry32: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 
 import {Assert, neutralColor, connectionRadius} from "./utilities.js"
-import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy} from "./entities.js"
-import {playerMaxHealth, Player} from "./player.js"
+import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playerMaxHealth, Player} from "./entities.js"
 
 //random num generator
 function mulberry32(a) {

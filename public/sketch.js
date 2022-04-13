@@ -13,8 +13,7 @@ export var state
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
-import {Powerup, enemyMaxHealth} from './shared/entities.js'
-import {playerMaxHealth} from "./shared/player.js"
+import {Powerup, enemyMaxHealth, playerMaxHealth} from './shared/entities.js'
 import {serverCameraDraw, isServerCamera, becomeServerCamera} from "./serverCamera.js"
 
 function windowResized() {

@@ -5,9 +5,9 @@
 @brief File that sets up server
 */
 
-import {Assert, SimpleVector, Color, neutralColor, isTesting, setTesting, mapWidth, mapHeight} from './public/shared/utilities.js'
+import {Assert, SimpleVector, Color, isTesting, setTesting, mapWidth, mapHeight} from './public/shared/utilities.js'
 import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName, PlayerActivateAbility} from './public/shared/events.js'
-import {Player} from './public/shared/player.js'
+import {Player} from './public/shared/entities.js'
 import {GameState} from './public/shared/gamestate.js'
 import express from 'express'
 import {Server} from 'socket.io'
