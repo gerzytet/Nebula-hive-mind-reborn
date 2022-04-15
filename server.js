@@ -19,7 +19,11 @@ app.use(express.static('public'))
 
 console.log('My server is running')
 
-var io = new Server(server)
+var io = new Server(server, {
+    cors: {
+        origin: "*"
+    }
+})
 
 var playercounter = 0
 io.sockets.on('connection', newConnection)
