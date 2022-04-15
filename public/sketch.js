@@ -479,9 +479,59 @@ function doRotation(player) {
 	lastAngle = newAngle
 }
 
+function pieChart(diameter, players, x, y) {
+	let lastAngle = 0;
+	let team_colors = [];
+	let team_counts = [0, 0, 0];
+	for (let i = 0; i < players.length; i++) {
+		if (!(players[i].color.inArray(team_colors))) {
+			team_colors.push(players[i].color);
+		}
+	}
+	for (let i = 0; i < team_colors.length; i++) {
+		team_counts[i] = 0;
+		for (let j = 0; j < players.length; j++) {
+			if (players[j].color.equals(team_colors[i])) {
+				team_counts[i] += 1;
+			}
+		}
+	}
+	let angles = [];
+	for (let i = 0; i < team_counts.length; i++) {
+		angles[i] = (team_counts[i] / players.length) * 360;
+	}
+	console.log(angles)
+	for (let i = 0; i < team_colors.length; i++) {
+		fill(color(team_colors[i].r, team_colors[i].g, team_colors[i].b));
+		arc(
+			x,
+			y,
+			diameter,
+			diameter,
+			lastAngle,
+			lastAngle + angles[i]
+		);
+		lastAngle += angles[i];
+	}
+}
+
 function ui(player, state) {
 	push()
 	//Bottom left
+
+	//background
+	push();
+	fill(0, 255, 255, 100);
+	stroke(0, 255, 255);
+	strokeWeight(5);
+	beginShape();
+	vertex(-10, windowHeight + 10);
+	vertex(-10, windowHeight - 110);
+	vertex((playerMaxHealth * 2) + 80, windowHeight - 115);
+	vertex((playerMaxHealth * 2) + 100, windowHeight + 10);
+	endShape(CLOSE);
+	pop()
+
 
 	//Health Bar
 		//"HP:" text
@@ -541,17 +591,61 @@ function ui(player, state) {
 
 	//Top right
 
+	//background
+	push();
+	fill(0, 255, 255, 100);
+	stroke(0, 255, 255);
+	strokeWeight(5);
+	beginShape();
+	vertex(windowWidth + 10, -10);
+	vertex(windowWidth + 10, 200);
+	vertex(windowWidth - 150, 200);
+	vertex(windowWidth - 150, -10);
+	endShape(CLOSE);
+	pop()
+
 	//Player scoreboard
 
 
 	//Bottom right
 
-	//Chat output
+	//background
+	push();
+	fill(0, 255, 255, 100);
+	stroke(0, 255, 255);
+	strokeWeight(5);
+	beginShape();
+	vertex(windowWidth + 10, windowHeight + 10);
+	vertex(windowWidth - 350, windowHeight + 10);
+	vertex(windowWidth - 350, windowHeight - 150);
+	vertex(windowWidth - 85, windowHeight - 150);
+	vertex(windowWidth - 80, windowHeight - 170);
+	vertex(windowWidth + 10, windowHeight - 170);
+	endShape(CLOSE);
+	pop()
 
+	//Chat output
+	textSize(16);
+	fill(255);
+	text("Chat", windowWidth - 68, windowHeight - 163);
 
 	//Top left
 
+	//background
+	push()
+	fill(0, 255, 255, 100);
+	stroke(0, 255, 255);
+	strokeWeight(5);
+	beginShape();
+	vertex(-10, -10);
+	vertex(-10, 115);
+	vertex(110, 110);
+	vertex(125, -10);
+	endShape(CLOSE);
+	pop()
+
 	//Player Team Chart
+	pieChart(100, state.players, 55, 55);
 
 	//Ability info
 	//TODO: replace this with something prettier

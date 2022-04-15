@@ -100,6 +100,16 @@ export class Color {
 	equals(other) {
 		return this.r === other.r && this.g === other.g && this.b === other.b
 	}
+
+	inArray(array) {
+		let found = false;
+		for (let i = 0; i < array.length; i++) {
+			if (this.equals(array[i])) {
+				found = true;
+			}
+		}
+		return found;
+	}
 }
 
 export const neutralColor = new Color(255, 255, 255)
