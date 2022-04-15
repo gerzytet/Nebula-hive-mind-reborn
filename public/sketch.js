@@ -214,7 +214,12 @@ function setup() {
 	startButtonImgElem = createImg("startbuttonbad.png", "Start")
 	startButtonImgElem.size(startButton.width, startButton.height)
 	startButtonImgElem.parent(startButton)
+
+
 }
+
+var Max_Ammo = 50;
+var Ammo = Max_Ammo;
 
 function menuDraw() {
 	background(0)
@@ -580,7 +585,7 @@ function ui(player, state) {
 
 		//current Ammo bar (Player colored sticks)
 		fill(player.color.r, player.color.g, player.color.b);
-		rect(70, windowHeight - 60, playerMaxHealth * 2, 20);
+		rect(70, windowHeight - 60, Ammo/Max_Ammo * (playerMaxHealth * 2), 20);
 
 		//Ammo seperator
 		fill(40);
@@ -729,14 +734,24 @@ function draw() {
 	state.enemies.map(e => showEnemy(e))
 	state.asteroids.map(a => showAsteroid(a))
 
+	
+	console.log(lastAmmoRefil);
+	if (millis() - lastAmmoRefil > refilDelayMillis && Ammo < Max_Ammo ) {
+		Ammo += 1
+		lastAmmoRefil = millis()
+	}
+
 	ui(player, state);
 }
 
-var lastShootTime = 0
+var lastAmmoRefil = 0;
+const refilDelayMillis = 500
+var lastShootTime = 0;
 const shootDelayMillis = 200
 
 function tryShoot() {
-	if (millis() - lastShootTime > shootDelayMillis) {
+	if (millis() - lastShootTime > shootDelayMillis && Ammo > 0) {
+		Ammo -= 1
 		socket.emit("shoot", {})
 		lastShootTime = millis()
 	}
