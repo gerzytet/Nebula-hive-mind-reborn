@@ -15,6 +15,7 @@
   "author": "Christian2",
   "license": "ISC",
   "dependencies": {
+    "cuss": "^2.0.0",
     "express": "^4.17.2",
     "socket.io": "^4.4.1"
   },

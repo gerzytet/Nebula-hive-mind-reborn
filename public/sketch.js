@@ -15,7 +15,9 @@ import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
 import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel} from './shared/entities.js'
 import {serverCameraDraw, isServerCamera, becomeServerCamera} from "./serverCamera.js"
+import { cuss } from './cuss'
 
+ 
 function windowResized() {
 	cnv = resizeCanvas(windowWidth - 20, windowHeight - 40)
 }
@@ -128,13 +130,6 @@ function changeName() {
 
 export var gameStarted = false
 function transitionToGame() {
-	input = createInput();
-	input.position(5, 5);
-	input.attribute("placeholder", "Enter a name...")
-
-	button = createButton('Change Name');
-	button.position(input.x + input.width, 5);
-	button.mousePressed(changeName);
 
 	const name = menuInput.value();
 	menuInput.remove()
@@ -186,6 +181,7 @@ var initialName
 var input, button
 var menuInput, startButton, startButtonImgElem
 function setup() {
+	console.log(cuss.fuck);
 	//THIS IS MENU SETUP
 	//for game setup, put code in transitionToGame
 
@@ -214,8 +210,6 @@ function setup() {
 	startButtonImgElem = createImg("startbuttonbad.png", "Start")
 	startButtonImgElem.size(startButton.width, startButton.height)
 	startButtonImgElem.parent(startButton)
-
-
 }
 
 var Max_Ammo = 50;
@@ -519,6 +513,9 @@ function pieChart(diameter, players, x, y) {
 		lastAngle += angles[i];
 	}
 }
+
+var ToggleChat = true;
+var ToggleScore = true;
 
 function ui(player, state) {
 	push()
