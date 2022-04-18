@@ -15,7 +15,7 @@ import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
 import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel} from './shared/entities.js'
 import {serverCameraDraw, isServerCamera, becomeServerCamera} from "./serverCamera.js"
-import { cuss } from './cuss'
+//import {cuss} from 'cuss'
 
  
 function windowResized() {
@@ -136,6 +136,23 @@ function transitionToGame() {
 	startButtonImgElem.remove()
 	startButton.remove()
 
+	/*
+	chatInput = createInput()
+	chatInput.value('')
+	chatInput.attribute("placeholder", "Enter some text...")
+	chatInput.size(300, 20)
+
+	chatButton = createButton("")
+	chatButton.size(20, 20)
+	chatButton.style("padding", "0px")
+	chatButton.style("margin", "0px")
+	chatButton.style("border", "0px")
+	chatButton.mouseClicked(transitionToGame)
+	chatButtonImgElem = createImg("startbuttonbad.png", "Start")
+	chatButtonImgElem.size(startButton.width, startButton.height)
+	chatButtonImgElem.parent(startButton)
+	*/
+
 	socket = io.connect()
 	camera = {
 		x: 0,
@@ -179,9 +196,9 @@ function transitionToGame() {
 
 var initialName
 var input, button
-var menuInput, startButton, startButtonImgElem
+var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgE
 function setup() {
-	console.log(cuss.fuck);
+	//console.log(cuss.fuck);
 	//THIS IS MENU SETUP
 	//for game setup, put code in transitionToGame
 
@@ -631,6 +648,16 @@ function ui(player, state) {
 	fill(255);
 	text("Chat", windowWidth - 68, windowHeight - 163);
 
+	//Chat input
+	if(ToggleChat == true){
+		chatInput.center()
+		chatButton.center()
+
+		chatInput.position(chatInput.x, chatInput.y + (height / 4))
+		chatButton.position(chatButton.x, chatButton.y + (height / 4) + (chatButton.height / 2) + (chatInput.height / 2))
+	}else{
+		// make smaller and background 
+	}
 	//Top left
 
 	//background
