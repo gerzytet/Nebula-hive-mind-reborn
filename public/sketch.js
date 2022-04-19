@@ -650,11 +650,11 @@ function ui(player, state) {
 
 	//Chat input
 	if(ToggleChat == true){
-		chatInput.center()
-		chatButton.center()
+		//chatInput.center()
+		//chatButton.center()
 
-		chatInput.position(chatInput.x, chatInput.y + (height / 4))
-		chatButton.position(chatButton.x, chatButton.y + (height / 4) + (chatButton.height / 2) + (chatInput.height / 2))
+		//chatInput.position(chatInput.x, chatInput.y + (height / 4))
+		//chatButton.position(chatButton.x, chatButton.y + (height / 4) + (chatButton.height / 2) + (chatInput.height / 2))
 	}else{
 		// make smaller and background 
 	}

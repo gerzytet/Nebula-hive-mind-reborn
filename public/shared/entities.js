@@ -9,6 +9,35 @@
 
 import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor, isTesting} from "./utilities.js"
 
+
+export class Boom {
+	constructor(pos, size, color=neutralColor) {
+		this.pos = pos
+		this.color = color
+		this.lifecounter = 0
+		this.size = lifecounter + 1
+		this.maxLifetime = size
+		Boom.assertValid(this)
+	}
+
+	assertValid(boom) {
+		//assert stuff 
+    }
+
+	draw() {
+		this.size = lifecounter + 1
+		push()
+		fill(this.color.r * 0.5, this.color.g * 0.5, this.color.b * 0.5)
+		circle(this.pos.x, this.pos.y, this.size)
+		fill(this.color.r, this.color.g, this.color.b)
+		circle(this.pos.x, this.pos.y, this.size * 0.8)
+		pop()
+		this.lifecounter += 2
+		if (this.lifecounter > this.maxLifetime) {
+			//die
+        }
+    }
+}
 export class Entity {
 	constructor(pos, size, color=neutralColor) {
 		this.pos = pos
@@ -193,6 +222,7 @@ export class Player extends Entity {
 	damage(amount, color, state) {
 		this.health -= amount
 		if (this.isDead()) {
+			//Boom_Splat
 			this.kill(color, state)
 		}
 	}
@@ -858,6 +888,136 @@ export class Enemy extends Entity {
 			var newAcc = new SimpleVector(
 				Math.cos(radians) * enemySpeed * enemyBaseAcceleration,
 				Math.sin(radians) * enemySpeed * enemyBaseAcceleration
+			)
+			this.acc = newAcc
+		} else {
+			this.acc = new SimpleVector(0, 0)
+		}
+
+		this.move()
+		this.maybeShoot(state)
+	}
+}
+
+const bossProjectileDamage = 10
+export const bossMaxHealth = 50
+const bossSize = 20
+const bossSpeed = 5
+const bossBaseAcceleration = 0.01
+const bossShootChancePerTick = 0.02
+const bossSightRange = 500
+const bossShotSpreadAngle = 20
+export class Boss extends Entity {
+	constructor (pos, color=neutralColor) {
+		super(pos, bossSize, color)
+		this.health = bossMaxHealth
+	}
+
+	serialize() {
+		return {
+			pos: this.pos.serialize(),
+			angle: this.angle,
+			vel: this.vel,
+			health: this.health,
+			angle: this.angle,
+			color: this.color.serialize()
+		}
+	}
+
+	static deserialize(data) {
+		var boss = new Boss(SimpleVector.deserialize(data.pos), Color.deserialize(data.color))
+		boss.angle = data.angle
+		boss.vel = SimpleVector.deserialize(data.vel)
+		boss.health = data.health
+		boss.angle = data.angle
+		Boss.assertValid(boss)
+		return boss
+	}
+
+	static assertValid(boss) {
+		Entity.assertValid(boss)
+		Assert.number(boss.health)
+		Assert.true(boss.health >= 0 && boss.health <= bossMaxHealth)
+	}
+
+	move() {
+		super.move()
+
+		this.vel.limitMagnitude(bossSpeed)
+		this.vel.x *= 0.99
+		this.vel.y *= 0.99
+	}
+
+	damage(amount) {
+		this.health -= amount
+		if (this.health <= 0) {
+			this.health = 0
+		}
+	}
+
+	isDead() {
+		return this.health <= 0
+	}
+
+	maybeShoot(state) {
+		if (state.random() < bossShootChancePerTick) {
+			const bossBulletVel = playerBulletVel / 1.5
+			const bossBulletSize = playerBaseBulletSize
+			var shotAngle = this.angle + state.randint(-bossShotSpreadAngle, bossShotSpreadAngle)
+			var shotRadians = shotAngle * Math.PI / 180
+			state.projectiles.push(
+				new Projectile(
+					new SimpleVector(this.pos.x, this.pos.y),
+					new SimpleVector(
+						bossBulletVel * Math.cos(shotRadians),
+						bossBulletVel * Math.sin(shotRadians)
+					),
+					bossBulletSize,
+					this.color,
+					bossProjectileDamage
+				)
+			)
+		}
+	}
+
+	static addRandomBoss(state) {
+		var pos = new SimpleVector(
+			state.randint(bossSize, mapWidth - bossSize),
+			state.randint(bossSize, mapHeight - bossSize)
+		)
+		state.enemies.push(new Boss(pos))
+	}
+
+	tick(state) {
+		var closestPlayer = null
+		var closestPlayerDist = Infinity
+		for (var i = 0; i < state.players.length; i++) {
+			var player = state.players[i]
+			if (player.color.equals(this.color)) {
+				continue
+			}
+
+			var dist = this.pos.dist(player.pos)
+			if (dist < closestPlayerDist) {
+				closestPlayer = player
+				closestPlayerDist = dist
+			}
+		}
+
+		//if there is at least one player, and that player is in the sight range if we are is testing mode
+		if (closestPlayer !== null && (isTesting() || closestPlayerDist < bossSightRange)) {
+			var dx = closestPlayer.pos.x - this.pos.x
+			var dy = closestPlayer.pos.y - this.pos.y
+			var radians = Math.atan2(dy, dx) 
+			var angle = radians * 180 / Math.PI
+			if (angle < 0) {
+				angle += 360
+			}
+			this.angle = angle
+
+			var newAcc = new SimpleVector(
+				Math.cos(radians) * bossSpeed * bossBaseAcceleration,
+				Math.sin(radians) * bossSpeed * bossBaseAcceleration
 			)
 			this.acc = newAcc
 		} else {
