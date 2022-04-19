@@ -58,20 +58,16 @@ function preload() {
 		console.log("failed to load powerup machine gun");
 	})
 
-	swordImg = loadImage('Sword.png', () => { }, () => {
-		console.log("failed to load sword");
-	});
-
-	startButtonImage = loadImage('startbuttonbad.png', () => { }, () => {
-		console.log('failed to load start button')
-	})
 	menuBackground = loadImage('menubackgroundbad.png', () => { }, () => {
 		console.log('failed to load menu background')
+	})
+	bangEffect = loadImage('bang_effect.png', () => {}, () => {
+		console.log("Failed to load bang effect")
 	})
 }
 export var bg
 export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg, startButtonImage, menuBackground
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, bangEffect
 
 p5.Image.prototype.resizeNN = function (w, h) {
   "use strict";
@@ -117,15 +113,32 @@ p5.Image.prototype.resizeNN = function (w, h) {
   return this;
 };
 
-//Emitt this name
-//change name to input value
-function changeName() {
-	const name = input.value();
-	socket.emit("changeName", {
-		name: name
-	})
-	storeItem("namePreference", name)
-	input.value('');
+function cloneImage(img) {
+	var w = img.width
+	var h = img.height
+	var newImg = new p5.Image(w, h)
+	newImg.copy(img, 0, 0, w, h, 0, 0, w, h)
+	return newImg
+}
+
+var resizeCache = {}
+
+//name: name of the image.  Should be the same between calls if the image is the same
+function resize(img, name, w, h) {
+	var key = name + w + "," + h
+	if (resizeCache[key] !== undefined) {
+		return resizeCache[key]
+	}
+
+	var resized = cloneImage(img)
+	resized.resizeNN(w, h)
+	resizeCache[key] = resized
+	return resized
+}
+
+function imageWithResize(img, name, x, y, w, h) {
+	var resized = resize(img, name, w, h)
+	image(resized, x, y, w, h)
 }
 
 export var gameStarted = false
@@ -162,9 +175,9 @@ function transitionToGame() {
 	socket.on('tick', function (data) {
 		var eventsSerialized = data.events
 		var seed = data.seed
-		if (eventsSerialized.length !== 0) {
-			console.log(eventsSerialized)
-		}
+		//if (eventsSerialized.length !== 0) {
+		//	console.log(eventsSerialized)
+		//}
 
 		var events = []
 		for (var i = 0; i < eventsSerialized.length; i++) {
@@ -223,8 +236,10 @@ function setup() {
 	startButton.style("padding", "0px")
 	startButton.style("margin", "0px")
 	startButton.style("border", "0px")
+	startButton.style("background-color", "transparent")
+	startButton.style("image-rendering", "pixelated")
 	startButton.mouseClicked(transitionToGame)
-	startButtonImgElem = createImg("startbuttonbad.png", "Start")
+	startButtonImgElem = createImg("startbutton.png", "Start")
 	startButtonImgElem.size(startButton.width, startButton.height)
 	startButtonImgElem.parent(startButton)
 }
@@ -275,7 +290,7 @@ function doInput(player) {
 		ax = 1
 	}
 
-	if (keyIsDown(code('e')) || keyIsDown(code('E'))) {
+	if (keyIsDown(code('e')) || keyIsDown(code('E')) || mouseIsPressed) {
 		tryShoot()
 	}
 
@@ -416,14 +431,19 @@ function showAsteroid(asteroid) {
 		imageMode(CENTER);
 		var asteroidImage
 		var healthPercent = asteroid.health / asteroid.maxhealth()
+
+		var name = "asteroid_"
 		if (healthPercent > (2 / 3)) {
 			asteroidImage = asteroid_full
+			name += "full"
 		} else if (healthPercent > (1 / 3)) {
 			asteroidImage = asteroid_medium
+			name += "medium"
 		} else {
 			asteroidImage = asteroid_low
+			name += "low"
 		}
-		image(asteroidImage, 0, 0, asteroid.size * 2, asteroid.size * 2);
+		imageWithResize(asteroidImage, name, 0, 0, asteroid.size * 2, asteroid.size * 2);
 		pop()
 	}
 }
@@ -448,6 +468,9 @@ function showPowerup(powerup) {
 		push()
 		translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y)
 		imageMode(CENTER)
+		if (powerup.life < (30 * 5)) {
+			tint(255, Math.sin(powerup.life / 2) * 255)
+		}
 		image(imageFromPowerupType(powerup.type), 0, 0, powerup.size * 2, powerup.size * 2)
 		pop()
 	}
@@ -474,6 +497,17 @@ function showEnemy(enemy) {
 		fill(enemy.color.r, enemy.color.g, enemy.color.b);
 		rect((enemy.pos.x - camera.x) - 13, enemy.pos.y - camera.y + enemy.size + 5, enemy.health/2, 10);
 	}
+}
+
+function showCorpse(corpse) {
+	push()
+	var entity = corpse.entity
+	translate(entity.pos.x - camera.x, entity.pos.y - camera.y)
+	angleMode(DEGREES)
+	rotate(entity.angle)
+	imageMode(CENTER)
+	image(bangEffect, 0, 0, entity.size*2, entity.size*2)
+	pop()
 }
 
 var lastAngle;
@@ -516,7 +550,6 @@ function pieChart(diameter, players, x, y) {
 	for (let i = 0; i < team_counts.length; i++) {
 		angles[i] = (team_counts[i] / players.length) * 360;
 	}
-	console.log(angles)
 	for (let i = 0; i < team_colors.length; i++) {
 		fill(color(team_colors[i].r, team_colors[i].g, team_colors[i].b));
 		arc(
@@ -752,6 +785,7 @@ function draw() {
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
 
 	showPlayerConnections()
+	state.corpses.map(c => showCorpse(c))
 	state.powerups.map(p => showPowerup(p))
 	state.players.map(p => showPlayer(p))
 	state.projectiles.map(p => showProjecile(p))
@@ -759,7 +793,6 @@ function draw() {
 	state.asteroids.map(a => showAsteroid(a))
 
 	
-	console.log(lastAmmoRefil);
 	if (millis() - lastAmmoRefil > refilDelayMillis && Ammo < Max_Ammo ) {
 		Ammo += 1
 		lastAmmoRefil = millis()
@@ -781,12 +814,6 @@ function tryShoot() {
 	}
 }
 
-function mouseClicked(){
-	if (gameStarted && isCanvasFocused()) {
-		tryShoot()
-	}
-}
-
 function tryActivateAbility(player) {
 	if (player.canActivateAbility()) {
 		socket.emit("activateAbility", {})
@@ -798,5 +825,4 @@ window.draw = draw
 window.preload = preload
 window.setup = setup
 window.windowResized = windowResized
-window.mouseClicked = mouseClicked
 window.becomeServerCamera = becomeServerCamera

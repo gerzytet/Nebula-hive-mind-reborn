@@ -1,4 +1,4 @@
-import {state, bg, socket, pship, asteroid_full, eship, gameStarted} from "./sketch.js"
+import {state, bg, socket, pship, asteroid_full, eship, gameStarted, asteroid_medium, asteroid_low} from "./sketch.js"
 import {mapWidth, mapHeight, neutralColor} from "./shared/utilities.js"
 
 function serverCameraShowPlayer(player, serverCamScalex, serverCamScaley) {
