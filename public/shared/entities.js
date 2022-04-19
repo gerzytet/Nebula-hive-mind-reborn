@@ -78,6 +78,15 @@ export class Entity {
 		other.vel.x += scaledPushVector.x
 		other.vel.y += scaledPushVector.y
 	}
+
+	getCorpse() {
+		const defaultLifespan = 25
+		return new Corpse(this, defaultLifespan)
+	}
+
+	hasCorpse() {
+		return false
+	}
 }
 
 const playerSize = 20
@@ -597,6 +606,10 @@ export class Asteroid extends Entity {
 	maxhealth() {
 		return this.size
 	}
+
+	hasCorpse() {
+		return true
+	}
 }
 
 const powerupSize = 12
@@ -878,5 +891,37 @@ export class Enemy extends Entity {
 
 		this.move()
 		this.maybeShoot(state)
+	}
+
+	hasCorpse() {
+		return true
+	}
+}
+
+//a corpse represents and entity that just died
+//these are not serialized and sent to clients
+export class Corpse {
+	constructor(entity, life) {
+		this.entity = entity
+		this.life = life
+
+		Corpse.assertValid(this)
+	}
+
+	static assertValid(corpse) {
+		Assert.instanceOf(corpse, Corpse)
+		Entity.assertValid(corpse.entity)
+	}
+
+	tick() {
+		this.life--
+	}
+
+	isDead() {
+		return this.life <= 0
+	}
+
+	hasCorpse() {
+		return false
 	}
 }

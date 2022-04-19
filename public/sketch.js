@@ -68,10 +68,13 @@ function preload() {
 	menuBackground = loadImage('menubackgroundbad.png', () => { }, () => {
 		console.log('failed to load menu background')
 	})
+	bangEffect = loadImage('bang_effect.png', () => {}, () => {
+		console.log("Failed to load bang effect")
+	})
 }
 export var bg
 export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg, startButtonImage, menuBackground
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg, startButtonImage, menuBackground, bangEffect
 
 p5.Image.prototype.resizeNN = function (w, h) {
   "use strict";
@@ -501,6 +504,17 @@ function showEnemy(enemy) {
 	}
 }
 
+function showCorpse(corpse) {
+	push()
+	var entity = corpse.entity
+	translate(entity.pos.x - camera.x, entity.pos.y - camera.y)
+	angleMode(DEGREES)
+	rotate(entity.angle)
+	imageMode(CENTER)
+	image(bangEffect, 0, 0, entity.size*2, entity.size*2)
+	pop()
+}
+
 var lastAngle;
 function doRotation(player) {
 	//the angle determined by mouse position
@@ -776,6 +790,7 @@ function draw() {
 	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
 
 	showPlayerConnections()
+	state.corpses.map(c => showCorpse(c))
 	state.powerups.map(p => showPowerup(p))
 	state.players.map(p => showPlayer(p))
 	state.projectiles.map(p => showProjecile(p))
