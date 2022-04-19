@@ -58,13 +58,6 @@ function preload() {
 		console.log("failed to load powerup machine gun");
 	})
 
-	swordImg = loadImage('Sword.png', () => { }, () => {
-		console.log("failed to load sword");
-	});
-
-	startButtonImage = loadImage('startbuttonbad.png', () => { }, () => {
-		console.log('failed to load start button')
-	})
 	menuBackground = loadImage('menubackgroundbad.png', () => { }, () => {
 		console.log('failed to load menu background')
 	})
@@ -74,7 +67,7 @@ function preload() {
 }
 export var bg
 export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, swordImg, startButtonImage, menuBackground, bangEffect
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, bangEffect
 
 p5.Image.prototype.resizeNN = function (w, h) {
   "use strict";
@@ -243,8 +236,10 @@ function setup() {
 	startButton.style("padding", "0px")
 	startButton.style("margin", "0px")
 	startButton.style("border", "0px")
+	startButton.style("background-color", "transparent")
+	startButton.style("image-rendering", "pixelated")
 	startButton.mouseClicked(transitionToGame)
-	startButtonImgElem = createImg("startbuttonbad.png", "Start")
+	startButtonImgElem = createImg("startbutton.png", "Start")
 	startButtonImgElem.size(startButton.width, startButton.height)
 	startButtonImgElem.parent(startButton)
 }
@@ -830,5 +825,4 @@ window.draw = draw
 window.preload = preload
 window.setup = setup
 window.windowResized = windowResized
-window.mouseClicked = mouseClicked
 window.becomeServerCamera = becomeServerCamera
