@@ -117,15 +117,32 @@ p5.Image.prototype.resizeNN = function (w, h) {
   return this;
 };
 
-//Emitt this name
-//change name to input value
-function changeName() {
-	const name = input.value();
-	socket.emit("changeName", {
-		name: name
-	})
-	storeItem("namePreference", name)
-	input.value('');
+function cloneImage(img) {
+	var w = img.width
+	var h = img.height
+	var newImg = new p5.Image(w, h)
+	newImg.copy(img, 0, 0, w, h, 0, 0, w, h)
+	return newImg
+}
+
+var resizeCache = {}
+
+//name: name of the image.  Should be the same between calls if the image is the same
+function resize(img, name, w, h) {
+	var key = name + w + "," + h
+	if (resizeCache[key] !== undefined) {
+		return resizeCache[key]
+	}
+
+	var resized = cloneImage(img)
+	resized.resizeNN(w, h)
+	resizeCache[key] = resized
+	return resized
+}
+
+function imageWithResize(img, name, x, y, w, h) {
+	var resized = resize(img, name, w, h)
+	image(resized, x, y, w, h)
 }
 
 export var gameStarted = false
@@ -162,9 +179,9 @@ function transitionToGame() {
 	socket.on('tick', function (data) {
 		var eventsSerialized = data.events
 		var seed = data.seed
-		if (eventsSerialized.length !== 0) {
-			console.log(eventsSerialized)
-		}
+		//if (eventsSerialized.length !== 0) {
+		//	console.log(eventsSerialized)
+		//}
 
 		var events = []
 		for (var i = 0; i < eventsSerialized.length; i++) {
@@ -416,14 +433,19 @@ function showAsteroid(asteroid) {
 		imageMode(CENTER);
 		var asteroidImage
 		var healthPercent = asteroid.health / asteroid.maxhealth()
+
+		var name = "asteroid_"
 		if (healthPercent > (2 / 3)) {
 			asteroidImage = asteroid_full
+			name += "full"
 		} else if (healthPercent > (1 / 3)) {
 			asteroidImage = asteroid_medium
+			name += "medium"
 		} else {
 			asteroidImage = asteroid_low
+			name += "low"
 		}
-		image(asteroidImage, 0, 0, asteroid.size * 2, asteroid.size * 2);
+		imageWithResize(asteroidImage, name, 0, 0, asteroid.size * 2, asteroid.size * 2);
 		pop()
 	}
 }
@@ -448,6 +470,9 @@ function showPowerup(powerup) {
 		push()
 		translate(powerup.pos.x - camera.x, powerup.pos.y - camera.y)
 		imageMode(CENTER)
+		if (powerup.life < (30 * 5)) {
+			tint(255, Math.sin(powerup.life / 2) * 255)
+		}
 		image(imageFromPowerupType(powerup.type), 0, 0, powerup.size * 2, powerup.size * 2)
 		pop()
 	}
@@ -516,7 +541,6 @@ function pieChart(diameter, players, x, y) {
 	for (let i = 0; i < team_counts.length; i++) {
 		angles[i] = (team_counts[i] / players.length) * 360;
 	}
-	console.log(angles)
 	for (let i = 0; i < team_colors.length; i++) {
 		fill(color(team_colors[i].r, team_colors[i].g, team_colors[i].b));
 		arc(
@@ -650,11 +674,11 @@ function ui(player, state) {
 
 	//Chat input
 	if(ToggleChat == true){
-		chatInput.center()
-		chatButton.center()
+		//chatInput.center()
+		//chatButton.center()
 
-		chatInput.position(chatInput.x, chatInput.y + (height / 4))
-		chatButton.position(chatButton.x, chatButton.y + (height / 4) + (chatButton.height / 2) + (chatInput.height / 2))
+		//chatInput.position(chatInput.x, chatInput.y + (height / 4))
+		//chatButton.position(chatButton.x, chatButton.y + (height / 4) + (chatButton.height / 2) + (chatInput.height / 2))
 	}else{
 		// make smaller and background 
 	}
@@ -759,7 +783,6 @@ function draw() {
 	state.asteroids.map(a => showAsteroid(a))
 
 	
-	console.log(lastAmmoRefil);
 	if (millis() - lastAmmoRefil > refilDelayMillis && Ammo < Max_Ammo ) {
 		Ammo += 1
 		lastAmmoRefil = millis()

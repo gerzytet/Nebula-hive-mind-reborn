@@ -11,6 +11,9 @@
 import {Assert, neutralColor, connectionRadius} from "./utilities.js"
 import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playerMaxHealth, Player} from "./entities.js"
 
+//number of ticks it should take on average to fill the whole map with powerups, asteriods, enemies, if there is nothing there already
+const serverFillTicks = 30 * 30
+
 //random num generator
 function mulberry32(a) {
     return function() {
@@ -149,8 +152,8 @@ export class GameState {
 	}
 
 	doNewAsteroids() {
-		const newAsteroidChancePerTick = 0.1
 		const asteroidLimit = 10
+		const newAsteroidChancePerTick = asteroidLimit / serverFillTicks
 
 		if (this.asteroids.length < asteroidLimit && this.random() < newAsteroidChancePerTick) {
 			Asteroid.addRandomAsteroid(this);
@@ -158,8 +161,8 @@ export class GameState {
 	}
 
 	doNewPowerups() {
-		const newPowerupChancePerTick = 0.1
-		const powerupLimit = 10
+		const powerupLimit = 10 + 2 * this.players.length
+		const newPowerupChancePerTick = powerupLimit / serverFillTicks
 
 		if (this.powerups.length < powerupLimit && this.random() < newPowerupChancePerTick) {
 			Powerup.addRandomPowerup(this);
@@ -167,19 +170,20 @@ export class GameState {
 	}
 
 	doNewEnemies() {
-		const newEnemyChancePerTick = 0.1
 		const enemyLimit = 5
+		const newEnemyChancePerTick = enemyLimit / serverFillTicks
 
 		if (this.enemies.length < enemyLimit && this.random() < newEnemyChancePerTick) {
 			Enemy.addRandomEnemy(this);
 		}
 	}
 
-	moveEntities() {
+	tickEntities() {
 		this.players.map(p => p.tick(this))
 		this.projectiles.map(p => p.tick())
 		this.asteroids.map(a => a.tick())
 		this.enemies.map(e => e.tick(this))
+		this.powerups.map(p => p.tick())
 	}
 
 	applyPlayerConnections() {
@@ -215,7 +219,7 @@ export class GameState {
 
 		this.doNewAsteroids()
 		this.doNewPowerups()
-		this.moveEntities()
+		this.tickEntities()
 		this.doNewEnemies()
 		this.doCollision()
 		this.cleanDeadEntities()

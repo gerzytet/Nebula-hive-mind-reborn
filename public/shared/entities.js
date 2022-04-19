@@ -612,9 +612,17 @@ export class Powerup extends Entity {
 	constructor(pos, size, type) {
 		super(pos, size)
 		this.type = type
-		this.dead = false
+		this.life = this.maxLife()
 
 		Powerup.assertValid(this)
+	}
+
+	maxLife() {
+		if (this.type == Powerup.FUEL) {
+			return 30 * 10
+		} else {
+			return 30 * 30
+		}
 	}
 
 	//double checks the properties of powerup (check if they are valid)
@@ -622,7 +630,7 @@ export class Powerup extends Entity {
 		Entity.assertValid(powerup)
 		Assert.instanceOf(powerup, Powerup)
 		Assert.number(powerup.type)
-		Assert.boolean(powerup.dead)
+		Assert.number(powerup.life)
 		Assert.true(powerup.type >= 0 && powerup.type <= Powerup.MAX_TYPE)
 	}
 
@@ -630,18 +638,22 @@ export class Powerup extends Entity {
 	serialize() {
 		return {
 			pos: this.pos.serialize(),
-			type: this.type
+			type: this.type,
+			life: this.life
 		}
 	}
 
 	//turn the data packet into a powerup
 	static deserialize(data) {
 		var powerup = new Powerup(SimpleVector.deserialize(data.pos), powerupSize, data.type)
+		powerup.life = data.life
 		Powerup.assertValid(powerup)
 		return powerup
 	}
 
-	tick() {}
+	tick() {
+		this.life--
+	}
 
 	static addRandomPowerup(state) {
 		var type = state.randint(0, Powerup.ATTACK)
@@ -653,11 +665,11 @@ export class Powerup extends Entity {
 	}
 
 	isDead() {
-		return (this.dead)
+		return this.life <= 0
 	}
 
 	kill() {
-		this.dead = true
+		this.life = 0
 	}
 
 	getActiveEffect() {
@@ -844,8 +856,8 @@ export class Enemy extends Entity {
 			}
 		}
 
-		//if there is at least one player, and that player is in the sight range if we are is testing mode
-		if (closestPlayer !== null && (isTesting() || closestPlayerDist < enemySightRange)) {
+		//if there is at least one player, and that player is in the sight range
+		if (closestPlayer !== null && closestPlayerDist < enemySightRange) {
 			var dx = closestPlayer.pos.x - this.pos.x
 			var dy = closestPlayer.pos.y - this.pos.y
 			var radians = Math.atan2(dy, dx) 
