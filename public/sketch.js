@@ -295,7 +295,7 @@ function doInput(player) {
 		ax = 1
 	}
 
-	if (keyIsDown(code('e')) || keyIsDown(code('E'))) {
+	if (keyIsDown(code('e')) || keyIsDown(code('E')) || mouseIsPressed) {
 		tryShoot()
 	}
 
@@ -816,12 +816,6 @@ function tryShoot() {
 		Ammo -= 1
 		socket.emit("shoot", {})
 		lastShootTime = millis()
-	}
-}
-
-function mouseClicked(){
-	if (gameStarted && isCanvasFocused()) {
-		tryShoot()
 	}
 }
 
