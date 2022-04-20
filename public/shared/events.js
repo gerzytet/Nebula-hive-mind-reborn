@@ -8,6 +8,7 @@
 //TODO Create change name event
 import {Assert, SimpleVector} from "./utilities.js"
 import {Player, playerBaseAcceleration, playerLaserVel} from "./entities.js"
+import {Message} from "./gamestate.js"
 
 
 //base class for all primary game events
@@ -41,6 +42,10 @@ export class GameEvent {
 				return PlayerChangeName.deserialize(data)
 			case "PlayerActivateAbility":
 				return PlayerActivateAbility.deserialize(data)
+			case "PlayerDash":
+				return PlayerDash.deserialize(data)
+			case "PlayerSendMessage":
+				return PlayerSendMessage.deserialize(data)
 			default:
 				throw new Error("Unknown event type: " + data.type)
 		}
@@ -378,5 +383,36 @@ export class PlayerActivateAbility extends GameEvent {
 	static assertValid(event) {
 		Assert.instanceOf(event, PlayerActivateAbility);
 		Assert.string(event.id);
+	}
+}
+
+export class PlayerSendMessage extends GameEvent {
+	constructor(message) {
+		super()
+		this.message = message
+		PlayerSendMessage.assertValid(this)
+	}
+
+	serialize() {
+		return {
+			message: this.message.serialize(),
+			type: "PlayerSendMessage"
+		}
+	}
+
+	static deserialize(data) {
+		var event = new PlayerSendMessage(Message.deserialize(data.message))
+		PlayerSendMessage.assertValid(event)
+		return event
+	}
+
+	static assertValid(event) {
+		Assert.instanceOf(event, PlayerSendMessage)
+		Message.assertValid(event.message)
+	}
+
+	apply(state) {
+		state.addMessage(this.message)
+		console.log(this.message.message)
 	}
 }

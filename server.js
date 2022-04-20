@@ -6,9 +6,9 @@
 */
 
 import {Assert, SimpleVector, Color, isTesting, setTesting, mapWidth, mapHeight} from './public/shared/utilities.js'
-import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName, PlayerActivateAbility} from './public/shared/events.js'
+import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName, PlayerActivateAbility, PlayerDash, PlayerSendMessage} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
-import {GameState} from './public/shared/gamestate.js'
+import {GameState, Message} from './public/shared/gamestate.js'
 import express from 'express'
 import {Server} from 'socket.io'
 
@@ -109,13 +109,21 @@ function newConnection(socket) {
     socket.on('changeName', changeName)
     socket.on('becomeServerCamera', becomeServerCamera)
     socket.on('activateAbility', activateAbility)
+    socket.on('dash', dash)
+    socket.on('chat', chat)
+
+    console.log(socket.handshake.query)
+    var ability = parseInt(socket.handshake.query.ability)
 
     //players are created!
-    var player = new Player(socket.id, new SimpleVector(
-        Math.floor(Math.random() * (isTesting() ? 400 : mapWidth)),
-        Math.floor(Math.random() * (isTesting() ? 400 : mapHeight))),
-        getUnusedColor(), "Player: " + (playercounter + 1),
-        Math.floor(Math.random() * (Player.MAX_ABILITY + 1))
+    var player = new Player(
+        socket.id, new SimpleVector(
+            Math.floor(Math.random() * (isTesting() ? 400 : mapWidth)),
+            Math.floor(Math.random() * (isTesting() ? 400 : mapHeight))
+        ),
+        getUnusedColor(),
+        "Player: " + (playercounter + 1),
+        ability
     )
 
     playercounter += 1
@@ -187,5 +195,26 @@ function newConnection(socket) {
         events.push(
             new PlayerActivateAbility(player.id)
         ) 
+    }
+
+    function dash(data) {
+        var player = state.playerById(socket.id)
+        if (player === null) {
+            return
+        }
+        events.push(
+            new PlayerDash(player.id)
+        ) 
+    }
+
+    function chat(data) {
+        var player = state.playerById(socket.id)
+        if (player === null) {
+            return
+        }
+
+        events.push(
+            new PlayerSendMessage(new Message(data.message, player.color))
+        )
     }
 }

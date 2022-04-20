@@ -58,7 +58,7 @@ export var state
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
-import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel} from './shared/entities.js'
+import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy} from './shared/entities.js'
 import { serverCameraDraw, isServerCamera, becomeServerCamera } from "./serverCamera.js"
 import { defaultLifespan } from "./shared/entities.js"
 //import {cuss} from 'cuss'
@@ -116,7 +116,7 @@ function preload() {
 }
 export var bg
 export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif
 
 p5.Image.prototype.resizeNN = function (w, h) {
   "use strict";
@@ -191,7 +191,7 @@ function imageWithResize(img, name, x, y, w, h) {
 }
 
 export var gameStarted = false
-function transitionToGame() {
+function transitionToGame(PlayerAbilityVal) {
 
 	const name = menuInput.value();
 	menuInput.remove()
@@ -208,12 +208,16 @@ function transitionToGame() {
 	chatButton.style("padding", "0px")
 	chatButton.style("margin", "0px")
 	chatButton.style("border", "0px")
-	chatButton.mouseClicked(sendToChat)
-	chatButtonImgElem = createImg("startButton.png", "Start")
-	chatButtonImgElem.size(startButton.width, startButton.height)
-	chatButtonImgElem.parent(startButton)
+	chatButton.mouseClicked(sendChat)
+	chatButtonImgElem = createImg("startbutton.png", "Start")
+	chatButtonImgElem.size(20, 20)
+	chatButtonImgElem.parent(chatButton)
 
-	socket = io.connect()
+	socket = io.connect({
+		query: {
+			ability: PlayerAbilityVal
+		}
+	})
 	camera = {
 		x: 0,
 		y: 0
@@ -256,7 +260,7 @@ function transitionToGame() {
 
 var initialName
 var input, button
-var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgE
+var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShot, Lazer, Summonor
 function setup() {
 	//console.log(cuss.fuck);
 	//THIS IS MENU SETUP
@@ -285,10 +289,38 @@ function setup() {
 	startButton.style("border", "0px")
 	startButton.style("background-color", "transparent")
 	startButton.style("image-rendering", "pixelated")
-	startButton.mouseClicked(transitionToGame)
+	startButton.mouseClicked(() => {transitionToGame(Math.floor(Math.random() * Player.MAX_ABILITY))})
 	startButtonImgElem = createImg("startbutton.png", "Start")
 	startButtonImgElem.size(startButton.width, startButton.height)
 	startButtonImgElem.parent(startButton)
+
+	/*doubleShot = createButton("")
+	doubleShot.size(menuInput.width, 70)
+	doubleShot.style("padding", "0px")
+	doubleShot.style("margin", "0px")
+	doubleShot.style("border", "0px")
+	doubleShot.style("background-color", "transparent")
+	doubleShot.style("image-rendering", "pixelated")
+	doubleShot.mouseClicked(() => {transitionToGame(Player.DOUBLE_SHOT)})
+	
+	Lazer = createButton("")
+	Lazer.size(menuInput.width, 70)
+	Lazer.style("padding", "0px")
+	Lazer.style("margin", "0px")
+	Lazer.style("border", "0px")
+	Lazer.style("background-color", "transparent")
+	Lazer.style("image-rendering", "pixelated")
+	Lazer.mouseClicked(() => {transitionToGame(Player.LASER)})
+
+	Summonor = createButton("")
+	Summonor.size(menuInput.width, 70)
+	Summonor.style("padding", "0px")
+	Summonor.style("margin", "0px")
+	Summonor.style("border", "0px")
+	Summonor.style("background-color", "transparent")
+	Summonor.style("image-rendering", "pixelated")
+	Summonor.mouseClicked(() => {transitionToGame(Player.NECROMANCER)})*/
+	
 }
 
 var Max_Ammo = 50;
@@ -300,8 +332,16 @@ function menuDraw() {
 
 	menuInput.center()
 	startButton.center()
+
+	//doubleShot.center()
+	//Lazer.center()
+	//Summonor.center()
 	
 	menuInput.position(menuInput.x, menuInput.y + (height / 4))
+	//doubleShot.position(doubleShot.x, doubleShot.y + (height / 4) + (doubleShot.height / 2) + (menuInput.height / 2))
+	//Lazer.position(Lazer.x, Lazer.y + (height / 4) + doubleShot.height + (Lazer.height / 2) + (menuInput.height / 2))
+	//Summonor.position(Summonor.x, Summonor.y + (height / 4) + Lazer.height + doubleShot.height + (Summonor.height / 2) + (menuInput.height / 2))
+
 	startButton.position(startButton.x, startButton.y + (height / 4) + (startButton.height / 2) + (menuInput.height / 2))
 }
 
@@ -314,6 +354,10 @@ function isCanvasFocused() {
 
 //handles user input
 function doInput(player) {
+	if (keyIsDown(13)) {
+		sendChat()
+	}
+
 	//if we are not focused on the canvas, like if we are entering a name
 	if (!isCanvasFocused()) {
 		return
@@ -345,8 +389,12 @@ function doInput(player) {
 		becomeServerCamera()
 	}
 
-	if (keyIsDown(code('p')) || keyIsDown(code('P'))) {
+	if (keyIsDown(code('r')) || keyIsDown(code('R'))) {
 		tryActivateAbility(player)
+	}
+
+	if (keyIsDown(code('q')) || keyIsDown(code('Q'))) {
+		tryDash(player)
 	}
 
 	//if press space teleport at the rotation and add to the posision 
@@ -553,13 +601,15 @@ function showCorpse(corpse) {
 	angleMode(DEGREES)
 	rotate(entity.angle)
 	imageMode(CENTER)
-	explosionGif.play()
-	image(explosionGif, 0, 0, entity.size*2, entity.size*2)
-	pop()
-	
-	if (corpse.life == defaultLifespan){
-		explosionSound.play()
+
+	var explosionImage
+	if (entity instanceof Enemy) {
+		explosionImage = explosionGif
+	} else {
+		explosionImage = rockexplosionGif
 	}
+	image(explosionImage, 0, 0, entity.size*2, entity.size*2)
+	pop()
 }
 
 var lastAngle;
@@ -621,6 +671,38 @@ var ToggleScore = true;
 
 function ui(player, state) {
 	push()
+	//Bottom
+
+	//background
+	push();
+	fill(0, 255, 255, 100);
+	stroke(0, 255, 255);
+	strokeWeight(5);
+	beginShape();
+	vertex((playerMaxHealth * 2) + 100, windowHeight - 110);
+	vertex((playerMaxHealth * 4) + 100, windowHeight - 110);
+	vertex((playerMaxHealth * 4) + 100, windowHeight - 80);
+	vertex((playerMaxHealth * 2) + 100, windowHeight - 80);
+	endShape(CLOSE);
+	pop()
+	
+	//Ability info
+	textAlign(CENTER, CENTER);
+	textSize(15);
+	fill(255);
+
+	text(`Ability ${player.abilityName()}`, (windowWidth / 2) - 20, windowHeight - 40)
+
+	//Ability bar
+	text("Charge:", (playerMaxHealth * 2) + 110, windowHeight - 20)
+	//max Ability bar (dark-grey)
+	fill(40);
+	rect(70, windowHeight - 100, playerMaxHealth * 2, 20);
+
+	//current Ability bar (yellow)
+	fill(255, 255, 0);
+	rect(70, windowHeight - 100, player.health * 2, 20);
+	
 	//Bottom left
 
 	//background
@@ -733,13 +815,29 @@ function ui(player, state) {
 	fill(255);
 	text("Chat", windowWidth - 68, windowHeight - 163);
 
+	for (var i = 0; i < state.messages.length; i++) {
+		var ysub = 140 - (i * 20)
+		var color = state.messages[i].color
+		fill(color.r, color.g, color.b)
+		text(state.messages[i].message, windowWidth - 340, windowHeight - ysub)
+	}
+	
+	
+	/*
+	fill(255, 0, 0)
+	text("Craig: I code fast", windowWidth - 340, windowHeight - 140)
+	fill(255, 140, 0)
+	text("Chris: Hi", windowWidth - 340, windowHeight - 120)
+	fill(0, 0, 255)
+	text("David: Im cool", windowWidth - 340, windowHeight - 100)
+	fill(0, 255, 0)
+	text("Pat: sounds", windowWidth - 340, windowHeight - 80)
+	*/
+	
 	//Chat input
 	if(ToggleChat == true){
-		chatInput.center()
-		chatButton.center()
-
-		chatInput.position(chatInput.x, chatInput.y + (height / 4))
-		chatButton.position(chatButton.x, chatButton.y + (height / 4) + (chatButton.height / 2) + (chatInput.height / 2))
+		chatInput.position(windowWidth - (chatInput.width + chatButton.width + 7), windowHeight - 38)
+		chatButton.position(windowWidth - (chatButton.width + 7), windowHeight - 38)
 	}else{
 		// make smaller and background 
 	}
@@ -761,13 +859,7 @@ function ui(player, state) {
 	//Player Team Chart
 	pieChart(100, state.players, 55, 55);
 
-	//Ability info
-	//TODO: replace this with something prettier
-	textAlign(CENTER, CENTER);
-	textSize(15);
-	fill(255);
-
-	text(`Ability ${player.abilityName()}, Duration: ${player.abilityDuration}, Cooldown: ${player.abilityCooldown}`, width / 2, height - 20)
+	
 
 	pop()
 }
@@ -865,13 +957,10 @@ function tryShoot() {
 		lastShootTime = millis()
 		
 		if ((Math.floor(Math.random() * 3)) == 0) {
-			console.log("0")
 			blasterSoundLow.play();
 		} else if ((Math.floor(Math.random() * 3)) == 1) {
-			console.log("1")
 			blasterSoundHigh.play();
 		} else {
-			console.log("2")
 			blasterSound.play();
 		}
 	}
@@ -881,6 +970,32 @@ function tryActivateAbility(player) {
 	if (player.canActivateAbility()) {
 		socket.emit("activateAbility", {})
 	}
+}
+
+var lastDashMillis = 0
+const dashCooldownMillis = 1000
+function tryDash(player) {
+	if (player.canDash() && (millis() - lastDashMillis) > dashCooldownMillis) {
+		console.log("sending dash")
+		socket.emit('dash', {})
+		lastDashMillis = millis()
+	}
+}
+
+function sendChat() {
+	var message = chatInput.value()
+	var player = state.playerById(socket.id)
+	if (player === null) {
+		return
+	}
+	if (message === "") {
+		return
+	}
+
+	chatInput.value("")
+	socket.emit("chat", {
+		message: player.name + ": " + message
+	})
 }
 
 //this is necessary because p5.js needs to see these functions in the global scope, which doesn't happen with a module

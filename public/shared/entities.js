@@ -10,8 +10,6 @@
 import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor, isTesting} from "./utilities.js"
 
 export const defaultLifespan = 25
-
-
 export class Entity {
 	constructor(pos, size, color=neutralColor) {
 		this.pos = pos
@@ -400,6 +398,26 @@ export class Player extends Entity {
 	canDash() {
 		return this.fuel > 0
 	}
+
+	dash() {
+		const dashDistance = 150
+		var radians = this.angle * (180 / Math.PI)
+
+		var unitVector = new SimpleVector(
+			Math.cos(radians),
+			Math.sin(radians) * -1
+		)
+
+		var dashVector = unitVector.clone()
+		dashVector.scale(dashDistance)
+		this.pos.add(dashVector)
+
+		var newVel = unitVector.clone()
+		newVel.scale(this.speed)
+		this.vel = newVel
+
+		this.fuel--
+	}
 }
 
 const bulletLifetimeTicks = 150
@@ -612,6 +630,10 @@ export class Asteroid extends Entity {
 
 	hasCorpse() {
 		return true
+	}
+
+	getCorpse() {
+		return new Corpse(this, 12)
 	}
 }
 

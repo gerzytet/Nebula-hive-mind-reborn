@@ -8,7 +8,7 @@
 //!DON'T USE MATH.RANDOM! USE OUR FUNCTIONS!
 //reference for mulberry32: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 
-import {Assert, neutralColor, connectionRadius} from "./utilities.js"
+import {Assert, neutralColor, connectionRadius, Color} from "./utilities.js"
 import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playerMaxHealth, Player, Corpse} from "./entities.js"
 
 //number of ticks it should take on average to fill the whole map with powerups, asteriods, enemies, if there is nothing there already
@@ -33,6 +33,7 @@ export class GameState {
 		this.powerups = []
 		this.enemies = []
 		this.corpses = []
+		this.messages = []
 		this.rng = mulberry32(0)
 		GameState.assertValid(this);
 	}
@@ -238,7 +239,8 @@ export class GameState {
 			projectiles: [],
 			asteroids: [],
 			powerups: [],
-			enemies: []
+			enemies: [],
+			messages: []
 		};
 		function serializeHelper(dataArray, stateArray) {
 			for (var i = 0; i < stateArray.length; i++) {
@@ -250,6 +252,7 @@ export class GameState {
 		serializeHelper(data.asteroids, this.asteroids)
 		serializeHelper(data.powerups, this.powerups)
 		serializeHelper(data.enemies, this.enemies)
+		serializeHelper(data.messages, this.messages)
 		return data;
 	}
 
@@ -265,6 +268,7 @@ export class GameState {
 		deserializeHelper(data.asteroids, state.asteroids, Asteroid)
 		deserializeHelper(data.powerups, state.powerups, Powerup)
 		deserializeHelper(data.enemies, state.enemies, Enemy)
+		deserializeHelper(data.messages, state.messages, Message)
 
 		GameState.assertValid(state);
 		return state;
@@ -284,6 +288,7 @@ export class GameState {
 		assertHelper(state.powerups, Powerup)
 		assertHelper(state.enemies, Enemy)
 		assertHelper(state.corpses, Corpse)
+		assertHelper(state.messages, Message)
 
 		Assert.function(state.rng)
 	}
@@ -303,5 +308,39 @@ export class GameState {
 	//seed the rng with a number
 	seed(seed) {
 		this.rng = mulberry32(seed);
+	}
+
+
+	addMessage(message) {
+		const maxMessages = 4
+		if (this.messages.length === maxMessages) {
+			this.messages.splice(0, 1)
+		}
+
+		this.messages.push(message)
+	}
+}
+
+export class Message {
+	constructor (message, color) {
+		this.message = message
+		this.color = color
+	}
+
+	serialize() {
+		return {
+			color: this.color.serialize(),
+			message: this.message
+		}
+	}
+
+	static deserialize(data) {
+		return new Message(data.message, Color.deserialize(data.color))
+	}
+
+	static assertValid(message) {
+		Assert.instanceOf(message, Message)
+		Color.assertValid(message.color)
+		Assert.string(message.message)
 	}
 }
