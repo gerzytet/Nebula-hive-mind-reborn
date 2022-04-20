@@ -17,14 +17,35 @@
             padding-top: 20px;
             background: #3e3e3e;
         }
+
+        .no-bar{
+            display: none;
+
+        }
     </style>
 
     <div id="sketch-container">
 
-
+    <!--Audio Stuff-->
+    <audio controls class="no-bar" >
+        <source src="library/blaster.mp3" type="audio/mpeg">
+        <source src="library/blaster_high_pitch.mp3" type="audio/mpeg">
+        <source src="library/blaster_low_pitch.mp3" type="audio/mpeg">
+        <source src="library/boost.mp3" type="audio/mpeg">
+        <source src="library/laser_sword.mp3" type="audio/mpeg">
+        <source src="library/powerup.mp3" type="audio/mpeg">
+        <source src="library/explosion.mp3" type="audio/mpeg">
+        <source src="library/sword-hit.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.4/howler.js"></script>
+    <script type="text/javascript" src="sketch.js"></script>
+    <script type="text/javascript" src="entity.js"></script>
+    <script type="text/javascript" src="sprite.js"></script>
+    <script type="text/javascript" src="sound.js"></script>
+    
     </div>
-
-
 
 </head>
 <body>

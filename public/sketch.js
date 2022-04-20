@@ -5,6 +5,51 @@
 @brief File that controls the graphics on the canvas
 */
 
+//howler crap
+
+var sounds = ['library/blaster.mp3', 'library/blaster_high_pitch.mp3', 'library/blaster_low_pitch.mp3', 'library/boost.mp3', 
+'library/laser_sword.mp3', 'library/powerup.mp3', 'library/explosion.mp3'];
+//'library/sword-hit.mp3'
+
+var blasterSound = new Howl({
+	src:[sounds[0]],
+	loop: false,
+	volume: 0.25
+});
+var blasterSoundHigh = new Howl({
+	src:[sounds[1]],
+	loop: false,
+	volume: 0.25
+});
+var blasterSoundLow = new Howl({
+	src:[sounds[2]],
+	loop: false,
+	volume: 0.25
+});
+var boostSound = new Howl({
+	src:[sounds[3]],
+	loop: false
+});
+var laserSwordSound = new Howl({
+	src:[sounds[4]],
+	loop: false
+});
+var powerupSound = new Howl({
+	src:[sounds[5]],
+	loop: false
+});
+//!Change this sound completely!!!!!
+var explosionSound = new Howl({
+	src:[sounds[6]],
+	loop: false,
+	volume: 0.025
+});
+var swordHitSound = new Howl({
+	src:[sounds[6]],
+	loop: false,
+	volume: 0.5
+});
+
 export var socket
 var cnv
 var camera
@@ -14,10 +59,10 @@ import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
 import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel} from './shared/entities.js'
-import {serverCameraDraw, isServerCamera, becomeServerCamera} from "./serverCamera.js"
+import { serverCameraDraw, isServerCamera, becomeServerCamera } from "./serverCamera.js"
+import { defaultLifespan } from "./shared/entities.js"
 //import {cuss} from 'cuss'
 
- 
 function windowResized() {
 	cnv = resizeCanvas(windowWidth - 20, windowHeight - 40)
 }
@@ -61,13 +106,17 @@ function preload() {
 	menuBackground = loadImage('menubackgroundbad.png', () => { }, () => {
 		console.log('failed to load menu background')
 	})
-	bangEffect = loadImage('bang_effect.png', () => {}, () => {
-		console.log("Failed to load bang effect")
+	explosionGif = loadImage('explosion_.gif', () => {}, () => {
+		console.log("Failed to load Explosion Gif")
 	})
+	rockexplosionGif = loadImage('Rock_explosion_.gif', () => { }, () => {
+		console.log("Failed to load Rock Explosion Gif")
+	})
+
 }
 export var bg
 export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, bangEffect
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif
 
 p5.Image.prototype.resizeNN = function (w, h) {
   "use strict";
@@ -149,7 +198,6 @@ function transitionToGame() {
 	startButtonImgElem.remove()
 	startButton.remove()
 
-	/*
 	chatInput = createInput()
 	chatInput.value('')
 	chatInput.attribute("placeholder", "Enter some text...")
@@ -160,11 +208,10 @@ function transitionToGame() {
 	chatButton.style("padding", "0px")
 	chatButton.style("margin", "0px")
 	chatButton.style("border", "0px")
-	chatButton.mouseClicked(transitionToGame)
-	chatButtonImgElem = createImg("startbuttonbad.png", "Start")
+	chatButton.mouseClicked(sendToChat)
+	chatButtonImgElem = createImg("startButton.png", "Start")
 	chatButtonImgElem.size(startButton.width, startButton.height)
 	chatButtonImgElem.parent(startButton)
-	*/
 
 	socket = io.connect()
 	camera = {
@@ -506,8 +553,13 @@ function showCorpse(corpse) {
 	angleMode(DEGREES)
 	rotate(entity.angle)
 	imageMode(CENTER)
-	image(bangEffect, 0, 0, entity.size*2, entity.size*2)
+	explosionGif.play()
+	image(explosionGif, 0, 0, entity.size*2, entity.size*2)
 	pop()
+	
+	if (corpse.life == defaultLifespan){
+		explosionSound.play()
+	}
 }
 
 var lastAngle;
@@ -683,11 +735,11 @@ function ui(player, state) {
 
 	//Chat input
 	if(ToggleChat == true){
-		//chatInput.center()
-		//chatButton.center()
+		chatInput.center()
+		chatButton.center()
 
-		//chatInput.position(chatInput.x, chatInput.y + (height / 4))
-		//chatButton.position(chatButton.x, chatButton.y + (height / 4) + (chatButton.height / 2) + (chatInput.height / 2))
+		chatInput.position(chatInput.x, chatInput.y + (height / 4))
+		chatButton.position(chatButton.x, chatButton.y + (height / 4) + (chatButton.height / 2) + (chatInput.height / 2))
 	}else{
 		// make smaller and background 
 	}
@@ -811,6 +863,17 @@ function tryShoot() {
 		Ammo -= 1
 		socket.emit("shoot", {})
 		lastShootTime = millis()
+		
+		if ((Math.floor(Math.random() * 3)) == 0) {
+			console.log("0")
+			blasterSoundLow.play();
+		} else if ((Math.floor(Math.random() * 3)) == 1) {
+			console.log("1")
+			blasterSoundHigh.play();
+		} else {
+			console.log("2")
+			blasterSound.play();
+		}
 	}
 }
 

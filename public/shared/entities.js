@@ -9,35 +9,9 @@
 
 import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor, isTesting} from "./utilities.js"
 
+export const defaultLifespan = 25
 
-export class Boom {
-	constructor(pos, size, color=neutralColor) {
-		this.pos = pos
-		this.color = color
-		this.lifecounter = 0
-		this.size = lifecounter + 1
-		this.maxLifetime = size
-		Boom.assertValid(this)
-	}
 
-	assertValid(boom) {
-		//assert stuff 
-    }
-
-	draw() {
-		this.size = lifecounter + 1
-		push()
-		fill(this.color.r * 0.5, this.color.g * 0.5, this.color.b * 0.5)
-		circle(this.pos.x, this.pos.y, this.size)
-		fill(this.color.r, this.color.g, this.color.b)
-		circle(this.pos.x, this.pos.y, this.size * 0.8)
-		pop()
-		this.lifecounter += 2
-		if (this.lifecounter > this.maxLifetime) {
-			//die
-        }
-    }
-}
 export class Entity {
 	constructor(pos, size, color=neutralColor) {
 		this.pos = pos
@@ -109,7 +83,6 @@ export class Entity {
 	}
 
 	getCorpse() {
-		const defaultLifespan = 25
 		return new Corpse(this, defaultLifespan)
 	}
 
