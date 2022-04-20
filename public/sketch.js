@@ -112,11 +112,14 @@ function preload() {
 	rockexplosionGif = loadImage('Rock_explosion_.gif', () => { }, () => {
 		console.log("Failed to load Rock Explosion Gif")
 	})
+	dog = loadFont('dogicapixel.otf', () => { }, () => {
+		console.log("Failed to load Dogica Pixel Font")
+	})
 
 }
 export var bg
 export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif, dog
 
 p5.Image.prototype.resizeNN = function (w, h) {
   "use strict";
@@ -201,16 +204,16 @@ function transitionToGame(PlayerAbilityVal) {
 	chatInput = createInput()
 	chatInput.value('')
 	chatInput.attribute("placeholder", "Enter some text...")
-	chatInput.size(300, 20)
+	chatInput.size(290, 20)
 
 	chatButton = createButton("")
-	chatButton.size(20, 20)
+	chatButton.size(chatInput.height, chatInput.height)
 	chatButton.style("padding", "0px")
 	chatButton.style("margin", "0px")
 	chatButton.style("border", "0px")
 	chatButton.mouseClicked(sendChat)
-	chatButtonImgElem = createImg("startbutton.png", "Start")
-	chatButtonImgElem.size(20, 20)
+	chatButtonImgElem = createImg("chatbutton.png", "Chat")
+	chatButtonImgElem.size(chatInput.height, chatInput.height)
 	chatButtonImgElem.parent(chatButton)
 
 	socket = io.connect({
@@ -273,6 +276,7 @@ function setup() {
 
 	textAlign(CENTER);
 	textSize(50);
+	textFont(dog);
 
 	menuInput = createInput()
 	var namePreference = getItem("namePreference")
@@ -477,6 +481,7 @@ function showPlayer(player) {
 		//draw name tag below player above health bar
 		textAlign(CENTER);
 		textSize(12);
+		textFont(dog);
 		fill(255);
 		text(player.name, player.pos.x - camera.x, player.pos.y - camera.y + 25);
 
@@ -694,20 +699,21 @@ function ui(player, state) {
 	
 	//Ability info
 	textSize(15);
+	textFont(dog);
 	fill(255);
 
 	text(`Ability: ${player.abilityName()}`, (playerMaxHealth * 2) + 240, windowHeight - 75)
 
 	//Ability bar
-	text("Charge:", (playerMaxHealth * 2) + 130, windowHeight - 53)
+	text("Charge:", (playerMaxHealth * 2) + 138, windowHeight - 53)
 	//max Ability bar (dark-grey)
 	fill(40);
-	rect((playerMaxHealth * 2) + 160, windowHeight - 67, playerMaxHealth * 2, 20);
+	rect((playerMaxHealth * 2) + 180, windowHeight - 67, playerMaxHealth * 2, 20);
 
 	//current Ability bar (yellow if in use, blue if charging)
 	if (player.isAbilityActive()) {
 		fill(255, 255, 0);
-		rect((playerMaxHealth * 2) + 160, windowHeight - 67, playerMaxHealth * 2 * (player.abilityDuration / player.maxDuration()), 20);
+		rect((playerMaxHealth * 2) + 180, windowHeight - 67, playerMaxHealth * 2 * (player.abilityDuration / player.maxDuration()), 20);
     }
 	if (player.abilityDuration == 0) {
 		/*
@@ -716,8 +722,8 @@ function ui(player, state) {
 		} else {
 			fill(0, 0, 255);
         }*/
-		fill(0, 0, 0);
-		rect((playerMaxHealth * 2) + 160, windowHeight - 67, playerMaxHealth * 2 * ((player.maxCooldown()-player.abilityCooldown) / player.maxCooldown()), 20);
+		fill(((player.maxCooldown() - player.abilityCooldown) / player.maxCooldown()) * 255, ((player.maxCooldown() - player.abilityCooldown) / player.maxCooldown()) * 255, (player.abilityCooldown / player.maxCooldown()) * 255);
+		rect((playerMaxHealth * 2) + 180, windowHeight - 67, playerMaxHealth * 2 * ((player.maxCooldown()-player.abilityCooldown) / player.maxCooldown()), 20);
 	}
 	//Bottom left
 
@@ -739,6 +745,7 @@ function ui(player, state) {
 		//"HP:" text
 		textAlign(LEFT, TOP);
 		textSize(15);
+		textFont(dog);
 		fill(255);
 		text("HP:", 5, windowHeight - 97);
 
@@ -754,8 +761,9 @@ function ui(player, state) {
 		//"Dashes:" text
 		textAlign(LEFT, TOP);
 		textSize(15);
+		textFont(dog);
 		fill(255);
-		text("Dashes:", 5, windowHeight - 77);
+		text("Dash:", 5, windowHeight - 77);
 		
 		//max Dash bar (dark-grey)
 		fill(40);
@@ -773,8 +781,9 @@ function ui(player, state) {
 		//"Ammo:" text
 		textAlign(LEFT, TOP);
 		textSize(15);
+		textFont(dog);
 		fill(255);
-		text("Ammo:", 5, windowHeight - 57);
+		text("Ammo:", 4, windowHeight - 57);
 
 		//max Ammo bar (dark-grey)
 		fill(40);
@@ -831,8 +840,9 @@ function ui(player, state) {
 	stroke(255);
 	strokeWeight(2);
 	textSize(16);
+	textFont(dog);
 	fill(255);
-	text("Chat", windowWidth - 68, windowHeight - 163);
+	text("Chat", windowWidth - 77, windowHeight - 163);
 
 	for (var i = 0; i < state.messages.length; i++) {
 		var ysub = 140 - (i * 20)
@@ -855,8 +865,8 @@ function ui(player, state) {
 	
 	//Chat input
 	if(ToggleChat == true){
-		chatInput.position(windowWidth - (chatInput.width + chatButton.width + 7), windowHeight - 38)
-		chatButton.position(windowWidth - (chatButton.width + 7), windowHeight - 38)
+		chatInput.position(windowWidth - (chatInput.width + chatButton.width + 14), windowHeight - 38)
+		chatButton.position(windowWidth - (chatButton.width + 14), windowHeight - 39)
 	}else{
 		// make smaller and background 
 	}

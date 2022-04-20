@@ -349,10 +349,9 @@ export class Player extends Entity {
 		this.abilityDuration = this.maxDuration(this.ability)
 
 		if (this.ability === Player.NECROMANCER) {
-			state.enemies.push(new Enemy(
-				this.pos.clone(),
-				this.color
-			))
+			let enemy = new Enemy(this.pos.clone(), this.color)
+			enemy.angle = -1*this.angle
+			state.enemies.push(enemy)
 		}
 	}
 
