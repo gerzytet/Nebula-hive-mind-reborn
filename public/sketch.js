@@ -58,7 +58,7 @@ export var state
 import {GameState} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
-import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy} from './shared/entities.js'
+import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage} from './shared/entities.js'
 import { serverCameraDraw, isServerCamera, becomeServerCamera } from "./serverCamera.js"
 import { defaultLifespan } from "./shared/entities.js"
 //import {cuss} from 'cuss'
@@ -468,7 +468,7 @@ function showPlayer(player) {
 		push()
 		angleMode(DEGREES)
 		translate(player.pos.x - camera.x, player.pos.y - camera.y)
-		rotate(-player.angle + 90)
+		rotate(-player.angle)
 		tint(player.color.r, player.color.g, player.color.b)
 		imageMode(CENTER)
 		image(pship, 0, 0, player.size * 2, player.size * 2);
@@ -605,6 +605,12 @@ function showCorpse(corpse) {
 	var explosionImage
 	if (entity instanceof Enemy) {
 		explosionImage = explosionGif
+	} else if (entity instanceof PlayerAfterImage) {
+		var color = entity.color
+		tint(color.r, color.g, color.b, 128 * (corpse.life / 30))
+		image(pship, 0, 0, entity.size*2, entity.size*2)
+		pop()
+		return
 	} else {
 		explosionImage = rockexplosionGif
 	}
@@ -687,11 +693,11 @@ function ui(player, state) {
 	pop()
 	
 	//Ability info
-	textAlign(CENTER, CENTER);
+	
 	textSize(15);
 	fill(255);
 
-	text(`Ability ${player.abilityName()}`, (windowWidth / 2) - 20, windowHeight - 40)
+	text(`Ability ${player.abilityName()}`, (windowWidth / 2) - 100, windowHeight - 40)
 
 	//Ability bar
 	text("Charge:", (playerMaxHealth * 2) + 110, windowHeight - 20)
