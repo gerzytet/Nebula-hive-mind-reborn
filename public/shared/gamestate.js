@@ -49,11 +49,6 @@ export class GameState {
 		return null
 	}
 
-	killPlayer(player, damageColor) {
-		player.color = damageColor
-		player.health = playerMaxHealth
-	}
-
 	//calls collision function if two enemies collide
 	doCollision() {
 		function collisionHelper(array1, array2, onCollision, checkColor=true) {
@@ -164,6 +159,13 @@ export class GameState {
 		cleanHelper(this.powerups)
 		cleanHelper(this.asteroids)
 		cleanHelper(this.corpses)
+
+		for (var i = 0; i < this.players.length; i++) {
+			if (this.players[i].isPermanentlyDead(this)) {
+				this.players.splice(i, 1)
+				i--
+			}
+		}
 	}
 
 	doNewAsteroids() {
@@ -237,9 +239,11 @@ export class GameState {
 		} else if (this.bossPhase) {
 			if (!this.bossExists()) {
 				this.bossPhase = false
+				console.log("boss over")
 				callbacks.onGameOver(true)
 			} else if (this.players.length === 0) {
 				this.bossPhase = false
+				console.log("boss over")
 				callbacks.onGameOver(false)
 			}
 		}

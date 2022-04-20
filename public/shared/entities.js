@@ -204,6 +204,10 @@ export class Player extends Entity {
 		return this.health <= 0
 	}
 
+	isPermanentlyDead(state) {
+		return this.isDead() && state.bossPhase
+	}
+
 	damage(amount, color, state) {
 		this.health -= amount
 		if (this.isDead()) {

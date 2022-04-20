@@ -145,11 +145,13 @@ class ClientCallbacks extends Callbacks {
 		if (player.id !== socket.id) {
 			return
 		}
-		socket.disconnect()
 		transitionToState(STATE_DIED)
 	}
 
 	onGameOver(win) {
+		if (gameState === STATE_MENU) {
+			return
+		}
 		if (win) {
 			transitionToState(STATE_WIN)
 		} else {
@@ -176,6 +178,7 @@ function transitionToState(newGameState, ...args) {
 			throw new Error("Unknown state")
 	}
 
+	gameState =  newGameState
 	switch (newGameState) {
 		case STATE_MENU:
 			createMenu()
@@ -191,8 +194,6 @@ function transitionToState(newGameState, ...args) {
 		default:
 			throw new Error("Unknown state")
 	}
-
-	gameState =  newGameState
 }
 
 
@@ -282,8 +283,6 @@ function createGame(PlayerAbilityVal) {
 	chatButtonImgElem.size(chatInput.height, chatInput.height)
 	chatButtonImgElem.parent(chatButton)
 
-	setCallbacks(new ClientCallbacks())
-
 	camera = {
 		x: 0,
 		y: 0
@@ -370,6 +369,14 @@ function menuDraw() {
 	//Summonor.position(Summonor.x, Summonor.y + (height / 4) + Lazer.height + doubleShot.height + (Summonor.height / 2) + (menuInput.height / 2))
 
 	startButton.position(startButton.x, startButton.y + (height / 4) + (startButton.height / 2) + (menuInput.height / 2))
+	if (state) {
+		if (state.bossPhase && menuButtonEnabled) {
+			disableMenuButton()
+		}
+		if (!state.bossPhase && !menuButtonEnabled) {
+			enableMenuButton()
+		}
+	}
 }
 
 function createMenu() {
@@ -392,10 +399,7 @@ function createMenu() {
 	startButton.style("border", "0px")
 	startButton.style("background-color", "transparent")
 	startButton.style("image-rendering", "pixelated")
-	startButton.mouseClicked(() => {transitionToState(STATE_RUNNING, Math.floor(Math.random() * Player.MAX_ABILITY))})
-	startButtonImgElem = createImg("startbutton.png", "Start")
-	startButtonImgElem.size(startButton.width, startButton.height)
-	startButtonImgElem.parent(startButton)
+	disableMenuButton()
 
 	socket = io.connect()
 
@@ -423,21 +427,56 @@ function createMenu() {
 
 }
 
+var menuButtonEnabled = false
+function enableMenuButton() {
+	startButton.mouseClicked(() => {transitionToState(STATE_RUNNING, Math.floor(Math.random() * (Player.MAX_ABILITY + 1)))})
+
+	if (startButtonImgElem) {
+		startButtonImgElem.remove()
+	}
+	startButtonImgElem = createImg("startbutton.png", "Start")
+	startButtonImgElem.size(startButton.width, startButton.height)
+	startButtonImgElem.parent(startButton)
+	menuButtonEnabled = true
+}
+
+function disableMenuButton() {
+	startButton.mouseClicked(() => {})
+
+	if (startButtonImgElem) {
+		startButtonImgElem.remove()
+	}
+	startButtonImgElem = createImg("waitingbutton.png", "waiting")
+	startButtonImgElem.size(startButton.width, startButton.height)
+	startButtonImgElem.parent(startButton)
+	menuButtonEnabled = false
+}
+
+
 function setup() {
 	cnv = createCanvas(0, 0);
 	cnv.parent("sketch-container")
 	windowResized()
 	background(0)
 
+	setCallbacks(new ClientCallbacks())
 	gameState = STATE_MENU
 	createMenu()
 }
 
 function createGameoverScreen() {
-	backToMenuButton = createButton("back to main menu")
-	backToMenuButton.mouseClicked(() => {
-		transitionToState(STATE_MENU)
-	})
+	var buttonText, buttonAction
+	if (gameState === STATE_DIED) {
+		buttonText = "waiting for boss fight"
+		buttonAction = () => {}
+	} else {
+		buttonText = "back to main menu"
+		buttonAction = () => {transitionToState(STATE_MENU)}
+		socket.disconnect()
+	}
+
+	backToMenuButton = createButton(buttonText)
+	backToMenuButton.mouseClicked(buttonAction)
 }
 
 function drawGameoverScreen() {
@@ -448,13 +487,13 @@ function drawGameoverScreen() {
 	var message
 	switch (gameState) {
 		case STATE_DIED:
-			message = "u ded"
+			message = "you are dead"
 			break
 		case STATE_LOSE:
-			message = "boss wun"
+			message = "the boss won"
 			break
 		case STATE_WIN:
-			message = "u wun"
+			message = "you won"
 			break
 	}
 	text(message, 100, 100)
@@ -463,10 +502,7 @@ function drawGameoverScreen() {
 
 function deleteGameoverScreen() {
 	backToMenuButton.remove()
-	socket.disconnect()
 }
-
-
 
 function isCanvasFocused() {
 	return document.activeElement.tagName === "BODY"
@@ -1132,3 +1168,5 @@ window.preload = preload
 window.setup = setup
 window.windowResized = windowResized
 window.becomeServerCamera = becomeServerCamera
+window.enableMenuButton = enableMenuButton
+window.disableMenuButton = disableMenuButton
