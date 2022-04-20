@@ -316,10 +316,12 @@ export class Player extends Entity {
 			this.abilityDuration = 0
 		}
 
-		if (isTesting()) {
-			this.abilityCooldown -= 5
-		} else {
-			this.abilityCooldown--
+		if (!this.isAbilityActive()) {
+			if (isTesting()) {
+				this.abilityCooldown -= 5
+			} else {
+				this.abilityCooldown--
+			}
 		}
 		if (this.abilityCooldown < 0) {
 			this.abilityCooldown = 0

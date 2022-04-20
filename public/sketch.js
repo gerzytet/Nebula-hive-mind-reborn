@@ -679,30 +679,40 @@ function ui(player, state) {
 	stroke(0, 255, 255);
 	strokeWeight(5);
 	beginShape();
-	vertex((playerMaxHealth * 2) + 100, windowHeight - 110);
-	vertex((playerMaxHealth * 4) + 100, windowHeight - 110);
-	vertex((playerMaxHealth * 4) + 100, windowHeight - 80);
-	vertex((playerMaxHealth * 2) + 100, windowHeight - 80);
+	vertex((playerMaxHealth * 2) + 100, windowHeight + 10);
+	vertex((playerMaxHealth * 4) + 300, windowHeight + 10);
+	vertex((playerMaxHealth * 4) + 200, windowHeight - 100);
+	vertex((playerMaxHealth * 2) + 85, windowHeight - 95);
 	endShape(CLOSE);
 	pop()
 	
 	//Ability info
-	textAlign(CENTER, CENTER);
 	textSize(15);
 	fill(255);
 
-	text(`Ability ${player.abilityName()}`, (windowWidth / 2) - 20, windowHeight - 40)
+	text(`Ability: ${player.abilityName()}`, (playerMaxHealth * 2) + 240, windowHeight - 75)
 
 	//Ability bar
-	text("Charge:", (playerMaxHealth * 2) + 110, windowHeight - 20)
+	text("Charge:", (playerMaxHealth * 2) + 130, windowHeight - 53)
 	//max Ability bar (dark-grey)
 	fill(40);
-	rect(70, windowHeight - 100, playerMaxHealth * 2, 20);
+	rect((playerMaxHealth * 2) + 160, windowHeight - 67, playerMaxHealth * 2, 20);
 
-	//current Ability bar (yellow)
-	fill(255, 255, 0);
-	rect(70, windowHeight - 100, player.health * 2, 20);
-	
+	//current Ability bar (yellow if in use, blue if charging)
+	if (player.isAbilityActive()) {
+		fill(255, 255, 0);
+		rect((playerMaxHealth * 2) + 160, windowHeight - 67, playerMaxHealth * 2 * (player.abilityDuration / player.maxDuration()), 20);
+    }
+	if (player.abilityDuration == 0) {
+		/*
+		if (player.abilityCooldown == 0) {
+			fill(255, 255, 0);
+		} else {
+			fill(0, 0, 255);
+        }*/
+		fill(0, 0, 0);
+		rect((playerMaxHealth * 2) + 160, windowHeight - 67, playerMaxHealth * 2 * ((player.maxCooldown()-player.abilityCooldown) / player.maxCooldown()), 20);
+	}
 	//Bottom left
 
 	//background
@@ -811,6 +821,9 @@ function ui(player, state) {
 	pop()
 
 	//Chat output
+	push()
+	stroke(255);
+	strokeWeight(2);
 	textSize(16);
 	fill(255);
 	text("Chat", windowWidth - 68, windowHeight - 163);
@@ -821,7 +834,7 @@ function ui(player, state) {
 		fill(color.r, color.g, color.b)
 		text(state.messages[i].message, windowWidth - 340, windowHeight - ysub)
 	}
-	
+	pop()	
 	
 	/*
 	fill(255, 0, 0)
@@ -857,8 +870,11 @@ function ui(player, state) {
 	pop()
 
 	//Player Team Chart
+	push()
+	stroke(255);
+	strokeWeight(2);
 	pieChart(100, state.players, 55, 55);
-
+	pop()
 	
 
 	pop()
