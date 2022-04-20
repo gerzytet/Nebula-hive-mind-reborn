@@ -411,7 +411,6 @@ function createMenu() {
 	socket.on('tick', function (data) {
 		var eventsSerialized = data.events
 		if (data.events) {
-			console.log(eventsSerialized)
 		}
 		var seed = data.seed
 

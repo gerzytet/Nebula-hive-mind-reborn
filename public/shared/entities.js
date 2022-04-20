@@ -1009,7 +1009,7 @@ export class PlayerAfterImage {
 	}
 }
 
-const bossProjectileDamage = 10
+const bossProjectileDamage = 100
 export const bossMaxHealth = 50
 const bossSize = 200
 const bossSpeed = 5
@@ -1030,7 +1030,8 @@ export class Boss extends Entity {
 			vel: this.vel,
 			health: this.health,
 			angle: this.angle,
-			color: this.color.serialize()
+			color: this.color.serialize(),
+			isBoss: true
 		}
 	}
 
@@ -1046,6 +1047,7 @@ export class Boss extends Entity {
 
 	static assertValid(boss) {
 		Entity.assertValid(boss)
+		Assert.instanceOf(boss, Boss)
 		Assert.number(boss.health)
 		Assert.true(boss.health >= 0 && boss.health <= bossMaxHealth)
 	}
@@ -1088,14 +1090,6 @@ export class Boss extends Entity {
 				)
 			)
 		}
-	}
-
-	static addRandomBoss(state) {
-		var pos = new SimpleVector(
-			state.randint(bossSize, mapWidth - bossSize),
-			state.randint(bossSize, mapHeight - bossSize)
-		)
-		state.enemies.push(new Boss(pos))
 	}
 
 	tick(state) {

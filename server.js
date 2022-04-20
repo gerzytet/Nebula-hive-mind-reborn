@@ -40,11 +40,11 @@ const timeoutMillis = 10000;
 
 class ServerCallbacks extends Callbacks {
     onKillDuringBoss(player) {
-        
+
     }
 
     onGameOver(win) {
-        state = new GameState()
+
     }
 }
 

@@ -26,7 +26,7 @@ function mulberry32(a) {
 
 //holds everything in the game
 export class GameState {
-	constructor() {
+	reset() {
 		this.players = []
 		this.projectiles = []
 		this.asteroids = []
@@ -36,6 +36,10 @@ export class GameState {
 		this.messages = []
 		this.rng = mulberry32(0)
 		this.bossPhase = false
+	}
+
+	constructor() {
+		this.reset()
 		GameState.assertValid(this);
 	}
 
@@ -241,10 +245,12 @@ export class GameState {
 				this.bossPhase = false
 				console.log("boss over")
 				callbacks.onGameOver(true)
+				this.reset()
 			} else if (this.players.length === 0) {
 				this.bossPhase = false
 				console.log("boss over")
 				callbacks.onGameOver(false)
+				this.reset()
 			}
 		}
 	}
@@ -313,9 +319,17 @@ export class GameState {
 		deserializeHelper(data.projectiles, state.projectiles, Projectile)
 		deserializeHelper(data.asteroids, state.asteroids, Asteroid)
 		deserializeHelper(data.powerups, state.powerups, Powerup)
-		deserializeHelper(data.enemies, state.enemies, Enemy)
 		deserializeHelper(data.messages, state.messages, Message)
-		this.bossPhase = data.bossPhase
+		state.bossPhase = data.bossPhase
+		for (var i = 0; i < data.enemies.length; i++) {
+			var d = data.enemies[i]
+			if (d.isBoss) {
+				state.enemies.push(Boss.deserialize(d))
+			} else {
+				state.enemies.push(Enemy.deserialize(d))
+			}
+		}
+
 		GameState.assertValid(state);
 		return state;
 	}
