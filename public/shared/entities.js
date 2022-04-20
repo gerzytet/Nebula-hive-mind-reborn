@@ -352,6 +352,11 @@ export class Player extends Entity {
 			let enemy = new Enemy(this.pos.clone(), this.color)
 			enemy.angle = -1*this.angle
 			state.enemies.push(enemy)
+			state.enemies.push(new Enemy(
+				this.pos.clone(),
+				this.color
+			))
+			
 		}
 	}
 
@@ -1002,7 +1007,7 @@ export class PlayerAfterImage {
 
 const bossProjectileDamage = 10
 export const bossMaxHealth = 50
-const bossSize = 20
+const bossSize = 200
 const bossSpeed = 5
 const bossBaseAcceleration = 0.01
 const bossShootChancePerTick = 0.02
