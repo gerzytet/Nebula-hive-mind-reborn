@@ -57,7 +57,7 @@ export class Entity {
 	isColliding(other) {
 		var maxDist = other.size + this.size
 		var dist = this.pos.dist(other.pos)
-		return (dist < maxDist)
+		return dist < maxDist
 	}
 
 	push(other, strength) {
@@ -86,6 +86,10 @@ export class Entity {
 
 	hasCorpse() {
 		return false
+	}
+
+	getHitboxes() {
+		return [this]
 	}
 }
 
@@ -119,7 +123,7 @@ export class Player extends Entity {
 		this.abilityCooldown = 0
 		this.abilityDuration = 0
 		this.name = name;
-		this.fuel = 0
+		this.fuel = 3
 		Player.assertValid(this);
 	}
 
@@ -401,18 +405,25 @@ export class Player extends Entity {
 		return this.fuel > 0
 	}
 
-	dash() {
+	dash(state) {
 		const dashDistance = 150
-		var radians = this.angle * (180 / Math.PI)
+		var radians = this.angle * (Math.PI / 180)
 
 		var unitVector = new SimpleVector(
 			Math.cos(radians),
-			Math.sin(radians) * -1
+			-Math.sin(radians)
 		)
 
-		var dashVector = unitVector.clone()
-		dashVector.scale(dashDistance)
-		this.pos.add(dashVector)
+		var quarterDashVector = unitVector.clone()
+		quarterDashVector.scale(dashDistance / 4)
+
+		for (var i = 0; i < 4; i++) {
+			this.pos.add(quarterDashVector)
+			state.corpses.push(new Corpse(
+				new PlayerAfterImage(this),
+				30
+			))
+		}
 
 		var newVel = unitVector.clone()
 		newVel.scale(this.speed)
@@ -937,7 +948,6 @@ export class Corpse {
 
 	static assertValid(corpse) {
 		Assert.instanceOf(corpse, Corpse)
-		Entity.assertValid(corpse.entity)
 	}
 
 	tick() {
@@ -950,6 +960,44 @@ export class Corpse {
 
 	hasCorpse() {
 		return false
+	}
+}
+
+class Hitbox {
+	constructor(pos, size) {
+		this.pos = pos
+		this.size = size
+	}
+
+	static assertValid(hitbox) {
+		Assert.instanceOf(hitbox, Hitbox)
+		SimpleVector.assertValid(hitbox.pos)
+		Assert.number(hitbox.size)
+	}
+
+	isColliding(other) {
+		var maxDist = other.size + this.size
+		var dist = this.pos.dist(other.pos)
+		return dist < maxDist
+	}
+}
+
+export class PlayerAfterImage {
+	constructor(player) {
+		this.pos = player.pos.clone()
+		this.color = player.color
+		this.angle = player.angle
+		this.size = player.size
+
+		PlayerAfterImage.assertValid(this)
+	}
+
+	static assertValid(image) {
+		Assert.instanceOf(image, PlayerAfterImage)
+		SimpleVector.assertValid(image.pos)
+		Color.assertValid(image.color)
+		Assert.number(image.angle)
+		Assert.number(image.size)
 	}
 }
 
