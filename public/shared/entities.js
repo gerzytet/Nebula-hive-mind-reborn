@@ -8,6 +8,7 @@
 //TODO Implement Name Change
 
 import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor, isTesting} from "./utilities.js"
+import {callbacks} from "./gamestate.js"
 
 export const defaultLifespan = 25
 export class Entity {
@@ -213,6 +214,10 @@ export class Player extends Entity {
 	
 	kill(color, state) {
 		var colors = [];
+		if (state.bossPhase) {
+			callbacks.onKillDuringBoss(this)
+			return
+		}
 		if (color.r === 255 && color.g === 255 && color.b === 255) {
 			for (var i = 0; i < state.players.length; i++) {
 				colors.push(state.players[i].color)
@@ -351,12 +356,7 @@ export class Player extends Entity {
 		if (this.ability === Player.NECROMANCER) {
 			let enemy = new Enemy(this.pos.clone(), this.color)
 			enemy.angle = -1*this.angle
-			state.enemies.push(enemy)
-			state.enemies.push(new Enemy(
-				this.pos.clone(),
-				this.color
-			))
-			
+			state.enemies.push(enemy)			
 		}
 	}
 

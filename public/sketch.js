@@ -50,17 +50,11 @@ var swordHitSound = new Howl({
 	volume: 0.5
 });
 
-export var socket
-var cnv
-var camera
-export var state
-
-import {GameState} from './shared/gamestate.js'
+import {Callbacks, GameState, setCallbacks} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
 import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage} from './shared/entities.js'
 import { serverCameraDraw, isServerCamera, becomeServerCamera } from "./serverCamera.js"
-import { defaultLifespan } from "./shared/entities.js"
 //import {cuss} from 'cuss'
 
 function windowResized() {
@@ -77,13 +71,13 @@ function preload() {
 	eship = loadImage('Ship_1.png', () => { }, () => {
 		console.log("failed to load enemy ship");
 	});
-	asteroid_full = loadImage('Asteroid_Full.png', () => { }, () => {
+	asteroidFull = loadImage('Asteroid_Full.png', () => { }, () => {
 		console.log("failed to load asteroid full");
 	});
-	asteroid_medium = loadImage('Asteroid_Medium.png', () => { }, () => {
+	asteroidMedium = loadImage('Asteroid_Medium.png', () => { }, () => {
 		console.log("failed to load asteroid medium");
 	});
-	asteroid_low = loadImage('Asteroid_Low.png', () => { }, () => {
+	asteroidLow = loadImage('Asteroid_Low.png', () => { }, () => {
 		console.log("failed to load asteroid low");
 	});
 
@@ -118,8 +112,89 @@ function preload() {
 
 }
 export var bg
-export var pship, eship, asteroid_full, asteroid_medium, asteroid_low
+export var pship, eship, asteroidFull, asteroidMedium, asteroidLow
 var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif, dog
+export var socket
+var cnv
+var camera
+export var state
+var resizeCache = {}
+var initialName
+var input, button
+var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShot, Lazer, Summonor, backToMenuButton
+var maxAmmo = 50;
+var ammo = maxAmmo
+var lastax
+var lastay
+var lastAngle
+
+
+//game still running
+export const STATE_RUNNING = 0
+//boss battle win
+export const STATE_WIN = 1
+//boss battle lose
+export const STATE_LOSE = 2
+//died.  boss battle result inconclusive
+export const STATE_DIED = 3
+//menu
+export const STATE_MENU = 4
+
+class ClientCallbacks extends Callbacks {
+	onKillDuringBoss(player) {
+		if (player.id !== socket.id) {
+			return
+		}
+		socket.disconnect()
+		transitionToState(STATE_DIED)
+	}
+
+	onGameOver(win) {
+		if (win) {
+			transitionToState(STATE_WIN)
+		} else {
+			transitionToState(STATE_LOSE)
+		}
+	}
+}
+
+export var gameState
+function transitionToState(newGameState, ...args) {
+	switch (gameState) {
+		case STATE_MENU:
+			deleteMenu()
+			break
+		case STATE_RUNNING:
+			deleteGame()
+			break
+		case STATE_DIED:
+		case STATE_LOSE:
+		case STATE_WIN:
+			deleteGameoverScreen()
+			break
+		default:
+			throw new Error("Unknown state")
+	}
+
+	switch (newGameState) {
+		case STATE_MENU:
+			createMenu()
+			break
+		case STATE_RUNNING:
+			createGame(...args)
+			break
+		case STATE_DIED:
+		case STATE_LOSE:
+		case STATE_WIN:
+			createGameoverScreen()
+			break
+		default:
+			throw new Error("Unknown state")
+	}
+
+	gameState =  newGameState
+}
+
 
 p5.Image.prototype.resizeNN = function (w, h) {
   "use strict";
@@ -173,8 +248,6 @@ function cloneImage(img) {
 	return newImg
 }
 
-var resizeCache = {}
-
 //name: name of the image.  Should be the same between calls if the image is the same
 function resize(img, name, w, h) {
 	var key = name + w + "," + h
@@ -193,14 +266,7 @@ function imageWithResize(img, name, x, y, w, h) {
 	image(resized, x, y, w, h)
 }
 
-export var gameStarted = false
-function transitionToGame(PlayerAbilityVal) {
-
-	const name = menuInput.value();
-	menuInput.remove()
-	startButtonImgElem.remove()
-	startButton.remove()
-
+function createGame(PlayerAbilityVal) {
 	chatInput = createInput()
 	chatInput.value('')
 	chatInput.attribute("placeholder", "Enter some text...")
@@ -216,31 +282,68 @@ function transitionToGame(PlayerAbilityVal) {
 	chatButtonImgElem.size(chatInput.height, chatInput.height)
 	chatButtonImgElem.parent(chatButton)
 
+	setCallbacks(new ClientCallbacks())
+
 	camera = {
 		x: 0,
 		y: 0
 	}
 
-	socket.on('tick', function (data) {
-		var eventsSerialized = data.events
-		var seed = data.seed
-		//if (eventsSerialized.length !== 0) {
-		//	console.log(eventsSerialized)
-		//}
-
-		var events = []
-		for (var i = 0; i < eventsSerialized.length; i++) {
-			events.push(GameEvent.deserialize(eventsSerialized[i]))
-		}
-
-		state.seed(seed)
-		state.advance(events)
-		socket.emit('tickReply', {});
-	})
-
 	socket.emit("join", {
 		ability: PlayerAbilityVal
 	})
+
+	lastax = 0
+	lastay = 0
+}
+
+function deleteGame() {
+	chatInput.remove()
+	chatButton.remove()
+}
+
+function gameDraw() {
+	if (state === undefined) {
+		//we are still waiting for initial state packet
+		return
+	}
+	var player = state.playerById(socket.id)
+	if (player === null) {
+		//we got initial state packet, but it will not have us as a player at first
+		return
+	}
+
+	handleInitialName()
+
+	doInput(player)
+	moveCamera(player)
+	doRotation(player)
+
+	background(51)
+	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
+
+	showPlayerConnections()
+	state.corpses.map(c => showCorpse(c))
+	state.powerups.map(p => showPowerup(p))
+	state.players.map(p => showPlayer(p))
+	state.projectiles.map(p => showProjecile(p))
+	state.enemies.map(e => showEnemy(e))
+	state.asteroids.map(a => showAsteroid(a))
+
+	
+	if (millis() - lastAmmoRefil > refilDelayMillis && ammo < maxAmmo ) {
+		ammo += 1
+		lastAmmoRefil = millis()
+	}
+
+	ui(player, state);
+}
+
+function deleteMenu() {
+	const name = menuInput.value();
+	menuInput.remove()
+	startButtonImgElem.remove()
+	startButton.remove()
 
 	if (name) {
 		initialName = name
@@ -248,87 +351,7 @@ function transitionToGame(PlayerAbilityVal) {
 	} else {
 		initialName = undefined
 	}
-
-	lastax = 0
-	lastay = 0
-
-	gameStarted = true
 }
-
-var initialName
-var input, button
-var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShot, Lazer, Summonor
-function setup() {
-	//console.log(cuss.fuck);
-	//THIS IS MENU SETUP
-	//for game setup, put code in transitionToGame
-
-	cnv = createCanvas(0, 0);
-	cnv.parent("sketch-container")
-	windowResized()
-	background(0)
-
-	textAlign(CENTER);
-	textSize(50);
-	textFont(dog);
-
-	menuInput = createInput()
-	var namePreference = getItem("namePreference")
-	if (namePreference !== null) {
-		menuInput.value(namePreference)
-	}
-	menuInput.attribute("placeholder", "Enter a name...")
-	menuInput.size(400, 20)
-	
-	startButton = createButton("")
-	startButton.size(menuInput.width, 70)
-	startButton.style("padding", "0px")
-	startButton.style("margin", "0px")
-	startButton.style("border", "0px")
-	startButton.style("background-color", "transparent")
-	startButton.style("image-rendering", "pixelated")
-	startButton.mouseClicked(() => {transitionToGame(Math.floor(Math.random() * Player.MAX_ABILITY))})
-	startButtonImgElem = createImg("startbutton.png", "Start")
-	startButtonImgElem.size(startButton.width, startButton.height)
-	startButtonImgElem.parent(startButton)
-
-	/*doubleShot = createButton("")
-	doubleShot.size(menuInput.width, 70)
-	doubleShot.style("padding", "0px")
-	doubleShot.style("margin", "0px")
-	doubleShot.style("border", "0px")
-	doubleShot.style("background-color", "transparent")
-	doubleShot.style("image-rendering", "pixelated")
-	doubleShot.mouseClicked(() => {transitionToGame(Player.DOUBLE_SHOT)})
-	
-	Lazer = createButton("")
-	Lazer.size(menuInput.width, 70)
-	Lazer.style("padding", "0px")
-	Lazer.style("margin", "0px")
-	Lazer.style("border", "0px")
-	Lazer.style("background-color", "transparent")
-	Lazer.style("image-rendering", "pixelated")
-	Lazer.mouseClicked(() => {transitionToGame(Player.LASER)})
-
-	Summonor = createButton("")
-	Summonor.size(menuInput.width, 70)
-	Summonor.style("padding", "0px")
-	Summonor.style("margin", "0px")
-	Summonor.style("border", "0px")
-	Summonor.style("background-color", "transparent")
-	Summonor.style("image-rendering", "pixelated")
-	Summonor.mouseClicked(() => {transitionToGame(Player.NECROMANCER)})*/
-
-	socket = io.connect()
-
-	socket.on("state", function (data) {
-		state = GameState.deserialize(data.state)
-		setTesting(data.testing)
-	})
-}
-
-var Max_Ammo = 50;
-var Ammo = Max_Ammo;
 
 function menuDraw() {
 	background(0)
@@ -349,8 +372,101 @@ function menuDraw() {
 	startButton.position(startButton.x, startButton.y + (height / 4) + (startButton.height / 2) + (menuInput.height / 2))
 }
 
-var lastax
-var lastay
+function createMenu() {
+	textAlign(CENTER);
+	textSize(50);
+	textFont(dog);
+
+	menuInput = createInput()
+	var namePreference = getItem("namePreference")
+	if (namePreference !== null) {
+		menuInput.value(namePreference)
+	}
+	menuInput.attribute("placeholder", "Enter a name...")
+	menuInput.size(400, 20)
+	
+	startButton = createButton("")
+	startButton.size(menuInput.width, 70)
+	startButton.style("padding", "0px")
+	startButton.style("margin", "0px")
+	startButton.style("border", "0px")
+	startButton.style("background-color", "transparent")
+	startButton.style("image-rendering", "pixelated")
+	startButton.mouseClicked(() => {transitionToState(STATE_RUNNING, Math.floor(Math.random() * Player.MAX_ABILITY))})
+	startButtonImgElem = createImg("startbutton.png", "Start")
+	startButtonImgElem.size(startButton.width, startButton.height)
+	startButtonImgElem.parent(startButton)
+
+	socket = io.connect()
+
+	socket.on("state", function (data) {
+		state = GameState.deserialize(data.state)
+		setTesting(data.testing)
+	})
+
+	socket.on('tick', function (data) {
+		var eventsSerialized = data.events
+		if (data.events) {
+			console.log(eventsSerialized)
+		}
+		var seed = data.seed
+
+		var events = []
+		for (var i = 0; i < eventsSerialized.length; i++) {
+			events.push(GameEvent.deserialize(eventsSerialized[i]))
+		}
+
+		state.seed(seed)
+		state.advance(events)
+		socket.emit('tickReply', {});
+	})
+
+}
+
+function setup() {
+	cnv = createCanvas(0, 0);
+	cnv.parent("sketch-container")
+	windowResized()
+	background(0)
+
+	gameState = STATE_MENU
+	createMenu()
+}
+
+function createGameoverScreen() {
+	backToMenuButton = createButton("back to main menu")
+	backToMenuButton.mouseClicked(() => {
+		transitionToState(STATE_MENU)
+	})
+}
+
+function drawGameoverScreen() {
+	push()
+	background(255)
+	textSize(40)
+	fill(0, 0, 0)
+	var message
+	switch (gameState) {
+		case STATE_DIED:
+			message = "u ded"
+			break
+		case STATE_LOSE:
+			message = "boss wun"
+			break
+		case STATE_WIN:
+			message = "u wun"
+			break
+	}
+	text(message, 100, 100)
+	pop()
+}
+
+function deleteGameoverScreen() {
+	backToMenuButton.remove()
+	socket.disconnect()
+}
+
+
 
 function isCanvasFocused() {
 	return document.activeElement.tagName === "BODY"
@@ -534,13 +650,13 @@ function showAsteroid(asteroid) {
 
 		var name = "asteroid_"
 		if (healthPercent > (2 / 3)) {
-			asteroidImage = asteroid_full
+			asteroidImage = asteroidFull
 			name += "full"
 		} else if (healthPercent > (1 / 3)) {
-			asteroidImage = asteroid_medium
+			asteroidImage = asteroidMedium
 			name += "medium"
 		} else {
-			asteroidImage = asteroid_low
+			asteroidImage = asteroidLow
 			name += "low"
 		}
 		imageWithResize(asteroidImage, name, 0, 0, asteroid.size * 2, asteroid.size * 2);
@@ -631,7 +747,6 @@ function showCorpse(corpse) {
 	pop()
 }
 
-var lastAngle;
 function doRotation(player) {
 	//the angle determined by mouse position
 	var newAngle = Math.atan2(mouseY - (player.pos.y - camera.y), mouseX - (player.pos.x - camera.x))
@@ -686,7 +801,6 @@ function pieChart(diameter, players, x, y) {
 }
 
 var ToggleChat = true;
-var ToggleScore = true;
 
 function ui(player, state) {
 	push()
@@ -799,7 +913,7 @@ function ui(player, state) {
 
 		//current Ammo bar (Player colored sticks)
 		fill(player.color.r, player.color.g, player.color.b);
-		rect(70, windowHeight - 60, Ammo/Max_Ammo * (playerMaxHealth * 2), 20);
+		rect(70, windowHeight - 60, ammo/maxAmmo * (playerMaxHealth * 2), 20);
 
 		//Ammo seperator
 		fill(40);
@@ -946,43 +1060,15 @@ function draw() {
 		serverCameraDraw()
 		return
 	}
-	if (!gameStarted) {
+	if (gameState === STATE_MENU) {
 		menuDraw()
 		return
 	}
-	if (state === undefined) {
-		//we are still waiting for initial state packet
+	if (gameState === STATE_RUNNING) {
+		gameDraw()
 		return
 	}
-	var player = state.playerById(socket.id)
-	if (player === null) {
-		//we got initial state packet, but it will not have us as a player at first
-		return
-	}
-	handleInitialName()
-
-	doInput(player)
-	moveCamera(player)
-	doRotation(player)
-
-	background(51)
-	image(bg, -camera.x, -camera.y, mapWidth, mapHeight);
-
-	showPlayerConnections()
-	state.corpses.map(c => showCorpse(c))
-	state.powerups.map(p => showPowerup(p))
-	state.players.map(p => showPlayer(p))
-	state.projectiles.map(p => showProjecile(p))
-	state.enemies.map(e => showEnemy(e))
-	state.asteroids.map(a => showAsteroid(a))
-
-	
-	if (millis() - lastAmmoRefil > refilDelayMillis && Ammo < Max_Ammo ) {
-		Ammo += 1
-		lastAmmoRefil = millis()
-	}
-
-	ui(player, state);
+	drawGameoverScreen()
 }
 
 var lastAmmoRefil = 0;
@@ -991,8 +1077,8 @@ var lastShootTime = 0;
 const shootDelayMillis = 200
 
 function tryShoot() {
-	if (millis() - lastShootTime > shootDelayMillis && Ammo > 0) {
-		Ammo -= 1
+	if (millis() - lastShootTime > shootDelayMillis && ammo > 0) {
+		ammo -= 1
 		socket.emit("shoot", {})
 		lastShootTime = millis()
 		
@@ -1037,6 +1123,8 @@ function sendChat() {
 		message: player.name + ": " + message
 	})
 }
+
+
 
 //this is necessary because p5.js needs to see these functions in the global scope, which doesn't happen with a module
 window.draw = draw

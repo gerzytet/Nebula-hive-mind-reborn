@@ -1,4 +1,4 @@
-import {state, bg, socket, pship, asteroid_full, eship, gameStarted, asteroid_medium, asteroid_low} from "./sketch.js"
+import {state, bg, socket, pship, asteroidFull, eship, asteroidMedium, asteroidLow, gameState, STATE_RUNNING} from "./sketch.js"
 import {mapWidth, mapHeight, neutralColor} from "./shared/utilities.js"
 
 function serverCameraShowPlayer(player, serverCamScalex, serverCamScaley) {
@@ -32,11 +32,11 @@ function serverCameraShowAsteroid(asteroid, serverCamScalex, serverCamScaley) {
 	var asteroidImage
 	var healthPercent = asteroid.health / asteroid.maxhealth()
 	if (healthPercent > (2 / 3)) {
-		asteroidImage = asteroid_full
+		asteroidImage = asteroidFull
 	} else if (healthPercent > (1 / 3)) {
-		asteroidImage = asteroid_medium
+		asteroidImage = asteroidMedium
 	} else {
-		asteroidImage = asteroid_low
+		asteroidImage = asteroidLow
 	}
 	image(asteroidImage, 0, 0, asteroid.size * 2 * serverCamScalex, asteroid.size * 2 * serverCamScaley)
 	pop()
@@ -65,7 +65,7 @@ export function serverCameraDraw() {
 
 export var isServerCamera = false
 export function becomeServerCamera() {
-	if (!gameStarted) {
+	if (gameState !== STATE_RUNNING) {
 		return
 	}
 	isServerCamera = true

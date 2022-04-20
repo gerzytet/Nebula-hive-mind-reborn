@@ -237,8 +237,10 @@ export class GameState {
 		} else if (this.bossPhase) {
 			if (!this.bossExists()) {
 				this.bossPhase = false
-				this.addMessage(new Message("Boss over yay", neutralColor))
-				console.log("boss over yay")
+				callbacks.onGameOver(true)
+			} else if (this.players.length === 0) {
+				this.bossPhase = false
+				callbacks.onGameOver(false)
 			}
 		}
 	}
@@ -364,6 +366,20 @@ export class GameState {
 	bossExists() {
 		return this.enemies.find(e => e instanceof Boss) !== undefined
 	}
+}
+
+//client-and-server specific stuff called by gamestate to communicate directly with client/server
+export class Callbacks {
+	//true if the players won
+	onGameOver(win) {}
+	//called whan a player dies during boss phase
+	//client disconnects, sevrer send a playerLeave event
+	onKillDuringBoss(player) {}
+}
+//the instance of callbacks
+export var callbacks = undefined
+export function setCallbacks(newCallbacks) {
+	callbacks = newCallbacks
 }
 
 export class Message {
