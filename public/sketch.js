@@ -216,11 +216,6 @@ function transitionToGame(PlayerAbilityVal) {
 	chatButtonImgElem.size(chatInput.height, chatInput.height)
 	chatButtonImgElem.parent(chatButton)
 
-	socket = io.connect({
-		query: {
-			ability: PlayerAbilityVal
-		}
-	})
 	camera = {
 		x: 0,
 		y: 0
@@ -243,9 +238,8 @@ function transitionToGame(PlayerAbilityVal) {
 		socket.emit('tickReply', {});
 	})
 
-	socket.on("state", function (data) {
-		state = GameState.deserialize(data.state)
-		setTesting(data.testing)
+	socket.emit("join", {
+		ability: PlayerAbilityVal
 	})
 
 	if (name) {
@@ -324,7 +318,13 @@ function setup() {
 	Summonor.style("background-color", "transparent")
 	Summonor.style("image-rendering", "pixelated")
 	Summonor.mouseClicked(() => {transitionToGame(Player.NECROMANCER)})*/
-	
+
+	socket = io.connect()
+
+	socket.on("state", function (data) {
+		state = GameState.deserialize(data.state)
+		setTesting(data.testing)
+	})
 }
 
 var Max_Ammo = 50;
@@ -608,7 +608,9 @@ function showCorpse(corpse) {
 	imageMode(CENTER)
 
 	var explosionImage
+	var name
 	if (entity instanceof Enemy) {
+		name = "enemyExplosion"
 		explosionImage = explosionGif
 	} else if (entity instanceof PlayerAfterImage) {
 		var color = entity.color
@@ -617,9 +619,15 @@ function showCorpse(corpse) {
 		pop()
 		return
 	} else {
+		name = "rockExplosion"
 		explosionImage = rockexplosionGif
 	}
-	image(explosionImage, 0, 0, entity.size*2, entity.size*2)
+	//hack to get GIF to still animate
+	tint(255, 0)
+	image(explosionImage, 0, 0, 0, 0)
+	noTint()
+
+	imageWithResize(explosionImage, name + explosionImage.getCurrentFrame(), 0, 0, entity.size*2, entity.size*2)
 	pop()
 }
 

@@ -6,7 +6,7 @@
 */
 
 //TODO Create change name event
-import {Assert, SimpleVector} from "./utilities.js"
+import {Assert, SimpleVector, isTesting} from "./utilities.js"
 import {Player, playerBaseAcceleration, playerLaserVel} from "./entities.js"
 import {Message} from "./gamestate.js"
 
@@ -413,6 +413,8 @@ export class PlayerSendMessage extends GameEvent {
 
 	apply(state) {
 		state.addMessage(this.message)
-		console.log(this.message.message)
+		if (isTesting() && this.message.message.split(" ")[1] === "/boss") {
+			state.transitionToBoss()
+		}
 	}
 }

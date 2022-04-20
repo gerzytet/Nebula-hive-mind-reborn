@@ -8,8 +8,8 @@
 //!DON'T USE MATH.RANDOM! USE OUR FUNCTIONS!
 //reference for mulberry32: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 
-import {Assert, neutralColor, connectionRadius, Color} from "./utilities.js"
-import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playerMaxHealth, Player, Corpse} from "./entities.js"
+import {Assert, neutralColor, connectionRadius, Color, mapWidth, mapHeight, SimpleVector} from "./utilities.js"
+import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playerMaxHealth, Player, Corpse, Boss} from "./entities.js"
 
 //number of ticks it should take on average to fill the whole map with powerups, asteriods, enemies, if there is nothing there already
 const serverFillTicks = 30 * 30
@@ -35,6 +35,7 @@ export class GameState {
 		this.corpses = []
 		this.messages = []
 		this.rng = mulberry32(0)
+		this.bossPhase = false
 		GameState.assertValid(this);
 	}
 
@@ -223,11 +224,42 @@ export class GameState {
 		}
 	}
 
+	doBossChecks() {
+		if (!this.bossPhase && this.players.length > 4) {
+			var allSame = true
+			var color = this.players[0]
+			for (var i = 0; i < this.players.length; i++) {
+				allSame = allSame && this.players[i].color.equals(color)
+			}
+			if (allSame) {
+				this.transitionToBoss()
+			}
+		} else if (this.bossPhase) {
+			if (!this.bossExists()) {
+				this.bossPhase = false
+				this.addMessage(new Message("Boss over yay", neutralColor))
+				console.log("boss over yay")
+			}
+		}
+	}
+
+	transitionToBoss() {
+		this.bossPhase = true
+
+		this.enemies.push(new Boss(
+			new SimpleVector(
+				mapWidth / 2,
+			    mapHeight / 2
+			)
+		))
+	}
+
 	//events is a list of GameEvent
 	//applies each game event to this state
 	advance(events) {
 		//this is run before the events are because it calculates the player's connections
 		this.applyPlayerConnections()
+		this.doBossChecks()
 		for (var i = 0; i < events.length; i++) {
 			events[i].apply(this)
 		}
@@ -247,7 +279,8 @@ export class GameState {
 			asteroids: [],
 			powerups: [],
 			enemies: [],
-			messages: []
+			messages: [],
+			bossPhase: this.bossPhase
 		};
 		function serializeHelper(dataArray, stateArray) {
 			for (var i = 0; i < stateArray.length; i++) {
@@ -276,7 +309,7 @@ export class GameState {
 		deserializeHelper(data.powerups, state.powerups, Powerup)
 		deserializeHelper(data.enemies, state.enemies, Enemy)
 		deserializeHelper(data.messages, state.messages, Message)
-
+		this.bossPhase = data.bossPhase
 		GameState.assertValid(state);
 		return state;
 	}
@@ -297,6 +330,7 @@ export class GameState {
 		assertHelper(state.corpses, Corpse)
 		assertHelper(state.messages, Message)
 
+		Assert.boolean(state.bossPhase)
 		Assert.function(state.rng)
 	}
 
@@ -317,7 +351,6 @@ export class GameState {
 		this.rng = mulberry32(seed);
 	}
 
-
 	addMessage(message) {
 		const maxMessages = 4
 		if (this.messages.length === maxMessages) {
@@ -325,6 +358,11 @@ export class GameState {
 		}
 
 		this.messages.push(message)
+	}
+
+	//true if boss or their death explosion is still around
+	bossExists() {
+		return this.enemies.find(e => e instanceof Boss) !== undefined
 	}
 }
 

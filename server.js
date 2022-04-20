@@ -111,25 +111,26 @@ function newConnection(socket) {
     socket.on('activateAbility', activateAbility)
     socket.on('dash', dash)
     socket.on('chat', chat)
+    socket.on('join', join)
 
-    console.log(socket.handshake.query)
-    var ability = parseInt(socket.handshake.query.ability)
+    function join(data) {
+        //players are created!
+        var player = new Player(
+            socket.id, new SimpleVector(
+                Math.floor(Math.random() * (isTesting() ? 400 : mapWidth)),
+                Math.floor(Math.random() * (isTesting() ? 400 : mapHeight))
+            ),
+            getUnusedColor(),
+            "Player: " + (playercounter + 1),
+            data.ability
+        )
 
-    //players are created!
-    var player = new Player(
-        socket.id, new SimpleVector(
-            Math.floor(Math.random() * (isTesting() ? 400 : mapWidth)),
-            Math.floor(Math.random() * (isTesting() ? 400 : mapHeight))
-        ),
-        getUnusedColor(),
-        "Player: " + (playercounter + 1),
-        ability
-    )
+        playercounter += 1
+        events.push(
+            new PlayerJoin(player)
+        )
+    }
 
-    playercounter += 1
-    events.push(
-        new PlayerJoin(player)
-    )
     socket.emit("state", {
         state: state.serialize(),
         testing: isTesting()
@@ -151,6 +152,7 @@ function newConnection(socket) {
 
     function changeAngle(data) {
         Assert.number(data.angle)
+        var player = state.playerById(socket.id)
         if (player === null) {
             return
         }
