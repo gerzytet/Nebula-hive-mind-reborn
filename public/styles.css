@@ -1,0 +1,35 @@
+.no-margin {
+    margin: 0px;
+    padding: 0px;
+    border: 0px;
+  }
+  
+  .name-input {
+    width: 100%;
+    height: 15%;
+  }
+  
+  .ability-button {
+    width: 33.33%;
+    vertical-align: top;
+    height: 40%;
+  }
+  
+  .menu-button-container {
+    width: 400px;
+    height: 140px;
+    
+  }
+  
+  .start-button {
+    width: 100%;
+    vertical-align: top;
+    height: 45%;
+    background-color: transparent;
+    image-rendering: pixelated
+  }
+  
+  .button-image {
+    width: 100%;
+    height: 100%;
+  }

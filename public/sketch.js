@@ -121,7 +121,7 @@ export var state
 var resizeCache = {}
 var initialName
 var input, button
-var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShot, Lazer, Summonor, backToMenuButton
+var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShotButton, laserButton, summonerButton, backToMenuButton, menuDiv
 var maxAmmo = 50;
 var ammo = maxAmmo
 var lastax
@@ -356,19 +356,19 @@ function menuDraw() {
 	background(0)
 	image(menuBackground, 0, 0, width, height);
 
-	menuInput.center()
-	startButton.center()
+	//menuInput.center()
+	//startButton.center()
 
 	//doubleShot.center()
 	//Lazer.center()
 	//Summonor.center()
 	
-	menuInput.position(menuInput.x, menuInput.y + (height / 4))
+	//menuInput.position(menuInput.x, menuInput.y + (height / 4))
 	//doubleShot.position(doubleShot.x, doubleShot.y + (height / 4) + (doubleShot.height / 2) + (menuInput.height / 2))
 	//Lazer.position(Lazer.x, Lazer.y + (height / 4) + doubleShot.height + (Lazer.height / 2) + (menuInput.height / 2))
 	//Summonor.position(Summonor.x, Summonor.y + (height / 4) + Lazer.height + doubleShot.height + (Summonor.height / 2) + (menuInput.height / 2))
 
-	startButton.position(startButton.x, startButton.y + (height / 4) + (startButton.height / 2) + (menuInput.height / 2))
+	//startButton.position(startButton.x, startButton.y + (height / 4) + (startButton.height / 2) + (menuInput.height / 2))
 	if (state) {
 		if (state.bossPhase && menuButtonEnabled) {
 			disableMenuButton()
@@ -384,21 +384,39 @@ function createMenu() {
 	textSize(50);
 	textFont(dog);
 
-	menuInput = createInput()
+	menuDiv = createDiv()
+	menuDiv.class("menu-button-container")
+	menuDiv.position(width/2 - 200, (height*3)/4 - 70)
+
 	var namePreference = getItem("namePreference")
+	menuInput=createInput()
 	if (namePreference !== null) {
 		menuInput.value(namePreference)
 	}
+
 	menuInput.attribute("placeholder", "Enter a name...")
-	menuInput.size(400, 20)
-	
+	menuInput.class("name-input")
+	menuInput.parent(menuDiv)
+
+	doubleShotButton = createButton("")
+	doubleShotButton.class("no-margin")
+	doubleShotButton.class("ability-button")
+	doubleShotButton.parent(menuDiv)
+
+	laserButton = createButton("")
+	laserButton.class("no-margin")
+	laserButton.class("ability-button")
+	laserButton.parent(menuDiv)
+
+	summonerButton = createButton("")
+	summonerButton.class("no-margin")
+	summonerButton.class("ability-button")
+	summonerButton.parent(menuDiv)
+
 	startButton = createButton("")
-	startButton.size(menuInput.width, 70)
-	startButton.style("padding", "0px")
-	startButton.style("margin", "0px")
-	startButton.style("border", "0px")
-	startButton.style("background-color", "transparent")
-	startButton.style("image-rendering", "pixelated")
+	startButton.class("no-margin")
+	startButton.class("start-button")
+	startButton.parent(menuDiv)
 	disableMenuButton()
 
 	socket = io.connect()
@@ -434,7 +452,7 @@ function enableMenuButton() {
 		startButtonImgElem.remove()
 	}
 	startButtonImgElem = createImg("startbutton.png", "Start")
-	startButtonImgElem.size(startButton.width, startButton.height)
+	startButtonImgElem.class("button-image")
 	startButtonImgElem.parent(startButton)
 	menuButtonEnabled = true
 }

@@ -433,6 +433,12 @@ export class Player extends Entity {
 			))
 		}
 
+		var oldSpeed = this.speed
+		this.speed += playerBaseSpeed * 2
+		this.acc.scale((this.speed / oldSpeed))
+		
+		this.effects.push(new ActiveEffect(Powerup.SPEED, 50))
+
 		var newVel = unitVector.clone()
 		newVel.scale(this.speed)
 		this.vel = newVel
@@ -742,8 +748,9 @@ export class Powerup extends Entity {
 	apply(player) {
 		switch (this.type) {
 			case Powerup.SPEED:
-				player.speed *= 4
-				player.acc.scale(4)
+				var oldSpeed = player.speed
+				player.speed += playerBaseSpeed * 2
+				player.acc.scale((player.speed / oldSpeed))
 				break
 			case Powerup.ATTACK:
 				player.attack *= 2
@@ -761,14 +768,13 @@ export class Powerup extends Entity {
 	}
 }
 
-//this can be changed to be different for each powerup later
 const powerupEffectDurationTicks = 150
 
 //a lasting powerup effect
 export class ActiveEffect {
-	constructor(type) {
+	constructor(type, duration=powerupEffectDurationTicks) {
 		this.type = type
-		this.life = powerupEffectDurationTicks
+		this.life = duration
 	}
 
 	serialize() {
@@ -801,7 +807,7 @@ export class ActiveEffect {
 	expire(player) {
 		switch (this.type) {
 			case Powerup.SPEED:
-				player.speed /= 4
+				player.speed -= playerBaseSpeed * 2
 				break
 			case Powerup.ATTACK:
 				player.attack /= 2
