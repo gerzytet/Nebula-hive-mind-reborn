@@ -8,6 +8,7 @@
 //TODO Implement Name Change
 
 import {SimpleVector, Color, Assert, mapHeight, mapWidth, neutralColor, isTesting} from "./utilities.js"
+import {callbacks} from "./gamestate.js"
 
 export const defaultLifespan = 25
 export class Entity {
@@ -203,6 +204,10 @@ export class Player extends Entity {
 		return this.health <= 0
 	}
 
+	isPermanentlyDead(state) {
+		return this.isDead() && state.bossPhase
+	}
+
 	damage(amount, color, state) {
 		this.health -= amount
 		if (this.isDead()) {
@@ -213,6 +218,10 @@ export class Player extends Entity {
 	
 	kill(color, state) {
 		var colors = [];
+		if (state.bossPhase) {
+			callbacks.onKillDuringBoss(this)
+			return
+		}
 		if (color.r === 255 && color.g === 255 && color.b === 255) {
 			for (var i = 0; i < state.players.length; i++) {
 				colors.push(state.players[i].color)
@@ -351,8 +360,7 @@ export class Player extends Entity {
 		if (this.ability === Player.NECROMANCER) {
 			let enemy = new Enemy(this.pos.clone(), this.color)
 			enemy.angle = -1*this.angle
-			state.enemies.push(enemy)
-			
+			state.enemies.push(enemy)			
 		}
 	}
 
@@ -424,6 +432,12 @@ export class Player extends Entity {
 				30
 			))
 		}
+
+		var oldSpeed = this.speed
+		this.speed += playerBaseSpeed * 2
+		this.acc.scale((this.speed / oldSpeed))
+		
+		this.effects.push(new ActiveEffect(Powerup.SPEED, 50))
 
 		var newVel = unitVector.clone()
 		newVel.scale(this.speed)
@@ -734,8 +748,9 @@ export class Powerup extends Entity {
 	apply(player) {
 		switch (this.type) {
 			case Powerup.SPEED:
-				player.speed *= 4
-				player.acc.scale(4)
+				var oldSpeed = player.speed
+				player.speed += playerBaseSpeed * 2
+				player.acc.scale((player.speed / oldSpeed))
 				break
 			case Powerup.ATTACK:
 				player.attack *= 2
@@ -753,14 +768,13 @@ export class Powerup extends Entity {
 	}
 }
 
-//this can be changed to be different for each powerup later
 const powerupEffectDurationTicks = 150
 
 //a lasting powerup effect
 export class ActiveEffect {
-	constructor(type) {
+	constructor(type, duration=powerupEffectDurationTicks) {
 		this.type = type
-		this.life = powerupEffectDurationTicks
+		this.life = duration
 	}
 
 	serialize() {
@@ -793,7 +807,7 @@ export class ActiveEffect {
 	expire(player) {
 		switch (this.type) {
 			case Powerup.SPEED:
-				player.speed /= 4
+				player.speed -= playerBaseSpeed * 2
 				break
 			case Powerup.ATTACK:
 				player.attack /= 2
@@ -1001,7 +1015,7 @@ export class PlayerAfterImage {
 	}
 }
 
-const bossProjectileDamage = 10
+const bossProjectileDamage = 100
 export const bossMaxHealth = 50
 const bossSize = 200
 const bossSpeed = 5
@@ -1022,7 +1036,8 @@ export class Boss extends Entity {
 			vel: this.vel,
 			health: this.health,
 			angle: this.angle,
-			color: this.color.serialize()
+			color: this.color.serialize(),
+			isBoss: true
 		}
 	}
 
@@ -1038,6 +1053,7 @@ export class Boss extends Entity {
 
 	static assertValid(boss) {
 		Entity.assertValid(boss)
+		Assert.instanceOf(boss, Boss)
 		Assert.number(boss.health)
 		Assert.true(boss.health >= 0 && boss.health <= bossMaxHealth)
 	}
@@ -1080,14 +1096,6 @@ export class Boss extends Entity {
 				)
 			)
 		}
-	}
-
-	static addRandomBoss(state) {
-		var pos = new SimpleVector(
-			state.randint(bossSize, mapWidth - bossSize),
-			state.randint(bossSize, mapHeight - bossSize)
-		)
-		state.enemies.push(new Boss(pos))
 	}
 
 	tick(state) {

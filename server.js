@@ -8,7 +8,7 @@
 import {Assert, SimpleVector, Color, isTesting, setTesting, mapWidth, mapHeight} from './public/shared/utilities.js'
 import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName, PlayerActivateAbility, PlayerDash, PlayerSendMessage} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
-import {GameState, Message} from './public/shared/gamestate.js'
+import {Callbacks, GameState, Message, setCallbacks} from './public/shared/gamestate.js'
 import express from 'express'
 import {Server} from 'socket.io'
 
@@ -38,7 +38,18 @@ setInterval(tick, 33);
 
 const timeoutMillis = 10000;
 
+class ServerCallbacks extends Callbacks {
+    onKillDuringBoss(player) {
+
+    }
+
+    onGameOver(win) {
+
+    }
+}
+
 var state = new GameState()
+setCallbacks(new ServerCallbacks)
 var events = []
 
 function colorUsed(c) {

@@ -26,7 +26,7 @@ function mulberry32(a) {
 
 //holds everything in the game
 export class GameState {
-	constructor() {
+	reset() {
 		this.players = []
 		this.projectiles = []
 		this.asteroids = []
@@ -36,6 +36,10 @@ export class GameState {
 		this.messages = []
 		this.rng = mulberry32(0)
 		this.bossPhase = false
+	}
+
+	constructor() {
+		this.reset()
 		GameState.assertValid(this);
 	}
 
@@ -47,11 +51,6 @@ export class GameState {
 			}
 		}
 		return null
-	}
-
-	killPlayer(player, damageColor) {
-		player.color = damageColor
-		player.health = playerMaxHealth
 	}
 
 	//calls collision function if two enemies collide
@@ -164,6 +163,13 @@ export class GameState {
 		cleanHelper(this.powerups)
 		cleanHelper(this.asteroids)
 		cleanHelper(this.corpses)
+
+		for (var i = 0; i < this.players.length; i++) {
+			if (this.players[i].isPermanentlyDead(this)) {
+				this.players.splice(i, 1)
+				i--
+			}
+		}
 	}
 
 	doNewAsteroids() {
@@ -237,8 +243,14 @@ export class GameState {
 		} else if (this.bossPhase) {
 			if (!this.bossExists()) {
 				this.bossPhase = false
-				this.addMessage(new Message("Boss over yay", neutralColor))
-				console.log("boss over yay")
+				console.log("boss over")
+				callbacks.onGameOver(true)
+				this.reset()
+			} else if (this.players.length === 0) {
+				this.bossPhase = false
+				console.log("boss over")
+				callbacks.onGameOver(false)
+				this.reset()
 			}
 		}
 	}
@@ -307,9 +319,17 @@ export class GameState {
 		deserializeHelper(data.projectiles, state.projectiles, Projectile)
 		deserializeHelper(data.asteroids, state.asteroids, Asteroid)
 		deserializeHelper(data.powerups, state.powerups, Powerup)
-		deserializeHelper(data.enemies, state.enemies, Enemy)
 		deserializeHelper(data.messages, state.messages, Message)
-		this.bossPhase = data.bossPhase
+		state.bossPhase = data.bossPhase
+		for (var i = 0; i < data.enemies.length; i++) {
+			var d = data.enemies[i]
+			if (d.isBoss) {
+				state.enemies.push(Boss.deserialize(d))
+			} else {
+				state.enemies.push(Enemy.deserialize(d))
+			}
+		}
+
 		GameState.assertValid(state);
 		return state;
 	}
@@ -364,6 +384,20 @@ export class GameState {
 	bossExists() {
 		return this.enemies.find(e => e instanceof Boss) !== undefined
 	}
+}
+
+//client-and-server specific stuff called by gamestate to communicate directly with client/server
+export class Callbacks {
+	//true if the players won
+	onGameOver(win) {}
+	//called whan a player dies during boss phase
+	//client disconnects, sevrer send a playerLeave event
+	onKillDuringBoss(player) {}
+}
+//the instance of callbacks
+export var callbacks = undefined
+export function setCallbacks(newCallbacks) {
+	callbacks = newCallbacks
 }
 
 export class Message {
