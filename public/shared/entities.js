@@ -352,10 +352,6 @@ export class Player extends Entity {
 			let enemy = new Enemy(this.pos.clone(), this.color)
 			enemy.angle = -1*this.angle
 			state.enemies.push(enemy)
-			state.enemies.push(new Enemy(
-				this.pos.clone(),
-				this.color
-			))
 			
 		}
 	}
