@@ -53,7 +53,7 @@ var swordHitSound = new Howl({
 import {Callbacks, GameState, setCallbacks} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
-import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage} from './shared/entities.js'
+import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage, Boss} from './shared/entities.js'
 import { serverCameraDraw, isServerCamera, becomeServerCamera } from "./serverCamera.js"
 //import {cuss} from 'cuss'
 
@@ -109,11 +109,13 @@ function preload() {
 	dog = loadFont('dogicapixel.otf', () => { }, () => {
 		console.log("Failed to load Dogica Pixel Font")
 	})
-
+	towleImage = loadImage('Towle.png', () => {}, () => {
+		console.log('Failed to load Towle')
+	})
 }
 export var bg
 export var pship, eship, asteroidFull, asteroidMedium, asteroidLow
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif, dog
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif, dog, towleImage
 export var socket
 var cnv
 var camera
@@ -343,6 +345,10 @@ function deleteMenu() {
 	menuInput.remove()
 	startButtonImgElem.remove()
 	startButton.remove()
+	doubleShotButton.remove()
+	laserButton.remove()
+	summonerButton.remove()
+	menuDiv.remove()
 
 	if (name) {
 		initialName = name
@@ -464,7 +470,7 @@ function disableMenuButton() {
 		startButtonImgElem.remove()
 	}
 	startButtonImgElem = createImg("waitingbutton.png", "waiting")
-	startButtonImgElem.size(startButton.width, startButton.height)
+	startButtonImgElem.class("button-image")
 	startButtonImgElem.parent(startButton)
 	menuButtonEnabled = false
 }
@@ -745,8 +751,34 @@ function showPowerup(powerup) {
 	}
 }
 
+function showBoss(boss) {
+	push()
+	angleMode(DEGREES)
+	translate(boss.pos.x - camera.x, boss.pos.y - camera.y)
+	rotate(boss.angle)
+	imageMode(CENTER)
+	image(towleImage, 0, 0, boss.size * 2, boss.size * 2)
+	pop()
+
+	push()
+	var hitboxes = boss.getHitboxes()
+	for (var i = 0; i < hitboxes.length; i++) {
+		var h = hitboxes[i]
+		fill(255, 0, 0)
+		ellipseMode(CENTER)
+		translate(h.pos.x - camera.x, h.pos.y - camera.y)
+		ellipse(0, 0, h.size*2, h.size*2)
+	}
+	pop()
+}
+
 function showEnemy(enemy) {
 	if (isOnscreen(enemy)) {
+		if (enemy instanceof Boss) {
+			showBoss(enemy)
+			return
+		}
+
 		push()
 		angleMode(DEGREES)
 		translate(enemy.pos.x - camera.x, enemy.pos.y - camera.y)

@@ -977,15 +977,17 @@ export class Corpse {
 	}
 }
 
-class Hitbox {
-	constructor(pos, size) {
+export class Hitbox {
+	constructor(pos, size, entity) {
 		this.pos = pos
 		this.size = size
+		this.entity = entity
 	}
 
 	static assertValid(hitbox) {
 		Assert.instanceOf(hitbox, Hitbox)
 		SimpleVector.assertValid(hitbox.pos)
+		Entity.assertValid(hitbox.entity)
 		Assert.number(hitbox.size)
 	}
 
@@ -1136,5 +1138,29 @@ export class Boss extends Entity {
 
 		this.move()
 		this.maybeShoot(state)
+	}
+
+	//return the hitbox at radius distance from the center, at angle degrees offset
+	makeHitbox(angle, radius, size) {
+		var totalAngle = angle + this.angle
+		totalAngle %= 360
+		var radians = totalAngle * (Math.PI / 180)
+		var unitVector = new SimpleVector(
+			Math.cos(radians),
+			Math.sin(radians)
+		)
+
+		var pos = this.pos.clone()
+		var scaledVector = unitVector
+		scaledVector.scale(radius)
+		pos.add(scaledVector)
+
+		return new Hitbox(pos, size, this)
+	}
+
+	getHitboxes() {
+		return [
+			this.makeHitbox(20, 100, 50)
+		]
 	}
 }

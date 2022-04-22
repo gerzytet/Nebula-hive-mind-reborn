@@ -9,7 +9,7 @@
 //reference for mulberry32: https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
 
 import {Assert, neutralColor, connectionRadius, Color, mapWidth, mapHeight, SimpleVector} from "./utilities.js"
-import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playerMaxHealth, Player, Corpse, Boss} from "./entities.js"
+import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playerMaxHealth, Player, Corpse, Boss, Hitbox} from "./entities.js"
 
 //number of ticks it should take on average to fill the whole map with powerups, asteriods, enemies, if there is nothing there already
 const serverFillTicks = 30 * 30
@@ -75,13 +75,14 @@ export class GameState {
 			}
 		}
 		var state = this;
+
 		//players and projectiles:
 		//damage the player by projectile.damage, kill the projectile
-		collisionHelper(this.players, this.projectiles, function(player, projectile) {
+		/*collisionHelper(this.players, this.projectiles, function(player, projectile) {
 			player.damage(projectile.damage, projectile.color, state)
 			projectile.pushIfNotLaser(player, 3)
 			projectile.killIfNotLaser()
-		})
+		})*/
 
 		//asteroids and players:
 		//damage the player by asteroidImpactDamagePerTick, push each other away
@@ -109,7 +110,11 @@ export class GameState {
 		//projectiles and enemies:
 		//kill the projectile, damage the enemy by projectile.damage
 		collisionHelper(this.projectiles, this.enemies, function(projectile, enemy) {
-			projectile.pushIfNotLaser(enemy, 2)
+			if (enemy instanceof Hitbox) {
+				enemy = enemy.entity
+			} else {
+				projectile.pushIfNotLaser(enemy, 2)
+			}
 			projectile.killIfNotLaser()
 			enemy.damage(projectile.damage)
 		})
@@ -117,8 +122,16 @@ export class GameState {
 		//enemies and enemies:
 		//push back both enemies
 		collisionHelper(this.enemies, this.enemies, function(enemy1, enemy2) {
-			enemy1.push(enemy2, 0.1)
-			enemy2.push(enemy1, 0.1)
+			if (enemy2 instanceof Hitbox) {
+				enemy2 = enemy2.entity
+				enemy2.push(enemy1, 0.1)
+			} else if (enemy1 instanceof Hitbox) {
+				enemy1 = enemy1.entity
+				enemy1.push(enemy2, 0.1)
+			} else {
+				enemy1.push(enemy2, 0.1)
+				enemy2.push(enemy1, 0.1)
+			}
 		}, false)
 
 		//asteroids and asteroids:
@@ -138,7 +151,11 @@ export class GameState {
 		//enemies and projectiles
 		//push both
 		collisionHelper(this.enemies, this.asteroids, function(enemy, asteroid) {
-			asteroid.push(enemy, 1)
+			if (enemy instanceof Hitbox) {
+				enemy = enemy.entity
+			} else {
+				asteroid.push(enemy, 1)
+			}
 			enemy.push(asteroid, 0.25)
 		}, false)
 	}
