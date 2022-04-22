@@ -759,17 +759,17 @@ function showBoss(boss) {
 	imageMode(CENTER)
 	image(towleImage, 0, 0, boss.size * 2, boss.size * 2)
 	pop()
-
-	push()
+	
 	var hitboxes = boss.getHitboxes()
 	for (var i = 0; i < hitboxes.length; i++) {
+		push()
 		var h = hitboxes[i]
 		fill(255, 0, 0)
 		ellipseMode(CENTER)
 		translate(h.pos.x - camera.x, h.pos.y - camera.y)
 		ellipse(0, 0, h.size*2, h.size*2)
+		pop()
 	}
-	pop()
 }
 
 function showEnemy(enemy) {
