@@ -461,7 +461,9 @@ export class Player extends Entity {
 
 const bulletLifetimeTicks = 150
 const laserLifetimeTicks = 50
+//BALANCING: how long Fs last
 const fLifetimeTicks = 200
+//BALANCING: how long bombs last:
 const bombLifetimeTicks =  30
 export class Projectile extends Entity {
 	static NORMAL = 0
@@ -551,6 +553,8 @@ export class Projectile extends Entity {
 	bombExplosion(state) {
 		var speed = 10
 
+		//BALANCING: decrease the 45 to make more bullets spawn
+		//number spawned is 360 / 45
 		for (var angle = 0; angle < 360; angle += 45) {
 			state.projectiles.push(
 				new Projectile(
@@ -559,6 +563,7 @@ export class Projectile extends Entity {
 					playerBaseBulletSize,
 					neutralColor,
 					bossProjectileDamage,
+					//BALANCING: logic means 2/3 chance of normal bullet, 1/3 chance of F.  can be tweaked
 					[Projectile.F, Projectile.NORMAL, Projectile.NORMAL][state.randint(0, 2)]
 				)
 			)
@@ -588,7 +593,8 @@ export class Projectile extends Entity {
 		if (this.type == Projectile.F) {
 			var closestPlayer = state.getClosestPlayer(this.pos)
 			if (closestPlayer !== null) {
-				this.acc = SimpleVector.unitVector(this.pos.angleTo(closestPlayer.pos))
+				//BALANCING: .scale() on this vector can make the Fs move faster or slower.  >1 is faster, <1 is slower
+				this.acc = SimpleVector.unitVector(this.pos.angleTo(closestPlayer.pos))//.scale(x)
 			}
 		}
 
@@ -1094,6 +1100,8 @@ export class Boss extends Entity {
 
 	constructor (pos, color=neutralColor) {
 		super(pos, bossSize, color)
+		//BALANCING: this needs to scale with number of players
+		//make initial health or number of players a parameter to the function
 		this.health = bossMaxHealth
 		this.attackCooldown = 0
 		this.attackPattern = undefined
@@ -1141,6 +1149,9 @@ export class Boss extends Entity {
 	}
 
 	maxAttackDuration() {
+		//BALANCING: duration in ticks of each attack
+		//less duration makes the attacks shoot less stuff, but the next attack comes around quicker
+		//feel free to add state to the parameter list so you can see the number of players and dynamically adjust
 		switch (this.attackPattern) {
 			case Boss.ATTACK_LASER_LEFT:
 			case Boss.ATTACK_LASER_RIGHT:
@@ -1202,6 +1213,7 @@ export class Boss extends Entity {
 			angle = handPos.angleTo(closestPlayer.pos)
 		}
 
+		//BALANCING: damage formula for laser attack is here
 		var laserVel = SimpleVector.unitVector(angle).scale(playerLaserVel)
 		state.projectiles.push(new Projectile(
 			handPos.clone(),
@@ -1213,6 +1225,8 @@ export class Boss extends Entity {
 			null,
 			(360 - angle)
 		))
+		//BALANCING: a double-laser stream could be done here
+		//just change angle by some small offset, make sure it isn't negative, recalculate laserVel, push another projectile
 
 		if (this.attackDuration === 1) {
 			this.dash()
@@ -1227,6 +1241,7 @@ export class Boss extends Entity {
 		var angle = state.randint(0, 359)
 		var vel = SimpleVector.unitVector(angle).scale(initialFVel)
 
+		//BALANCING: damage formula for Fs is here
 		state.projectiles.push(
 			new Projectile(
 				this.pos.clone(),
@@ -1243,6 +1258,8 @@ export class Boss extends Entity {
 	doLaserSweep(state) {
 		var progress = 1 - (this.maxAttackDuration() / this.attackDuration)
 		var angle = 180 * progress
+
+		//BALANCING: adding more items to both of these lists causes more bullet sources and more bullets in sweep attack
 		var angleOffsets = [240, 110]
 		var radii = [this.size, this.size * 0.9]
 
@@ -1262,6 +1279,8 @@ export class Boss extends Entity {
 	
 			var bulletType
 			var speed
+			//BALANCING: right now, this logic makes 10% F, 20% laser, 70% normal.  This can be tweaked
+			//BALANCING: change initial velocities for faster bullets.  Changing F velocity won't make it better though
 			var r = state.randint(1, 10)
 			if (r === 1) {
 				bulletType = Projectile.F
@@ -1274,13 +1293,14 @@ export class Boss extends Entity {
 				speed = playerBulletVel
 			}
 
+			//BALANCING: see the damage formula.  laserAttackFactor is something like 0.04 since it does damage per tick
 			var vel = SimpleVector.unitVector(angle).scale(speed)
 			state.projectiles.push(new Projectile(
 				handPos.clone(),
 				vel,
 				bossAttackSize,
 				this.color,
-				bossProjectileDamage * laserAttackFactor,
+				bulletType === Projectile.LASER ? bossProjectileDamage * laserAttackFactor : bossProjectileDamage,
 				bulletType,
 				null,
 				(360 - angle) % 360
@@ -1289,6 +1309,7 @@ export class Boss extends Entity {
 	}
 
 	doBombAttack(state) {
+		//BALANCING: decrease the 10 to make bomb attacks spawn more bombs
 		if (this.attackDuration % 10 !== 0) {
 			return
 		}
@@ -1322,8 +1343,10 @@ export class Boss extends Entity {
 			}
 	
 			if (state.random() < bossAttackChancePerTick) {
+				//BALANCING: decrease this value to decrease gap between boss attacks
 				this.attackCooldown = bossMinAttackDelay
-				this.attackPattern = Boss.ATTACK_BOMB
+				this.attackPattern = state.randint(0, MAX_ATTACK)
+				//BALANCING: see maxAttackDuration() for details
 				this.attackDuration = this.maxAttackDuration()
 			}
 		} else {
@@ -1362,8 +1385,7 @@ export class Boss extends Entity {
 			}
 		}
 
-		//if there is at least one player, and that player is in the sight range if we are is testing mode
-		if (closestPlayer !== null && (isTesting() || closestPlayerDist < bossSightRange)) {
+		if (closestPlayer !== null) {
 			var dx = closestPlayer.pos.x - this.pos.x
 			var dy = closestPlayer.pos.y - this.pos.y
 			var radians = Math.atan2(dy, dx) 
@@ -1373,6 +1395,7 @@ export class Boss extends Entity {
 			}
 			this.angle = angle
 
+			//BALANCING: boss could be made faster here
 			var newAcc = new SimpleVector(
 				Math.cos(radians) * bossSpeed * bossBaseAcceleration,
 				Math.sin(radians) * bossSpeed * bossBaseAcceleration
