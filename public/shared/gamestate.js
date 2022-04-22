@@ -74,6 +74,37 @@ export class GameState {
 				}
 			}
 		}
+
+		/*function collisionHelper(array1, array2, onCollision, checkColor=true) {
+			var arr = []
+			for (var i = 0; i < array1.length; i++) {
+				var entity = array1[i]
+				var hitboxes = entity.getHitboxes()
+				arr.push({
+					n: 1,
+					entity: array1[i],
+					hitbox: arr
+				})
+			}
+
+			for (var i = 0; i < array1.length; i++) {
+				for (var j = 0; j < array2.length; j++) {
+					if (array1[i] === array2[j] || (checkColor && array1[i].color.equals(array2[j].color))) {
+						continue
+					}
+					var hitboxes1 = array1[i].getHitboxes()
+					var hitboxes2 = array2[j].getHitboxes()
+
+					for (var k = 0; k < hitboxes1.length; k++) {
+						for (var l = 0; l < hitboxes2.length; l++) {
+							if (hitboxes1[k].isColliding(hitboxes2[l])) {
+								onCollision(hitboxes1[k], hitboxes2[l])
+							}
+						}
+					}
+				}
+			}
+		}*/
 		var state = this;
 
 		//players and projectiles:
