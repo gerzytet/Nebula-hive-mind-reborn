@@ -123,7 +123,7 @@ export var state
 var resizeCache = {}
 var initialName
 var input, button
-var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShotButton, laserButton, summonerButton, backToMenuButton, menuDiv
+var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShotButton, laserButton, summonerButton, DoubleButtonImgElem, LazerButtonImgElem, summonerButtonImgElem, backToMenuButton, menuDiv
 var maxAmmo = 50;
 var ammo = maxAmmo
 var lastax
@@ -450,9 +450,18 @@ function createMenu() {
 
 }
 
+var ability_value = Math.floor(Math.random() * (Player.MAX_ABILITY + 1));
 var menuButtonEnabled = false
 function enableMenuButton() {
-	startButton.mouseClicked(() => {transitionToState(STATE_RUNNING, Math.floor(Math.random() * (Player.MAX_ABILITY + 1)))})
+
+	
+	startButton.mouseClicked(() => { transitionToState(STATE_RUNNING, ability_value)})
+
+	summonerButton.mouseClicked(() => { (ability_value = 1)})
+
+	doubleShotButton.mouseClicked(() => { (ability_value = 0)})
+
+	laserButton.mouseClicked(() => { (ability_value = 2)})
 
 	if (startButtonImgElem) {
 		startButtonImgElem.remove()
@@ -460,6 +469,33 @@ function enableMenuButton() {
 	startButtonImgElem = createImg("startbutton.png", "Start")
 	startButtonImgElem.class("button-image")
 	startButtonImgElem.parent(startButton)
+
+
+
+	if (LazerButtonImgElem) {
+		LazerButtonImgElem.remove()
+	}
+	LazerButtonImgElem = createImg("laserbutton.png", "Lazer")
+	LazerButtonImgElem.class("button-image")
+	LazerButtonImgElem.parent(laserButton)
+
+
+	if (DoubleButtonImgElem) {
+		DoubleButtonImgElem.remove()
+	}
+	DoubleButtonImgElem = createImg("doubleshotbutton.png", "Double_Shot")
+	DoubleButtonImgElem.class("button-image")
+	DoubleButtonImgElem.parent(doubleShotButton)
+
+
+	
+	if (summonerButtonImgElem) {
+		summonerButtonImgElem.remove()
+	}
+	summonerButtonImgElem = createImg("summonerbutton.png", "Summoner")
+	summonerButtonImgElem.class("button-image")
+	summonerButtonImgElem.parent(summonerButton)
+
 	menuButtonEnabled = true
 }
 

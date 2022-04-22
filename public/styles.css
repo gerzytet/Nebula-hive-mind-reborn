@@ -8,12 +8,14 @@
     width: 100%;
     height: 15%;
   }
-  
-  .ability-button {
+
+.ability-button {
     width: 33.33%;
     vertical-align: top;
     height: 40%;
-  }
+    background-color: transparent;
+    image-rendering: pixelated;
+}
   
   .menu-button-container {
     width: 400px;
@@ -26,10 +28,12 @@
     vertical-align: top;
     height: 45%;
     background-color: transparent;
-    image-rendering: pixelated
+    image-rendering: pixelated;
   }
-  
-  .button-image {
+
+.button-image {
     width: 100%;
     height: 100%;
-  }
+    background-color: transparent;
+    image-rendering: pixelated;
+}

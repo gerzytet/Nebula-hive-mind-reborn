@@ -1160,7 +1160,11 @@ export class Boss extends Entity {
 
 	getHitboxes() {
 		return [
-			this.makeHitbox(20, 100, 50)
+			this.makeHitbox(20, 100, 50),
+			this.makeHitbox(90, 100, 50),
+			this.makeHitbox(270, 100, 50),
+			this.makeHitbox(180, 100, 50),
+			this.makeHitbox(0, 100, 50)
 		]
 	}
 }
