@@ -473,8 +473,8 @@ export class Projectile extends Entity {
 		super(pos, size, color)
 		this.vel = vel
 		this.damage = damage
-		this.life = bulletLifetimeTicks
 		this.type = type
+		this.life = this.maxLifetime()
 		this.angle = angle
 		this.id = id
 		Projectile.assertValid(this)
@@ -1302,7 +1302,7 @@ export class Boss extends Entity {
 				bossAttackSize,
 				this.color,
 				0,
-				Projectile.BOMB
+				Projectile.BOMB,
 			)
 		)
 	}
@@ -1323,7 +1323,7 @@ export class Boss extends Entity {
 	
 			if (state.random() < bossAttackChancePerTick) {
 				this.attackCooldown = bossMinAttackDelay
-				this.attackPattern = state.randint(0, Boss.MAX_ATTACK)
+				this.attackPattern = Boss.ATTACK_BOMB
 				this.attackDuration = this.maxAttackDuration()
 			}
 		} else {
