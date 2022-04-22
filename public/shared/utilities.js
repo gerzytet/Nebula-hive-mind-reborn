@@ -172,11 +172,41 @@ export class SimpleVector {
 	add(other) {
 		this.x += other.x
 		this.y += other.y
+
+		return this
 	}
 
 	scale(scalar) {
 		this.x *= scalar
 		this.y *= scalar
+
+		return this
+	}
+
+	angleTo(other) {
+		var dx = other.x - this.x
+		var dy = other.y - this.y
+		var radians = Math.atan2(dy, dx) 
+		var angle = radians * 180 / Math.PI
+		if (angle < 0) {
+			angle += 360
+		}
+		return angle
+	}
+
+	static unitVector(angle) {
+		var radians = angle * (Math.PI / 180)
+		var vec = new SimpleVector(
+			Math.cos(radians),
+			Math.sin(radians)
+		)
+		return vec
+	}
+
+	static unitVectorNegativeY(angle) {
+		var vec = SimpleVector.unitVector(angle)
+		vec.y *= -1
+		return vec
 	}
 }
 

@@ -78,11 +78,11 @@ export class GameState {
 
 		//players and projectiles:
 		//damage the player by projectile.damage, kill the projectile
-		/*collisionHelper(this.players, this.projectiles, function(player, projectile) {
+		collisionHelper(this.players, this.projectiles, function(player, projectile) {
 			player.damage(projectile.damage, projectile.color, state)
 			projectile.pushIfNotLaser(player, 3)
 			projectile.killIfNotLaser()
-		})*/
+		})
 
 		//asteroids and players:
 		//damage the player by asteroidImpactDamagePerTick, push each other away
@@ -218,7 +218,7 @@ export class GameState {
 
 	tickEntities() {
 		this.players.map(p => p.tick(this))
-		this.projectiles.map(p => p.tick())
+		this.projectiles.map(p => p.tick(this))
 		this.asteroids.map(a => a.tick())
 		this.enemies.map(e => e.tick(this))
 		this.powerups.map(p => p.tick())
@@ -400,6 +400,22 @@ export class GameState {
 	//true if boss or their death explosion is still around
 	bossExists() {
 		return this.enemies.find(e => e instanceof Boss) !== undefined
+	}
+
+	getClosestPlayer(pos) {
+		var closestPlayer = null
+		var closestPlayerDist = Infinity
+		for (var i = 0; i < this.players.length; i++) {
+			var player = this.players[i]
+
+			var dist = pos.dist(player.pos)
+			if (dist < closestPlayerDist) {
+				closestPlayer = player
+				closestPlayerDist = dist
+			}
+		}
+
+		return closestPlayer
 	}
 }
 

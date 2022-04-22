@@ -450,9 +450,11 @@ export class Player extends Entity {
 
 const bulletLifetimeTicks = 150
 const laserLifetimeTicks = 50
+const fLifetimeTicks = 200
 export class Projectile extends Entity {
 	static NORMAL = 0
 	static LASER = 1
+	static F = 2
 
 	constructor(pos, vel, size, color, damage, type=Projectile.NORMAL, angle=0) {
 		super(pos, size, color)
@@ -469,6 +471,8 @@ export class Projectile extends Entity {
 			return bulletLifetimeTicks
 		} else if (this.type === Projectile.LASER) {
 			return laserLifetimeTicks
+		} else if (this.type === Projectile.F) {
+			return fLifetimeTicks
 		}
 	}
 
@@ -478,7 +482,7 @@ export class Projectile extends Entity {
 		Assert.number(projectile.damage)
 		Assert.number(projectile.life)
 		Assert.number(projectile.type)
-		Assert.true(projectile.type === Projectile.NORMAL || projectile.type === Projectile.LASER)
+		Assert.true(projectile.type === Projectile.NORMAL || projectile.type === Projectile.LASER || projectile.type === Projectile.F)
 	}
 
 	serialize() {
@@ -542,7 +546,14 @@ export class Projectile extends Entity {
 		}
 	}
 
-	tick() {
+	tick(state) {
+		if (this.type == Projectile.F) {
+			var closestPlayer = state.getClosestPlayer(this.pos)
+			if (closestPlayer !== null) {
+				this.acc = SimpleVector.unitVector(this.pos.angleTo(closestPlayer.pos))
+			}
+		}
+
 		this.move()
 		this.life--
 	}
@@ -1018,18 +1029,28 @@ export class PlayerAfterImage {
 	}
 }
 
-const bossProjectileDamage = 100
+const bossProjectileDamage = 40
 export const bossMaxHealth = playerMaxHealth * 6;
 const bossSize = 200
 const bossSpeed = 5
 const bossBaseAcceleration = 0.01
-const bossShootChancePerTick = 0.02
 const bossSightRange = 500
-const bossShotSpreadAngle = 20
+const bossMinAttackDelay = 30
+const bossAttackChancePerTick = 1/15
+const bossAttackSize = playerBaseBulletSize
 export class Boss extends Entity {
+	static ATTACK_LASER_LEFT = 0
+	static ATTACK_F = 1
+	static ATTACK_LASER_RIGHT = 2
+	static ATTACK_SWEEP = 3
+	static MAX_ATTACK = 3
+
 	constructor (pos, color=neutralColor) {
 		super(pos, bossSize, color)
 		this.health = bossMaxHealth
+		this.attackCooldown = 0
+		this.attackPattern = undefined
+		this.attackDuration = 0
 	}
 
 	serialize() {
@@ -1040,7 +1061,10 @@ export class Boss extends Entity {
 			health: this.health,
 			angle: this.angle,
 			color: this.color.serialize(),
-			isBoss: true
+			isBoss: true,
+			attackCooldown: this.attackCooldown,
+			attackPattern: this.attackPattern,
+			attackDuration: this.attackDuration
 		}
 	}
 
@@ -1050,6 +1074,9 @@ export class Boss extends Entity {
 		boss.vel = SimpleVector.deserialize(data.vel)
 		boss.health = data.health
 		boss.angle = data.angle
+		boss.attackCooldown = data.attackCooldown
+		boss.attackPattern = data.attackPattern
+		boss.attackDuration = data.attackDuration
 		Boss.assertValid(boss)
 		return boss
 	}
@@ -1059,6 +1086,23 @@ export class Boss extends Entity {
 		Assert.instanceOf(boss, Boss)
 		Assert.number(boss.health)
 		Assert.true(boss.health >= 0 && boss.health <= bossMaxHealth)
+		Assert.number(boss.attackCooldown)
+		Assert.true(boss.attackCooldown >= 0 && boss.attackCooldown <= bossMinAttackDelay)
+		Assert.true(boss.attackPattern === undefined || boss.attackPattern >= 0 && boss.attackPattern <= Boss.MAX_ATTACK)
+		Assert.number(boss.attackDuration)
+		Assert.true(boss.attackDuration >= 0)
+	}
+
+	maxAttackDuration() {
+		switch (this.attackPattern) {
+			case Boss.ATTACK_LASER_LEFT:
+			case Boss.ATTACK_LASER_RIGHT:
+				return 50
+			case Boss.ATTACK_F:
+				return 50
+			case Boss.ATTACK_SWEEP:
+				return 60
+		}
 	}
 
 	move() {
@@ -1080,24 +1124,128 @@ export class Boss extends Entity {
 		return this.health <= 0
 	}
 
-	maybeShoot(state) {
-		if (state.random() < bossShootChancePerTick) {
-			const bossBulletVel = playerBulletVel / 1.5
-			const bossBulletSize = playerBaseBulletSize
-			var shotAngle = this.angle + state.randint(-bossShotSpreadAngle, bossShotSpreadAngle)
-			var shotRadians = shotAngle * Math.PI / 180
-			state.projectiles.push(
-				new Projectile(
-					new SimpleVector(this.pos.x, this.pos.y),
-					new SimpleVector(
-						bossBulletVel * Math.cos(shotRadians),
-						bossBulletVel * Math.sin(shotRadians)
-					),
-					bossBulletSize,
-					this.color,
-					bossProjectileDamage
-				)
+	doLaserAttack(state) {
+		var angleOffset
+		var radius
+		if (this.attackPattern === Boss.ATTACK_LASER_LEFT) {
+			angleOffset = 240
+			radius = this.size
+		} else if (this.attackPattern === Boss.ATTACK_LASER_RIGHT) {
+			angleOffset = 110
+			radius = this.size * 0.9
+		}
+		var radians = (this.angle + angleOffset) * (Math.PI / 180)
+		var offset = new SimpleVector(
+			Math.cos(radians),
+			Math.sin(radians)
+		)
+		offset.scale(radius)
+
+		var handPos = this.pos.clone()
+		handPos.add(offset)
+
+		var closestPlayer = state.getClosestPlayer(handPos)
+		var angle
+		if (closestPlayer === null) {
+			angle = this.pos.angleTo(handPos)
+		} else {
+			angle = handPos.angleTo(closestPlayer.pos)
+		}
+
+		var laserVel = SimpleVector.unitVector(angle).scale(playerLaserVel)
+		state.projectiles.push(new Projectile(
+			handPos.clone(),
+			laserVel,
+			bossAttackSize,
+			this.color,
+			bossProjectileDamage * laserAttackFactor,
+			Projectile.LASER,
+			(360 - angle)
+		))
+	}
+
+	doFAttack(state) {
+		if (this.attackDuration % 5 != 0) {
+			return
+		}
+
+		const initialFVel = 15
+		var angle = state.randint(0, 359)
+		var vel = SimpleVector.unitVector(angle).scale(initialFVel)
+
+		state.projectiles.push(
+			new Projectile(
+				this.pos.clone(),
+				vel,
+				bossAttackSize,
+				this.color,
+				bossProjectileDamage,
+				Projectile.F
 			)
+		)
+	}
+
+	doLaserSweep(state) {
+		var progress = 1 - (this.maxAttackDuration() / this.attackDuration)
+		var angle = 180 * progress
+		var angleOffsets = [240, 110]
+		var radii = [this.size, this.size * 0.9]
+
+		for (var i = 0; i < angleOffsets.length; i++) {
+			var angleOffset = angleOffsets[i]
+			var radius = radii[i]
+
+			var radians = (this.angle + angleOffset) * (Math.PI / 180)
+			var offset = new SimpleVector(
+				Math.cos(radians),
+				Math.sin(radians)
+			)
+			offset.scale(radius)
+	
+			var handPos = this.pos.clone()
+			handPos.add(offset)
+	
+			var laserVel = SimpleVector.unitVector(angle).scale(playerLaserVel)
+			state.projectiles.push(new Projectile(
+				handPos.clone(),
+				laserVel,
+				bossAttackSize,
+				this.color,
+				bossProjectileDamage * laserAttackFactor,
+				Projectile.LASER,
+				(360 - angle) % 360
+			))
+		}
+	}
+
+	doAttacks(state) {
+		if (this.attackDuration === 0) {
+			this.attackPattern = undefined
+
+			if (this.attackCooldown > 0) {
+				this.attackCooldown--
+				return
+			}
+	
+			if (state.random() < bossAttackChancePerTick) {
+				this.attackCooldown = bossMinAttackDelay
+				this.attackPattern = state.randint(0, Boss.MAX_ATTACK)
+				this.attackDuration = this.maxAttackDuration()
+			}
+		} else {
+			switch (this.attackPattern) {
+				case Boss.ATTACK_LASER_LEFT:
+				case Boss.ATTACK_LASER_RIGHT:
+					this.doLaserAttack(state)
+					break
+				case Boss.ATTACK_F:
+					this.doFAttack(state)
+					break
+				case Boss.ATTACK_SWEEP:
+					this.doLaserSweep(state)
+					break
+			}
+			this.attackDuration--
 		}
 	}
 
@@ -1138,7 +1286,7 @@ export class Boss extends Entity {
 		}
 
 		this.move()
-		this.maybeShoot(state)
+		this.doAttacks(state)
 	}
 
 	//return the hitbox at radius distance from the center, at angle degrees offset
