@@ -450,9 +450,11 @@ export class Player extends Entity {
 
 const bulletLifetimeTicks = 150
 const laserLifetimeTicks = 50
+const fLifetimeTicks = 200
 export class Projectile extends Entity {
 	static NORMAL = 0
 	static LASER = 1
+	static F = 2
 
 	constructor(pos, vel, size, color, damage, type=Projectile.NORMAL, angle=0) {
 		super(pos, size, color)
@@ -469,6 +471,8 @@ export class Projectile extends Entity {
 			return bulletLifetimeTicks
 		} else if (this.type === Projectile.LASER) {
 			return laserLifetimeTicks
+		} else if (this.type === Projectile.F) {
+			return fLifetimeTicks
 		}
 	}
 
@@ -478,7 +482,7 @@ export class Projectile extends Entity {
 		Assert.number(projectile.damage)
 		Assert.number(projectile.life)
 		Assert.number(projectile.type)
-		Assert.true(projectile.type === Projectile.NORMAL || projectile.type === Projectile.LASER)
+		Assert.true(projectile.type === Projectile.NORMAL || projectile.type === Projectile.LASER || projectile.type === Projectile.F)
 	}
 
 	serialize() {
@@ -542,7 +546,14 @@ export class Projectile extends Entity {
 		}
 	}
 
-	tick() {
+	tick(state) {
+		if (this.type == Projectile.F) {
+			var closestPlayer = state.getClosestPlayer(this.pos)
+			if (closestPlayer !== null) {
+				this.acc = SimpleVector.unitVector(this.pos.angleTo(closestPlayer.pos))
+			}
+		}
+
 		this.move()
 		this.life--
 	}
@@ -1018,7 +1029,7 @@ export class PlayerAfterImage {
 	}
 }
 
-const bossProjectileDamage = 100
+const bossProjectileDamage = 40
 export const bossMaxHealth = 50
 const bossSize = 200
 const bossSpeed = 5
@@ -1031,7 +1042,8 @@ export class Boss extends Entity {
 	static ATTACK_LASER_LEFT = 0
 	static ATTACK_F = 1
 	static ATTACK_LASER_RIGHT = 2
-	static MAX_ATTACK = 2
+	static ATTACK_SWEEP = 3
+	static MAX_ATTACK = 3
 
 	constructor (pos, color=neutralColor) {
 		super(pos, bossSize, color)
@@ -1076,8 +1088,7 @@ export class Boss extends Entity {
 		Assert.true(boss.health >= 0 && boss.health <= bossMaxHealth)
 		Assert.number(boss.attackCooldown)
 		Assert.true(boss.attackCooldown >= 0 && boss.attackCooldown <= bossMinAttackDelay)
-		Assert.number(boss.attackPattern)
-		Assert.true(boss.attackPattern >= 0 && boss.attackPattern <= Boss.MAX_ATTACK)
+		Assert.true(boss.attackPattern === undefined || boss.attackPattern >= 0 && boss.attackPattern <= Boss.MAX_ATTACK)
 		Assert.number(boss.attackDuration)
 		Assert.true(boss.attackDuration >= 0)
 	}
@@ -1087,6 +1098,10 @@ export class Boss extends Entity {
 			case Boss.ATTACK_LASER_LEFT:
 			case Boss.ATTACK_LASER_RIGHT:
 				return 50
+			case Boss.ATTACK_F:
+				return 50
+			case Boss.ATTACK_SWEEP:
+				return 60
 		}
 	}
 
@@ -1149,6 +1164,60 @@ export class Boss extends Entity {
 		))
 	}
 
+	doFAttack(state) {
+		if (this.attackDuration % 5 != 0) {
+			return
+		}
+
+		const initialFVel = 15
+		var angle = state.randint(0, 359)
+		var vel = SimpleVector.unitVector(angle).scale(initialFVel)
+
+		state.projectiles.push(
+			new Projectile(
+				this.pos.clone(),
+				vel,
+				bossAttackSize,
+				this.color,
+				bossProjectileDamage,
+				Projectile.F
+			)
+		)
+	}
+
+	doLaserSweep(state) {
+		var progress = 1 - (this.maxAttackDuration() / this.attackDuration)
+		var angle = 180 * progress
+		var angleOffsets = [240, 110]
+		var radii = [this.size, this.size * 0.9]
+
+		for (var i = 0; i < angleOffsets.length; i++) {
+			var angleOffset = angleOffsets[i]
+			var radius = radii[i]
+
+			var radians = (this.angle + angleOffset) * (Math.PI / 180)
+			var offset = new SimpleVector(
+				Math.cos(radians),
+				Math.sin(radians)
+			)
+			offset.scale(radius)
+	
+			var handPos = this.pos.clone()
+			handPos.add(offset)
+	
+			var laserVel = SimpleVector.unitVector(angle).scale(playerLaserVel)
+			state.projectiles.push(new Projectile(
+				handPos.clone(),
+				laserVel,
+				bossAttackSize,
+				this.color,
+				bossProjectileDamage * laserAttackFactor,
+				Projectile.LASER,
+				(360 - angle) % 360
+			))
+		}
+	}
+
 	doAttacks(state) {
 		if (this.attackDuration === 0) {
 			this.attackPattern = undefined
@@ -1160,7 +1229,7 @@ export class Boss extends Entity {
 	
 			if (state.random() < bossAttackChancePerTick) {
 				this.attackCooldown = bossMinAttackDelay
-				this.attackPattern = state.randint(0, 1) * 2
+				this.attackPattern = state.randint(0, Boss.MAX_ATTACK)
 				this.attackDuration = this.maxAttackDuration()
 			}
 		} else {
@@ -1168,6 +1237,13 @@ export class Boss extends Entity {
 				case Boss.ATTACK_LASER_LEFT:
 				case Boss.ATTACK_LASER_RIGHT:
 					this.doLaserAttack(state)
+					break
+				case Boss.ATTACK_F:
+					this.doFAttack(state)
+					break
+				case Boss.ATTACK_SWEEP:
+					this.doLaserSweep(state)
+					break
 			}
 			this.attackDuration--
 		}

@@ -78,11 +78,11 @@ export class GameState {
 
 		//players and projectiles:
 		//damage the player by projectile.damage, kill the projectile
-		/*collisionHelper(this.players, this.projectiles, function(player, projectile) {
+		collisionHelper(this.players, this.projectiles, function(player, projectile) {
 			player.damage(projectile.damage, projectile.color, state)
 			projectile.pushIfNotLaser(player, 3)
 			projectile.killIfNotLaser()
-		})*/
+		})
 
 		//asteroids and players:
 		//damage the player by asteroidImpactDamagePerTick, push each other away
@@ -218,7 +218,7 @@ export class GameState {
 
 	tickEntities() {
 		this.players.map(p => p.tick(this))
-		this.projectiles.map(p => p.tick())
+		this.projectiles.map(p => p.tick(this))
 		this.asteroids.map(a => a.tick())
 		this.enemies.map(e => e.tick(this))
 		this.powerups.map(p => p.tick())

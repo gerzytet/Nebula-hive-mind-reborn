@@ -799,10 +799,23 @@ function showLaser(laser) {
 	pop()
 }
 
+function showF(f) {
+	push()
+	var c = f.color
+	fill(c.r, c.g, c.b)
+	translate(f.pos.x - camera.x, f.pos.y - camera.y)
+	text("F", 0, 0)
+	pop()
+}
+
 function showProjecile(projectile) {
 	if (isOnscreen(projectile)) {
 		if (projectile.type === Projectile.LASER) {
 			showLaser(projectile)
+			return
+		}
+		if (projectile.type === Projectile.F) {
+			showF(projectile)
 			return
 		}
 		push()
@@ -876,7 +889,7 @@ function showBoss(boss) {
 	imageWithResize(towleImage, "towle", 0, 0, boss.size * 2, boss.size * 2)
 	pop()
 	
-	var hitboxes = boss.getHitboxes()
+	/*var hitboxes = boss.getHitboxes()
 	for (var i = 0; i < hitboxes.length; i++) {
 		push()
 		var h = hitboxes[i]
@@ -885,7 +898,7 @@ function showBoss(boss) {
 		translate(h.pos.x - camera.x, h.pos.y - camera.y)
 		ellipse(0, 0, h.size*2, h.size*2)
 		pop()
-	}
+	}*/
 }
 
 function showEnemy(enemy) {
