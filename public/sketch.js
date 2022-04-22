@@ -123,7 +123,7 @@ export var state
 var resizeCache = {}
 var initialName
 var input, button
-var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShotButton, laserButton, summonerButton, DoubleButtonImgElem, LazerButtonImgElem, summonerButtonImgElem, backToMenuButton, menuDiv
+var menuInput, startButton, chatInput, chatButton, startButtonImgElem, chatButtonImgElem, doubleShotButton, laserButton, summonerButton, doubleButtonImgElem, laserButtonImgElem, summonerButtonImgElem, backToMenuButton, menuDiv
 var maxAmmo = 50;
 var ammo = maxAmmo
 var lastax
@@ -385,7 +385,7 @@ function menuDraw() {
 	}
 }
 
-var ability_value = Math.floor(Math.random() * (Player.MAX_ABILITY + 1));
+var abilitySelection
 function createMenu() {
 	textAlign(CENTER);
 	textSize(50);
@@ -449,52 +449,114 @@ function createMenu() {
 		socket.emit('tickReply', {});
 	})
 
-	summonerButton.mouseClicked(() => {(ability_value = 1)})
+	summonerButton.mouseClicked(() => {deselectAbility(); selectAbility(Player.NECROMANCER)})
 
-	doubleShotButton.mouseClicked(() => { (ability_value = 0) })
+	doubleShotButton.mouseClicked(() => {deselectAbility(); selectAbility(Player.DOUBLE_SHOT)})
 
-	laserButton.mouseClicked(() => { (ability_value = 2) })
+	laserButton.mouseClicked(() => {deselectAbility(); selectAbility(Player.LASER) })
 
-	if (LazerButtonImgElem) {
-		LazerButtonImgElem.remove()
-	}
-	LazerButtonImgElem = createImg("laserbutton.png", "Lazer")
-	LazerButtonImgElem.class("button-image")
-	LazerButtonImgElem.parent(laserButton)
-	selecetedLazerButtonImgElem = createImg("selecetedlaserbutton.png", "Lazer")
-	selecetedLazerButtonImgElem.class("button-image")
-	selecetedLazerButtonImgElem.parent(laserButton)
+	laserButtonImgElem = createImg("laserbutton.png", "Lazer")
+	laserButtonImgElem.class("button-image")
+	laserButtonImgElem.parent(laserButton)
 
+	doubleButtonImgElem = createImg("doubleshotbutton.png", "Double_Shot")
+	doubleButtonImgElem.class("button-image")
+	doubleButtonImgElem.parent(doubleShotButton)
 
-	if (DoubleButtonImgElem) {
-		DoubleButtonImgElem.remove()
-	}
-	DoubleButtonImgElem = createImg("doubleshotbutton.png", "Double_Shot")
-	DoubleButtonImgElem.class("button-image")
-	DoubleButtonImgElem.parent(doubleShotButton)
-	selecetedDoubleButtonImgElem = createImg("seleceteddoubleshotbutton.png", "Double_Shot")
-	selecetedDoubleButtonImgElem.class("button-image")
-	selecetedDoubleButtonImgElem.parent(doubleShotButton)
-
-
-
-	if (summonerButtonImgElem) {
-		summonerButtonImgElem.remove()
-	}
 	summonerButtonImgElem = createImg("summonerbutton.png", "Summoner")
 	summonerButtonImgElem.class("button-image")
 	summonerButtonImgElem.parent(summonerButton)
-	selectedsummonerButtonImgElem = createImg("selectedsummonerbutton.png", "Summoner")
-	selectedsummonerButtonImgElem.class("button-image")
-	selectedsummonerButtonImgElem.parent(summonerButton)
 
+	selectAbility(Math.floor(Math.random() * (Player.MAX_ABILITY + 1)))
+}
+
+function abilityButtonImageName(ability) {
+	switch (ability) {
+		case Player.DOUBLE_SHOT:
+			return "doubleshotbutton.png"
+		case Player.LASER:
+			return "laserbutton.png"
+		case Player.NECROMANCER:
+			return "summonerbutton.png"
+	}
+}
+
+function selectedAbilityButtonImageName(ability) {
+	return "selected" + abilityButtonImageName(ability)
+}
+
+function abilityButtonElement(ability) {
+	switch (ability) {
+		case Player.DOUBLE_SHOT:
+			return doubleShotButton
+		case Player.LASER:
+			return laserButton
+		case Player.NECROMANCER:
+			return summonerButton
+	}
+}
+
+function abilityButtonImageElement(ability) {
+	switch (ability) {
+		case Player.DOUBLE_SHOT:
+			return doubleButtonImgElem
+		case Player.LASER:
+			return laserButtonImgElem
+		case Player.NECROMANCER:
+			return summonerButtonImgElem
+	}
+}
+
+function abilityAltText(ability) {
+	switch (ability) {
+		case Player.DOUBLE_SHOT:
+			return "double shot"
+		case Player.LASER:
+			return "laser"
+		case Player.NECROMANCER:
+			return "summoner"
+	}
+}
+
+function setImageElementVar(ability, element) {
+	switch (ability) {
+		case Player.DOUBLE_SHOT:
+			doubleButtonImgElem = element
+			break
+		case Player.LASER:
+			laserButtonImgElem = element
+			break
+		case Player.NECROMANCER:
+			summonerButtonImgElem = element
+			break
+	}
+}
+
+function deselectAbility() {
+	abilityButtonImageElement(abilitySelection).remove()
+	var deselectedButton = abilityButtonElement(abilitySelection)
+	var deselectedImageElement = createImg(abilityButtonImageName(abilitySelection), abilityAltText(abilitySelection))
+	deselectedImageElement.class("button-image")
+	deselectedImageElement.parent(deselectedButton)
+	setImageElementVar(abilitySelection, deselectedImageElement)
+}
+
+function selectAbility(ability) {
+	abilityButtonImageElement(ability).remove()
+	var selectedButton = abilityButtonElement(ability)
+	var selectedImageElement = createImg(selectedAbilityButtonImageName(ability), abilityAltText(ability))
+	selectedImageElement.class("button-image")
+	selectedImageElement.parent(selectedButton)
+	setImageElementVar(ability, selectedImageElement)
+
+	abilitySelection = ability
 }
 
 
 var menuButtonEnabled = false
 function enableMenuButton() {
 
-	startButton.mouseClicked(() => { transitionToState(STATE_RUNNING, ability_value) })
+	startButton.mouseClicked(() => { transitionToState(STATE_RUNNING, abilitySelection) })
 
 	if (startButtonImgElem) {
 		startButtonImgElem.remove()
