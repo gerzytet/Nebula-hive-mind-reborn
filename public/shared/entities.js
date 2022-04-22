@@ -1019,7 +1019,7 @@ export class PlayerAfterImage {
 }
 
 const bossProjectileDamage = 100
-export const bossMaxHealth = 50
+export const bossMaxHealth = playerMaxHealth * 6;
 const bossSize = 200
 const bossSpeed = 5
 const bossBaseAcceleration = 0.01
