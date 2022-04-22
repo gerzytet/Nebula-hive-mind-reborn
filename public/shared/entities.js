@@ -368,6 +368,9 @@ export class Player extends Entity {
 		if (this.ability === Player.NECROMANCER) {
 			let enemy = new Enemy(this.pos.clone(), this.color, this.id)
 			enemy.angle = -1 * this.angle
+			if (enemy.angle < 0) {
+				enemy.angle += 360
+			}
 			enemy.size = this.size*0.7
 			state.enemies.push(enemy)			
 		}
@@ -459,10 +462,12 @@ export class Player extends Entity {
 const bulletLifetimeTicks = 150
 const laserLifetimeTicks = 50
 const fLifetimeTicks = 200
+const bombLifetimeTicks =  30
 export class Projectile extends Entity {
 	static NORMAL = 0
 	static LASER = 1
 	static F = 2
+	static BOMB = 3
 
 	constructor(pos, vel, size, color, damage, type=Projectile.NORMAL, id = null, angle=0) {
 		super(pos, size, color)
@@ -482,6 +487,8 @@ export class Projectile extends Entity {
 			return laserLifetimeTicks
 		} else if (this.type === Projectile.F) {
 			return fLifetimeTicks
+		} else if (this.type === Projectile.BOMB) {
+			return bombLifetimeTicks
 		}
 	}
 
@@ -544,13 +551,30 @@ export class Projectile extends Entity {
 	bombExplosion(state) {
 		var speed = 10
 
-		this.life = 0
+		for (var angle = 0; angle < 360; angle += 45) {
+			state.projectiles.push(
+				new Projectile(
+					this.pos.clone(),
+					SimpleVector.unitVector(angle).scale(speed),
+					playerBaseBulletSize,
+					neutralColor,
+					bossProjectileDamage,
+					[Projectile.F, Projectile.NORMAL, Projectile.NORMAL][state.randint(0, 2)]
+				)
+			)
 		}
 	}
 
-	killIfNotLaser() {
+	kill(state) {
+		this.life = 0
+		if (this.type === Projectile.BOMB) {
+			this.bombExplosion(state)
+		}
+	}
+
 	killIfNotLaser(state) {
 		if (this.type !== Projectile.LASER) {
+			this.kill(state)
 		}
 	}
 
@@ -1065,6 +1089,7 @@ export class Boss extends Entity {
 	static ATTACK_F = 1
 	static ATTACK_LASER_RIGHT = 2
 	static ATTACK_SWEEP = 3
+	static ATTACK_BOMB = 4
 	static MAX_ATTACK = 4
 
 	constructor (pos, color=neutralColor) {
@@ -1124,14 +1149,14 @@ export class Boss extends Entity {
 				return 50
 			case Boss.ATTACK_SWEEP:
 				return 60
+			case Boss.ATTACK_BOMB:
+				return 50
 		}
 	}
 
 	move() {
 		super.move()
 
-		this.vel.x *= 0.99
-		this.vel.y *= 0.99
 		if (this.vel.magnitude() > bossSpeed) {
 			this.vel.x *= 0.99
 			this.vel.y *= 0.99	
@@ -1188,6 +1213,8 @@ export class Boss extends Entity {
 			null,
 			(360 - angle)
 		))
+
+		if (this.attackDuration === 1) {
 			this.dash()
 		}
 	}
@@ -1262,6 +1289,7 @@ export class Boss extends Entity {
 	}
 
 	doBombAttack(state) {
+		if (this.attackDuration % 10 !== 0) {
 			return
 		}
 
@@ -1269,6 +1297,21 @@ export class Boss extends Entity {
 		var unitVector = SimpleVector.unitVector(angle)
 		state.projectiles.push(
 			new Projectile(
+				this.pos.clone(),
+				unitVector.clone().scale(playerBulletVel),
+				bossAttackSize,
+				this.color,
+				0,
+				Projectile.BOMB
+			)
+		)
+	}
+
+	dash() {
+		var unitVector = SimpleVector.unitVector(this.angle)
+		this.vel = unitVector.clone().scale(bossSpeed * 3)
+	}
+
 	doAttacks(state) {
 		if (this.attackDuration === 0) {
 			this.attackPattern = undefined
@@ -1295,6 +1338,8 @@ export class Boss extends Entity {
 				case Boss.ATTACK_SWEEP:
 					this.doLaserSweep(state)
 					break
+				case Boss.ATTACK_BOMB:
+					this.doBombAttack(state)
 					break
 			}
 			this.attackDuration--
