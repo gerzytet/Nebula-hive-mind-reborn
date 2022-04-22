@@ -548,9 +548,9 @@ export class Projectile extends Entity {
 		}
 	}
 
-	killIfNotLaser() {
 	killIfNotLaser(state) {
 		if (this.type !== Projectile.LASER) {
+			this.kill(state)
 		}
 	}
 
