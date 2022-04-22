@@ -1038,6 +1038,7 @@ const bossSightRange = 500
 const bossMinAttackDelay = 30
 const bossAttackChancePerTick = 1/15
 const bossAttackSize = playerBaseBulletSize
+const initialFVel = 15
 export class Boss extends Entity {
 	static ATTACK_LASER_LEFT = 0
 	static ATTACK_F = 1
@@ -1169,7 +1170,6 @@ export class Boss extends Entity {
 			return
 		}
 
-		const initialFVel = 15
 		var angle = state.randint(0, 359)
 		var vel = SimpleVector.unitVector(angle).scale(initialFVel)
 
@@ -1205,14 +1205,28 @@ export class Boss extends Entity {
 			var handPos = this.pos.clone()
 			handPos.add(offset)
 	
-			var laserVel = SimpleVector.unitVector(angle).scale(playerLaserVel)
+			var bulletType
+			var speed
+			var r = state.randint(1, 10)
+			if (r === 1) {
+				bulletType = Projectile.F
+				speed = initialFVel
+			} else if (r === 2 || r == 3) {
+				bulletType = Projectile.LASER
+				speed = playerLaserVel
+			} else {
+				bulletType = Projectile.NORMAL
+				speed = playerBulletVel
+			}
+
+			var vel = SimpleVector.unitVector(angle).scale(speed)
 			state.projectiles.push(new Projectile(
 				handPos.clone(),
-				laserVel,
+				vel,
 				bossAttackSize,
 				this.color,
 				bossProjectileDamage * laserAttackFactor,
-				Projectile.LASER,
+				bulletType,
 				(360 - angle) % 360
 			))
 		}
