@@ -401,6 +401,22 @@ export class GameState {
 	bossExists() {
 		return this.enemies.find(e => e instanceof Boss) !== undefined
 	}
+
+	getClosestPlayer(pos) {
+		var closestPlayer = null
+		var closestPlayerDist = Infinity
+		for (var i = 0; i < this.players.length; i++) {
+			var player = this.players[i]
+
+			var dist = pos.dist(player.pos)
+			if (dist < closestPlayerDist) {
+				closestPlayer = player
+				closestPlayerDist = dist
+			}
+		}
+
+		return closestPlayer
+	}
 }
 
 //client-and-server specific stuff called by gamestate to communicate directly with client/server

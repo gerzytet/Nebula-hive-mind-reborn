@@ -793,7 +793,7 @@ function showBoss(boss) {
 	translate(boss.pos.x - camera.x, boss.pos.y - camera.y)
 	rotate(boss.angle)
 	imageMode(CENTER)
-	image(towleImage, 0, 0, boss.size * 2, boss.size * 2)
+	imageWithResize(towleImage, "towle", 0, 0, boss.size * 2, boss.size * 2)
 	pop()
 	
 	var hitboxes = boss.getHitboxes()
