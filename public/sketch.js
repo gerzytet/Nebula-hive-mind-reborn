@@ -1188,8 +1188,20 @@ function ui(player, state) {
 	endShape(CLOSE);
 	pop()
 
+	//getting scores
+	let scores = []
+	for (var i = 0; i < state.players.length; i++) {
+		let score = {
+			name: state.players[i].name,
+			color: state.players[i].color,
+			score: state.players[i].score
+		}
+		scores.push(score)
+	}
+	scores.sort((a, b) => b.score - a.score);
+	
 	//Player scoreboard
-	/*
+	
 	push()
 	stroke(255);
 	strokeWeight(2);
@@ -1198,16 +1210,21 @@ function ui(player, state) {
 	fill(255);
 	text("Player", windowWidth - 265, 5)
 	text("Score", windowWidth - 90, 5)
-	for (var i = 0; i < state.scores.length; i++) {
+	let score_ammount = 10
+	if (scores.length < 10){
+		score_ammount = scores.length
+	}
+	for (var i = 0; i < score_ammount; i++) {
 		var yplus = 25 + (i * 20)
-		var color = state.scores[i].color
+		var color = scores[i].color
 		fill(color.r, color.g, color.b)
 		text(i+1, windowWidth - 295, yplus)
-		text(state.scores[i].name, windowWidth - 265, yplus)
-		text(state.scores[i].score, windowWidth - 90, yplus)
+		text(scores[i].name, windowWidth - 265, yplus)
+		text(scores[i].score, windowWidth - 90, yplus)
 	}
 	pop()
-	*/
+	
+	/*
 	let scores = [{ color: { r: 255, g: 0, b: 0 }, name: "David", score: 1000 },
 		{ color: { r: 255, g: 200, b: 0 }, name: "Hi", score: 1800 },
 		{ color: { r: 0, g: 0, b: 255 }, name: "Craig", score: 800 },
@@ -1236,6 +1253,7 @@ function ui(player, state) {
 		text(scores[i].score, windowWidth - 90, yplus)
 	}
 	pop()
+	*/
 	//Bottom right
 
 	//background

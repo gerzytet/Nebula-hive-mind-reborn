@@ -81,7 +81,12 @@ export class GameState {
 		collisionHelper(this.players, this.projectiles, function(player, projectile) {
 			player.damage(projectile.damage, projectile.color, state)
 			projectile.pushIfNotLaser(player, 3)
+			let pointed_player = state.playerById(projectile.id)
+			if (pointed_player !== null) {
+				pointed_player.score += ceal(projectile.damage)
+			}
 			projectile.killIfNotLaser()
+			
 		})
 
 		//asteroids and players:
@@ -114,6 +119,10 @@ export class GameState {
 				enemy = enemy.entity
 			} else {
 				projectile.pushIfNotLaser(enemy, 2)
+			}
+			let pointed_player = state.playerById(projectile.id)
+			if (pointed_player !== null) {
+				pointed_player.score += 1
 			}
 			projectile.killIfNotLaser()
 			enemy.damage(projectile.damage)

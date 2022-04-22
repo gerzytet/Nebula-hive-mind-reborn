@@ -125,6 +125,7 @@ export class Player extends Entity {
 		this.abilityDuration = 0
 		this.name = name;
 		this.fuel = 3
+		this.score = 0;
 		Player.assertValid(this);
 	}
 
@@ -147,7 +148,8 @@ export class Player extends Entity {
 			ability: this.ability,
 			abilityCooldown: this.abilityCooldown,
 			abilityDuration: this.abilityDuration,
-			fuel: this.fuel
+			fuel: this.fuel,
+			score: this.score
 		}
 	}
 
@@ -164,6 +166,7 @@ export class Player extends Entity {
 		player.abilityDuration = data.abilityDuration
 		player.effects = []
 		player.fuel = data.fuel
+		player.score = data.score
 		for (var i = 0; i < data.effects.length; i++) {
 			player.effects.push(ActiveEffect.deserialize(data.effects[i]))
 		}
@@ -185,6 +188,7 @@ export class Player extends Entity {
 		Assert.true(player.abilityCooldown >= 0)
 		Assert.true(player.abilityDuration >= 0)
 		Assert.number(player.fuel)
+		Assert.number(player.score)
 		Assert.true(player.fuel >= 0 && player.fuel <= playerMaxFuel)
 
 		Assert.true(player.ability >= 0 && player.ability <= Player.MAX_ABILITY)
@@ -234,6 +238,7 @@ export class Player extends Entity {
 		} else {
 			this.color = color
 		}
+		this.score = 0
 		this.health = playerMaxHealth
 	}
 
@@ -295,7 +300,9 @@ export class Player extends Entity {
 				new SimpleVector(Math.cos(radians) * playerBulletVel, -Math.sin(radians) * playerBulletVel),
 				this.attackSize(),
 				this.color,
-				this.attack
+				this.attack,
+				Projectile.NORMAL,
+				this.id
 			))
 		}
 	}
@@ -309,6 +316,7 @@ export class Player extends Entity {
 			this.color,
 			this.attack * laserAttackFactor,
 			Projectile.LASER,
+			this.id,
 			this.angle
 		))
 	}
@@ -358,7 +366,7 @@ export class Player extends Entity {
 		this.abilityDuration = this.maxDuration(this.ability)
 
 		if (this.ability === Player.NECROMANCER) {
-			let enemy = new Enemy(this.pos.clone(), this.color)
+			let enemy = new Enemy(this.pos.clone(), this.color, this.id)
 			enemy.angle = -1 * this.angle
 			enemy.size = this.size*0.7
 			state.enemies.push(enemy)			
@@ -456,13 +464,14 @@ export class Projectile extends Entity {
 	static LASER = 1
 	static F = 2
 
-	constructor(pos, vel, size, color, damage, type=Projectile.NORMAL, angle=0) {
+	constructor(pos, vel, size, color, damage, type=Projectile.NORMAL, id = null, angle=0) {
 		super(pos, size, color)
 		this.vel = vel
 		this.damage = damage
 		this.life = bulletLifetimeTicks
 		this.type = type
 		this.angle = angle
+		this.id = id
 		Projectile.assertValid(this)
 	}
 
@@ -482,6 +491,9 @@ export class Projectile extends Entity {
 		Assert.number(projectile.damage)
 		Assert.number(projectile.life)
 		Assert.number(projectile.type)
+		if (projectile.id !== null) {
+			Assert.string(projectile.id)
+		}
 		Assert.true(projectile.type === Projectile.NORMAL || projectile.type === Projectile.LASER || projectile.type === Projectile.F)
 	}
 
@@ -493,7 +505,8 @@ export class Projectile extends Entity {
 			color: this.color.serialize(),
 			life: this.life,
 			damage: this.damage,
-			type: this.type
+			type: this.type,
+			id: this.id
 		}
 		if (this.type === Projectile.LASER) {
 			data.angle = this.angle
@@ -508,7 +521,8 @@ export class Projectile extends Entity {
 			data.size,
 			Color.deserialize(data.color),
 			data.damage,
-			data.type
+			data.type,
+			data.id
 		)
 		if (data.type === Projectile.LASER) {
 			projectile.angle = data.angle
@@ -837,9 +851,10 @@ const enemyShootChancePerTick = 0.02
 const enemySightRange = 500
 const enemyShotSpreadAngle = 20
 export class Enemy extends Entity {
-	constructor (pos, color=neutralColor) {
+	constructor (pos, color=neutralColor, id = null) {
 		super(pos, enemySize, color)
 		this.health = enemyMaxHealth
+		this.id = id
 	}
 
 	serialize() {
@@ -848,8 +863,8 @@ export class Enemy extends Entity {
 			angle: this.angle,
 			vel: this.vel,
 			health: this.health,
-			angle: this.angle,
-			color: this.color.serialize()
+			color: this.color.serialize(),
+			id: this.id
 		}
 	}
 
@@ -858,7 +873,8 @@ export class Enemy extends Entity {
 		enemy.angle = data.angle
 		enemy.vel = SimpleVector.deserialize(data.vel)
 		enemy.health = data.health
-		enemy.angle = data.angle
+		console.log(data.angle)
+		enemy.id = data.id
 		Enemy.assertValid(enemy)
 		return enemy
 	}
@@ -866,6 +882,9 @@ export class Enemy extends Entity {
 	static assertValid(enemy) {
 		Entity.assertValid(enemy)
 		Assert.number(enemy.health)
+		if (enemy.id !== null) {
+			Assert.string(enemy.id)
+        }
 		Assert.true(enemy.health >= 0 && enemy.health <= enemyMaxHealth)
 	}
 
@@ -903,7 +922,9 @@ export class Enemy extends Entity {
 					),
 					enemyBulletSize,
 					this.color,
-					enemyProjectileDamage
+					enemyProjectileDamage,
+					Projectile.NORMAL,
+					this.id
 				)
 			)
 		}
@@ -1161,6 +1182,7 @@ export class Boss extends Entity {
 			this.color,
 			bossProjectileDamage * laserAttackFactor,
 			Projectile.LASER,
+			null,
 			(360 - angle)
 		))
 	}
@@ -1180,7 +1202,8 @@ export class Boss extends Entity {
 				bossAttackSize,
 				this.color,
 				bossProjectileDamage,
-				Projectile.F
+				Projectile.F,
+				null
 			)
 		)
 	}
@@ -1227,6 +1250,7 @@ export class Boss extends Entity {
 				this.color,
 				bossProjectileDamage * laserAttackFactor,
 				bulletType,
+				null,
 				(360 - angle) % 360
 			))
 		}
