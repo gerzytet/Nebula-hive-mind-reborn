@@ -53,7 +53,7 @@ var swordHitSound = new Howl({
 import {Callbacks, GameState, setCallbacks} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
-import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage, Boss} from './shared/entities.js'
+import {Powerup, enemyMaxHealth, playerMaxHealth, bossMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage, Boss} from './shared/entities.js'
 import { serverCameraDraw, isServerCamera, becomeServerCamera } from "./serverCamera.js"
 //import {cuss} from 'cuss'
 
@@ -1022,6 +1022,39 @@ var ToggleChat = true;
 
 function ui(player, state) {
 	push()
+	//top
+
+	if (state.bossPhase) {
+		let boss = state.enemies.find(e => e instanceof Boss)
+		//background
+		push()
+		fill(0, 255, 255, 100);
+		stroke(0, 255, 255);
+		strokeWeight(5);
+		beginShape();
+		vertex((windowWidth / 2) - 440, -10);
+		vertex((windowWidth / 2) + 440, -10);
+		vertex((windowWidth / 2) + 420, 50);
+		vertex((windowWidth / 2) - 420, 50);
+		endShape(CLOSE);
+		pop()
+
+		if (boss !== undefined) {
+			//boss health bar
+			textSize(25);
+			textFont(dog);
+			fill(255);
+			text("Dr.Towle HP:", (windowWidth / 2) - 305, 38);
+			//max health bar (dark-grey)
+			fill(40);
+			rect((windowWidth / 2) - (100 * 3) + 110, 5, (100 * 6), 40);
+
+			//current health bar (red)
+			fill(255, 0, 0);
+			rect((windowWidth / 2) - (100 * 3) + 110, 5, ((boss.health) / bossMaxHealth) * (100 * 6), 40);
+        }
+    }
+
 	//Bottom
 
 	//background
@@ -1030,10 +1063,10 @@ function ui(player, state) {
 	stroke(0, 255, 255);
 	strokeWeight(5);
 	beginShape();
-	vertex((playerMaxHealth * 2) + 100, windowHeight + 10);
-	vertex((playerMaxHealth * 4) + 300, windowHeight + 10);
-	vertex((playerMaxHealth * 4) + 200, windowHeight - 100);
-	vertex((playerMaxHealth * 2) + 85, windowHeight - 95);
+	vertex((100 * 2) + 100, windowHeight + 10);
+	vertex((100 * 4) + 300, windowHeight + 10);
+	vertex((100 * 4) + 200, windowHeight - 100);
+	vertex((100 * 2) + 85, windowHeight - 95);
 	endShape(CLOSE);
 	pop()
 	
@@ -1042,18 +1075,18 @@ function ui(player, state) {
 	textFont(dog);
 	fill(255);
 
-	text(`Ability: ${player.abilityName()}`, (playerMaxHealth * 2) + 240, windowHeight - 75)
+	text(`Ability: ${player.abilityName()}`, (100 * 2) + 240, windowHeight - 75)
 
 	//Ability bar
-	text("Charge:", (playerMaxHealth * 2) + 138, windowHeight - 53)
+	text("Charge:", (100 * 2) + 138, windowHeight - 53)
 	//max Ability bar (dark-grey)
 	fill(40);
-	rect((playerMaxHealth * 2) + 180, windowHeight - 67, playerMaxHealth * 2, 20);
+	rect((100 * 2) + 180, windowHeight - 67, 100 * 2, 20);
 
 	//current Ability bar (yellow if in use, blue if charging)
 	if (player.isAbilityActive()) {
 		fill(255, 255, 0);
-		rect((playerMaxHealth * 2) + 180, windowHeight - 67, playerMaxHealth * 2 * (player.abilityDuration / player.maxDuration()), 20);
+		rect((100 * 2) + 180, windowHeight - 67, 100 * 2 * (player.abilityDuration / player.maxDuration()), 20);
     }
 	if (player.abilityDuration == 0) {
 		/*
@@ -1063,7 +1096,7 @@ function ui(player, state) {
 			fill(0, 0, 255);
         }*/
 		fill(((player.maxCooldown() - player.abilityCooldown) / player.maxCooldown()) * 255, ((player.maxCooldown() - player.abilityCooldown) / player.maxCooldown()) * 255, (player.abilityCooldown / player.maxCooldown()) * 255);
-		rect((playerMaxHealth * 2) + 180, windowHeight - 67, playerMaxHealth * 2 * ((player.maxCooldown()-player.abilityCooldown) / player.maxCooldown()), 20);
+		rect((100 * 2) + 180, windowHeight - 67, 100 * 2 * ((player.maxCooldown()-player.abilityCooldown) / player.maxCooldown()), 20);
 	}
 	//Bottom left
 
@@ -1075,8 +1108,8 @@ function ui(player, state) {
 	beginShape();
 	vertex(-10, windowHeight + 10);
 	vertex(-10, windowHeight - 110);
-	vertex((playerMaxHealth * 2) + 80, windowHeight - 115);
-	vertex((playerMaxHealth * 2) + 100, windowHeight + 10);
+	vertex((100 * 2) + 80, windowHeight - 115);
+	vertex((100 * 2) + 100, windowHeight + 10);
 	endShape(CLOSE);
 	pop()
 
@@ -1091,7 +1124,7 @@ function ui(player, state) {
 
 		//max health bar (dark-grey)
 		fill(40);
-		rect(70, windowHeight - 100, playerMaxHealth*2, 20);
+		rect(70, windowHeight - 100, 100*2, 20);
 
 		//current health bar (same as player color)
 		fill(player.color.r, player.color.g, player.color.b);
@@ -1107,16 +1140,16 @@ function ui(player, state) {
 		
 		//max Dash bar (dark-grey)
 		fill(40);
-		rect(70, windowHeight - 80, playerMaxHealth * 2, 20);
+		rect(70, windowHeight - 80, 100 * 2, 20);
 
 		//current Dash bar (Light-blue/cyan)
 		fill(0, 255, 255);
-		rect(70, windowHeight - 80, (playerMaxHealth * 2) * (player.fuel / playerMaxFuel), 20);
+		rect(70, windowHeight - 80, (100 * 2) * (player.fuel / playerMaxFuel), 20);
 
 		//Dash seperator
 		fill(40);
-		rect(70 + ((playerMaxHealth*2) / 3), windowHeight - 80, 1, 20);
-		rect(70 + (2*((playerMaxHealth*2) / 3)), windowHeight - 80, 1, 20);
+		rect(70 + ((100*2) / 3), windowHeight - 80, 1, 20);
+		rect(70 + (2*((100*2) / 3)), windowHeight - 80, 1, 20);
 	//Ammo indicator
 		//"Ammo:" text
 		textAlign(LEFT, TOP);
@@ -1127,16 +1160,16 @@ function ui(player, state) {
 
 		//max Ammo bar (dark-grey)
 		fill(40);
-		rect(70, windowHeight - 60, playerMaxHealth * 2, 20);
+		rect(70, windowHeight - 60, 100 * 2, 20);
 
 		//current Ammo bar (Player colored sticks)
 		fill(player.color.r, player.color.g, player.color.b);
-		rect(70, windowHeight - 60, ammo/maxAmmo * (playerMaxHealth * 2), 20);
+		rect(70, windowHeight - 60, ammo/maxAmmo * (100 * 2), 20);
 
 		//Ammo seperator
 		fill(40);
 		for (var i = 1; i < 50; i++) {
-			rect(70 + (i * ((playerMaxHealth * 2) / 50)), windowHeight - 60, 1, 20);
+			rect(70 + (i * ((100 * 2) / 50)), windowHeight - 60, 1, 20);
 		}
 
 
@@ -1149,15 +1182,60 @@ function ui(player, state) {
 	strokeWeight(5);
 	beginShape();
 	vertex(windowWidth + 10, -10);
-	vertex(windowWidth + 10, 200);
-	vertex(windowWidth - 150, 200);
-	vertex(windowWidth - 150, -10);
+	vertex(windowWidth + 10, 225);
+	vertex(windowWidth - 300, 225);
+	vertex(windowWidth - 300, -10);
 	endShape(CLOSE);
 	pop()
 
 	//Player scoreboard
-
-
+	/*
+	push()
+	stroke(255);
+	strokeWeight(2);
+	textSize(16);
+	textFont(dog);
+	fill(255);
+	text("Player", windowWidth - 265, 5)
+	text("Score", windowWidth - 90, 5)
+	for (var i = 0; i < state.scores.length; i++) {
+		var yplus = 25 + (i * 20)
+		var color = state.scores[i].color
+		fill(color.r, color.g, color.b)
+		text(i+1, windowWidth - 295, yplus)
+		text(state.scores[i].name, windowWidth - 265, yplus)
+		text(state.scores[i].score, windowWidth - 90, yplus)
+	}
+	pop()
+	*/
+	let scores = [{ color: { r: 255, g: 0, b: 0 }, name: "David", score: 1000 },
+		{ color: { r: 255, g: 200, b: 0 }, name: "Hi", score: 1800 },
+		{ color: { r: 0, g: 0, b: 255 }, name: "Craig", score: 800 },
+		{ color: { r: 0, g: 255, b: 0 }, name: "Pat", score: 700 },
+		{ color: { r: 32, g: 200, b: 4 }, name: "Chrisdingle12", score: 5 },
+		{ color: { r: 100, g: 104, b: 90 }, name: "Chris", score: 4 },
+		{ color: { r: 250, g: 3, b: 255 }, name: "Chris", score: 3 },
+		{ color: { r: 200, g: 30, b: 255 }, name: "Chris", score: 2 },
+		{ color: { r: 70, g: 100, b: 43 }, name: "Chris", score: 1 },
+		{ color: { r: 56, g: 123, b: 0 }, name: "Chris", score: 0 }
+	]
+	push()
+	stroke(255);
+	strokeWeight(2);
+	textSize(16);
+	textFont(dog);
+	fill(255);
+	text("Player", windowWidth - 265, 5)
+	text("Score", windowWidth - 90, 5)
+	for (var i = 0; i < scores.length; i++) {
+		var yplus = 25 + (i * 20)
+		var color = scores[i].color
+		fill(color.r, color.g, color.b)
+		text(i+1, windowWidth - 295, yplus)
+		text(scores[i].name, windowWidth - 265, yplus)
+		text(scores[i].score, windowWidth - 90, yplus)
+	}
+	pop()
 	//Bottom right
 
 	//background
