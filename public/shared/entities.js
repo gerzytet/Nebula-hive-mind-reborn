@@ -1160,11 +1160,25 @@ export class Boss extends Entity {
 
 	getHitboxes() {
 		return [
-			this.makeHitbox(20, 100, 50),
-			this.makeHitbox(90, 100, 50),
-			this.makeHitbox(270, 100, 50),
-			this.makeHitbox(180, 100, 50),
-			this.makeHitbox(0, 100, 50)
+			this.makeHitbox(240, 70, 20),
+			this.makeHitbox(60, 60, 50),
+			this.makeHitbox(320, 80, 30),
+			this.makeHitbox(90, 100, 20),
+			this.makeHitbox(100, 120, 20),
+			this.makeHitbox(105, 140, 20),
+			this.makeHitbox(105, 160, 20),
+			this.makeHitbox(108, 190, 20),
+			this.makeHitbox(260, 120, 20),
+			this.makeHitbox(255, 150, 25),
+			this.makeHitbox(245, 170, 20),
+			this.makeHitbox(241, 195, 20),
+			this.makeHitbox(190, 110, 50),
+			this.makeHitbox(190, 50, 50),
+			this.makeHitbox(-10, 100, 60),
+			this.makeHitbox(-5, 150, 50),
+			this.makeHitbox(0, 0, 50),
+			this.makeHitbox(280, 100, 50),
+			this.makeHitbox(175, 160, 30)
 		]
 	}
 }
