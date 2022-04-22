@@ -142,6 +142,8 @@ export class GameState {
 		//kill the projectile, damage the enemy by projectile.damage
 		collisionHelper(this.projectiles, this.enemies, function(projectile, enemy) {
 			if (enemy instanceof Hitbox) {
+				//BALANCING: if this branch executes, we know enemy is the boss
+				//we need some logic in here to nerf laser damage in this case
 				enemy = enemy.entity
 			} else {
 				projectile.pushIfNotLaser(enemy, 2)
@@ -151,6 +153,7 @@ export class GameState {
 				pointed_player.score += 1
 			}
 			projectile.killIfNotLaser()
+			//the part that does the damage
 			enemy.damage(projectile.damage)
 		})
 
