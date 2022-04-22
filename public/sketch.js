@@ -112,10 +112,14 @@ function preload() {
 	towleImage = loadImage('Towle.png', () => {}, () => {
 		console.log('Failed to load Towle')
 	})
+
+	FImage = loadImage('f.png', () => { }, () => {
+		console.log('Failed to load F')
+	})
 }
 export var bg
 export var pship, eship, asteroidFull, asteroidMedium, asteroidLow
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif, dog, towleImage
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif, dog, towleImage, FImage
 export var socket
 var cnv
 var camera
@@ -801,10 +805,22 @@ function showLaser(laser) {
 
 function showF(f) {
 	push()
-	var c = f.color
-	fill(c.r, c.g, c.b)
 	translate(f.pos.x - camera.x, f.pos.y - camera.y)
-	text("F", 0, 0)
+	imageMode(CENTER)
+	image(FImage, 0, 0, f.size * 2, f.size * 2)
+	pop()
+}
+
+function showBomb(bomb) {
+	push()
+	translate(bomb.pos.x - camera.x, bomb.pos.y - camera.y)
+	rectMode(CENTER)
+	fill(255, 0, 0)
+	rect(0, -bomb.size, 5, 10)
+	fill(100, 100, 100)
+	ellipseMode(CENTER)
+	ellipse(0, 0, bomb.size * 2)
+	
 	pop()
 }
 
@@ -818,6 +834,10 @@ function showProjecile(projectile) {
 			showF(projectile)
 			return
 		}
+		if (projectile.type === Projectile.BOMB) {
+			showBomb(projectile)
+			return
+        }
 		push()
 		var c = projectile.color
 		fill(c.r, c.g, c.b)

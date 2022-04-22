@@ -110,7 +110,7 @@ export class GameState {
 		//players and projectiles:
 		//damage the player by projectile.damage, kill the projectile
 		collisionHelper(this.players, this.projectiles, function(player, projectile) {
-			player.damage(projectile.damage, projectile.color, state)
+			//player.damage(projectile.damage, projectile.color, state)
 			projectile.pushIfNotLaser(player, 3)
 			projectile.killIfNotLaser(state)
 		})

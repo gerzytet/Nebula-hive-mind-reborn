@@ -890,7 +890,8 @@ export class Enemy extends Entity {
 			angle: this.angle,
 			vel: this.vel,
 			health: this.health,
-			color: this.color.serialize()
+			color: this.color.serialize(),
+			id: this.id
 		}
 	}
 
@@ -899,6 +900,7 @@ export class Enemy extends Entity {
 		enemy.angle = data.angle
 		enemy.vel = SimpleVector.deserialize(data.vel)
 		enemy.health = data.health
+		enemy.id = data.id
 		Enemy.assertValid(enemy)
 		return enemy
 	}
