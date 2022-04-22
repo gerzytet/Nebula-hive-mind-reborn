@@ -359,7 +359,8 @@ export class Player extends Entity {
 
 		if (this.ability === Player.NECROMANCER) {
 			let enemy = new Enemy(this.pos.clone(), this.color)
-			enemy.angle = -1*this.angle
+			enemy.angle = -1 * this.angle
+			enemy.size = this.size*0.7
 			state.enemies.push(enemy)			
 		}
 	}
