@@ -385,6 +385,7 @@ function menuDraw() {
 	}
 }
 
+var ability_value = Math.floor(Math.random() * (Player.MAX_ABILITY + 1));
 function createMenu() {
 	textAlign(CENTER);
 	textSize(50);
@@ -448,29 +449,11 @@ function createMenu() {
 		socket.emit('tickReply', {});
 	})
 
-}
+	summonerButton.mouseClicked(() => {(ability_value = 1)})
 
-var ability_value = Math.floor(Math.random() * (Player.MAX_ABILITY + 1));
-var menuButtonEnabled = false
-function enableMenuButton() {
+	doubleShotButton.mouseClicked(() => { (ability_value = 0) })
 
-	
-	startButton.mouseClicked(() => { transitionToState(STATE_RUNNING, ability_value)})
-
-	summonerButton.mouseClicked(() => { (ability_value = 1)})
-
-	doubleShotButton.mouseClicked(() => { (ability_value = 0)})
-
-	laserButton.mouseClicked(() => { (ability_value = 2)})
-
-	if (startButtonImgElem) {
-		startButtonImgElem.remove()
-	}
-	startButtonImgElem = createImg("startbutton.png", "Start")
-	startButtonImgElem.class("button-image")
-	startButtonImgElem.parent(startButton)
-
-
+	laserButton.mouseClicked(() => { (ability_value = 2) })
 
 	if (LazerButtonImgElem) {
 		LazerButtonImgElem.remove()
@@ -478,6 +461,9 @@ function enableMenuButton() {
 	LazerButtonImgElem = createImg("laserbutton.png", "Lazer")
 	LazerButtonImgElem.class("button-image")
 	LazerButtonImgElem.parent(laserButton)
+	selecetedLazerButtonImgElem = createImg("selecetedlaserbutton.png", "Lazer")
+	selecetedLazerButtonImgElem.class("button-image")
+	selecetedLazerButtonImgElem.parent(laserButton)
 
 
 	if (DoubleButtonImgElem) {
@@ -486,15 +472,36 @@ function enableMenuButton() {
 	DoubleButtonImgElem = createImg("doubleshotbutton.png", "Double_Shot")
 	DoubleButtonImgElem.class("button-image")
 	DoubleButtonImgElem.parent(doubleShotButton)
+	selecetedDoubleButtonImgElem = createImg("seleceteddoubleshotbutton.png", "Double_Shot")
+	selecetedDoubleButtonImgElem.class("button-image")
+	selecetedDoubleButtonImgElem.parent(doubleShotButton)
 
 
-	
+
 	if (summonerButtonImgElem) {
 		summonerButtonImgElem.remove()
 	}
 	summonerButtonImgElem = createImg("summonerbutton.png", "Summoner")
 	summonerButtonImgElem.class("button-image")
 	summonerButtonImgElem.parent(summonerButton)
+	selectedsummonerButtonImgElem = createImg("selectedsummonerbutton.png", "Summoner")
+	selectedsummonerButtonImgElem.class("button-image")
+	selectedsummonerButtonImgElem.parent(summonerButton)
+
+}
+
+
+var menuButtonEnabled = false
+function enableMenuButton() {
+
+	startButton.mouseClicked(() => { transitionToState(STATE_RUNNING, ability_value) })
+
+	if (startButtonImgElem) {
+		startButtonImgElem.remove()
+	}
+	startButtonImgElem = createImg("startbutton.png", "Start")
+	startButtonImgElem.class("button-image")
+	startButtonImgElem.parent(startButton)
 
 	menuButtonEnabled = true
 }
@@ -526,37 +533,48 @@ function setup() {
 function createGameoverScreen() {
 	var buttonText, buttonAction
 	if (gameState === STATE_DIED) {
-		buttonText = "waiting for boss fight"
+		buttonText = "Waiting for Boss Fight"
 		buttonAction = () => {}
 	} else {
-		buttonText = "back to main menu"
+		buttonText = "Back to Main Menu"
 		buttonAction = () => {transitionToState(STATE_MENU)}
 		socket.disconnect()
 	}
 
 	backToMenuButton = createButton(buttonText)
+	backToMenuButton.size(400, 100);
+	backToMenuButton.style('font-size', '40px');
+	backToMenuButton.class("no-margin")
 	backToMenuButton.mouseClicked(buttonAction)
 }
 
 function drawGameoverScreen() {
 	push()
-	background(255)
-	textSize(40)
-	fill(0, 0, 0)
+	textAlign(CENTER);
+	textSize(40);
+	
 	var message
 	switch (gameState) {
 		case STATE_DIED:
-			message = "you are dead"
+			background(40)
+			message = "You Died!"
+			fill(255, 0, 0)
 			break
 		case STATE_LOSE:
-			message = "the boss won"
+			background(40)
+			message = "Dr.Towle Failed you all!!!"
+			fill(255, 0, 0)
 			break
 		case STATE_WIN:
-			message = "you won"
+			background(40)
+			message = "You Beat Dr.Towle!"
+			fill(0, 255, 255)
 			break
 	}
-	text(message, 100, 100)
+
+	text(message, windowWidth / 2, windowHeight / 4);
 	pop()
+	backToMenuButton.position((windowWidth / 2) - (backToMenuButton.width / 2), windowHeight / 2);
 }
 
 function deleteGameoverScreen() {
@@ -818,12 +836,16 @@ function showEnemy(enemy) {
 		push()
 		angleMode(DEGREES)
 		translate(enemy.pos.x - camera.x, enemy.pos.y - camera.y)
-		rotate(enemy.angle + 90)
+		
 		imageMode(CENTER)
 		if (!enemy.color.equals(neutralColor)) {
+			rotate(enemy.angle)
 			tint(enemy.color.r, enemy.color.g, enemy.color.b)
+			image(pship, 0, 0, enemy.size * 2, enemy.size * 2)
+		} else {
+			rotate(enemy.angle + 90)
+			image(eship, 0, 0, enemy.size * 2, enemy.size * 2)
 		}
-		image(eship, 0, 0, enemy.size * 2, enemy.size * 2)
 		pop()
 
 		//max health bar (dark-grey)
