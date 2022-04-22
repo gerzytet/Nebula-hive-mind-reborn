@@ -491,10 +491,7 @@ export class Projectile extends Entity {
 		Assert.number(projectile.damage)
 		Assert.number(projectile.life)
 		Assert.number(projectile.type)
-		if (projectile.id !== null) {
-			Assert.string(projectile.id)
-		}
-		Assert.true(projectile.type === Projectile.NORMAL || projectile.type === Projectile.LASER || projectile.type === Projectile.F)
+		Assert.true(projectile.type >= Projectile.NORMAL && projectile.type <= Projectile.BOMB)
 	}
 
 	serialize() {
@@ -544,13 +541,16 @@ export class Projectile extends Entity {
 			}
 	}
 
-	kill() {
+	bombExplosion(state) {
+		var speed = 10
+
 		this.life = 0
+		}
 	}
 
 	killIfNotLaser() {
+	killIfNotLaser(state) {
 		if (this.type !== Projectile.LASER) {
-			this.kill()
 		}
 	}
 
@@ -570,6 +570,9 @@ export class Projectile extends Entity {
 
 		this.move()
 		this.life--
+		if (this.isDead()) {
+			this.kill(state)
+		}
 	}
 
 	move() {
@@ -863,8 +866,7 @@ export class Enemy extends Entity {
 			angle: this.angle,
 			vel: this.vel,
 			health: this.health,
-			color: this.color.serialize(),
-			id: this.id
+			color: this.color.serialize()
 		}
 	}
 
@@ -873,8 +875,6 @@ export class Enemy extends Entity {
 		enemy.angle = data.angle
 		enemy.vel = SimpleVector.deserialize(data.vel)
 		enemy.health = data.health
-		console.log(data.angle)
-		enemy.id = data.id
 		Enemy.assertValid(enemy)
 		return enemy
 	}
@@ -1053,7 +1053,7 @@ export class PlayerAfterImage {
 const bossProjectileDamage = 40
 export const bossMaxHealth = playerMaxHealth * 6;
 const bossSize = 200
-const bossSpeed = 5
+const bossSpeed = 8
 const bossBaseAcceleration = 0.01
 const bossSightRange = 500
 const bossMinAttackDelay = 30
@@ -1065,7 +1065,7 @@ export class Boss extends Entity {
 	static ATTACK_F = 1
 	static ATTACK_LASER_RIGHT = 2
 	static ATTACK_SWEEP = 3
-	static MAX_ATTACK = 3
+	static MAX_ATTACK = 4
 
 	constructor (pos, color=neutralColor) {
 		super(pos, bossSize, color)
@@ -1130,9 +1130,12 @@ export class Boss extends Entity {
 	move() {
 		super.move()
 
-		this.vel.limitMagnitude(bossSpeed)
 		this.vel.x *= 0.99
 		this.vel.y *= 0.99
+		if (this.vel.magnitude() > bossSpeed) {
+			this.vel.x *= 0.99
+			this.vel.y *= 0.99	
+		}
 	}
 
 	damage(amount) {
@@ -1185,10 +1188,12 @@ export class Boss extends Entity {
 			null,
 			(360 - angle)
 		))
+			this.dash()
+		}
 	}
 
 	doFAttack(state) {
-		if (this.attackDuration % 5 != 0) {
+		if (this.attackDuration % 5 !== 0) {
 			return
 		}
 
@@ -1256,6 +1261,14 @@ export class Boss extends Entity {
 		}
 	}
 
+	doBombAttack(state) {
+			return
+		}
+
+		var angle = state.randint(0, 259)
+		var unitVector = SimpleVector.unitVector(angle)
+		state.projectiles.push(
+			new Projectile(
 	doAttacks(state) {
 		if (this.attackDuration === 0) {
 			this.attackPattern = undefined
@@ -1281,6 +1294,7 @@ export class Boss extends Entity {
 					break
 				case Boss.ATTACK_SWEEP:
 					this.doLaserSweep(state)
+					break
 					break
 			}
 			this.attackDuration--
