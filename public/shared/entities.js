@@ -1034,6 +1034,7 @@ export class Corpse {
 		this.life = life
 		this.maxLife = life
 		this.pos = entity.pos
+		this.size = entity.size
 
 		Corpse.assertValid(this)
 	}
@@ -1043,6 +1044,7 @@ export class Corpse {
 		Assert.number(corpse.life)
 		Assert.number(corpse.maxLife)
 		SimpleVector.assertValid(corpse.pos)
+		Assert.number(corpse.size)
 	}
 
 	tick() {
