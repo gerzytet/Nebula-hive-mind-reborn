@@ -107,7 +107,7 @@ function preload() {
 	powerupFuel = loadImage('PowerUp_Fuel_2.png', () => { }, () => {
 		console.log("failed to load powerup fuel");
 	})
-	powerupHealth = loadImage('PowerUp-Health.png', () => { }, () => {
+	powerupHealth = loadImage('PowerUp-Health.gif', () => { }, () => {
 		console.log("failed to load powerup health");
 	})
 	powerupSpeed = loadImage('PowerUp-Speed.png', () => { }, () => {
@@ -431,7 +431,7 @@ function createMenu() {
 	menuDiv.position(width/2 - 200, (height*3)/4 - 20)
 
 	var namePreference = getItem("namePreference")
-	menuInput=createInput()
+	menuInput=createInput()	
 	if (namePreference !== null) {
 		menuInput.value(namePreference)
 	}
@@ -439,7 +439,8 @@ function createMenu() {
 	menuInput.attribute("placeholder", "Enter a name...")
 	menuInput.class("name-input")
 	menuInput.parent(menuDiv)
-
+	menuInput.attribute("maxlength", "12")
+	
 	doubleShotButton = createButton("")
 	doubleShotButton.class("no-margin")
 	doubleShotButton.class("ability-button")
@@ -506,6 +507,7 @@ function createMenu() {
 	summonerButtonImgElem.parent(summonerButton)
 
 	selectAbility(Math.floor(Math.random() * (Player.MAX_ABILITY + 1)))
+	
 }
 
 function abilityButtonImageName(ability) {
@@ -616,6 +618,9 @@ function disableMenuButton() {
 	startButtonImgElem.class("button-image")
 	startButtonImgElem.parent(startButton)
 	menuButtonEnabled = false
+
+	
+
 }
 
 
