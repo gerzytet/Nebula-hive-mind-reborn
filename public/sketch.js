@@ -73,7 +73,7 @@ var laserBeamSound = new Howl({
 	volume: 0.5
 });
 
-import {Callbacks, GameState, setCallbacks} from './shared/gamestate.js'
+import {Callbacks, GameState, setCallbacks, VERSION} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
 import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage, Boss} from './shared/entities.js'
@@ -141,8 +141,8 @@ function preload() {
 	})
 }
 export var bg
-export var pship, eship, asteroidFull, asteroidMedium, asteroidLow
-var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif, dog, towleImage, FImage
+export var pship, eship, asteroidFull, asteroidMedium, asteroidLow, towleImage
+var powerupFuel, powerupHealth, powerupSpeed, powerupAttack, powerupMachineGun, menuBackground, explosionGif, rockexplosionGif, dog, FImage
 export var socket
 var cnv
 var camera
@@ -466,6 +466,9 @@ function createMenu() {
 	socket.on("state", function (data) {
 		state = GameState.deserialize(data.state)
 		setTesting(data.testing)
+		if (data.version !== VERSION) {
+			window.location.reload()
+		}
 	})
 
 	socket.on('tick', function (data) {
@@ -1046,7 +1049,7 @@ function doRotation(player) {
 	if (newAngle < 0) {
 		newAngle += 360
 	}
-	if (isNaN(newAngle) || lastAngle === newAngle) {
+	if (isNaN(newAngle) || Math.abs(lastAngle - newAngle) < 4) {
 		return
 	}
 
@@ -1293,7 +1296,7 @@ function ui(player, state) {
 		fill(color.r, color.g, color.b)
 		text(i+1, windowWidth - 295, yplus)
 		text(scores[i].name, windowWidth - 265, yplus)
-		text(scores[i].score, windowWidth - 90, yplus)
+		text(Math.floor(scores[i].score), windowWidth - 90, yplus)
 	}
 	pop()
 	

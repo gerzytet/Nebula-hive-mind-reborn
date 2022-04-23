@@ -8,7 +8,7 @@
 import {Assert, SimpleVector, Color, isTesting, setTesting, mapWidth, mapHeight} from './public/shared/utilities.js'
 import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName, PlayerActivateAbility, PlayerDash, PlayerSendMessage} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
-import {Callbacks, GameState, Message, setCallbacks} from './public/shared/gamestate.js'
+import {Callbacks, GameState, Message, setCallbacks, VERSION} from './public/shared/gamestate.js'
 import express from 'express'
 import {Server} from 'socket.io'
 
@@ -145,7 +145,8 @@ function newConnection(socket) {
 
     socket.emit("state", {
         state: state.serialize(),
-        testing: isTesting()
+        testing: isTesting(),
+        version: VERSION
     })
 
     function tickReply(data) {

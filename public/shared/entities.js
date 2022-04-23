@@ -897,14 +897,19 @@ export class Enemy extends Entity {
 	}
 
 	serialize() {
-		return {
+		var data =  {
 			pos: this.pos.serialize(),
 			angle: this.angle,
 			vel: this.vel,
 			health: this.health,
-			color: this.color.serialize(),
-			id: this.id
+			color: this.color.serialize()
 		}
+		if (this.id === undefined) {
+			data.id = null
+		} else {
+			data.id = this.id
+		}
+		return data
 	}
 
 	static deserialize(data) {
@@ -918,8 +923,8 @@ export class Enemy extends Entity {
 	}
 
 	static assertValid(enemy) {
-		Entity.assertValid(enemy)
 		Assert.number(enemy.health)
+		console.log(enemy.id)
 		if (enemy.id !== null) {
 			Assert.string(enemy.id)
         }
