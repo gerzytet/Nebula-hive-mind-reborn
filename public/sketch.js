@@ -8,8 +8,9 @@
 //howler crap
 
 var sounds = ['library/blaster.mp3', 'library/blaster_high_pitch.mp3', 'library/blaster_low_pitch.mp3', 'library/boost.mp3', 
-'library/laser_sword.mp3', 'library/powerup.mp3', 'library/explosion.mp3'];
-//'library/sword-hit.mp3'
+'library/laser_sword.mp3', 'library/powerup.mp3', 'library/explosion.mp3', 'library/sword-hit.mp3','library/newExplosion.mp3',
+'library/Triumphant Music.mp3', 'library/laserBeam.mp3'];
+
 
 //done
 var blasterSound = new Howl({
@@ -52,7 +53,22 @@ var explosionSound = new Howl({
 });
 //!Pointless, no more sword in game!
 var swordHitSound = new Howl({
-	src:[sounds[6]],
+	src:[sounds[7]],
+	loop: false,
+	volume: 0.5
+});
+var nExplosionSound = new Howl({
+	src:[sounds[8]],
+	loop: false,
+	volume: 1.0
+});
+var fanfare = new Howl({
+	src:[sounds[9]],
+	loop: true,
+	volume: 0.5
+});
+var laserBeamSound = new Howl({
+	src:[sounds[10]],
 	loop: false,
 	volume: 0.5
 });
@@ -412,7 +428,7 @@ function createMenu() {
 
 	menuDiv = createDiv()
 	menuDiv.class("menu-button-container")
-	menuDiv.position(width/2 - 200, (height*3)/4 - 70)
+	menuDiv.position(width/2 - 200, (height*3)/4 - 20)
 
 	var namePreference = getItem("namePreference")
 	menuInput=createInput()
@@ -620,6 +636,10 @@ function createGameoverScreen() {
 		buttonText = "Back to Main Menu"
 		buttonAction = () => {transitionToState(STATE_MENU)}
 		socket.disconnect()
+	}
+
+	if (gameState === STATE_WIN) {
+		fanfare.play()
 	}
 
 	backToMenuButton = createButton(buttonText)
@@ -973,6 +993,10 @@ function showEnemy(enemy) {
 }
 
 function showCorpse(corpse) {
+	if (!isOnscreen(corpse)) {
+		return
+	}
+
 	push()
 	var entity = corpse.entity
 	translate(entity.pos.x - camera.x, entity.pos.y - camera.y)
@@ -989,7 +1013,7 @@ function showCorpse(corpse) {
 		explosionImage = explosionGif
 
 		if (shouldPlaySound) {
-			powerupSound.play()
+			nExplosionSound.play()
 		}
 	} else if (entity instanceof PlayerAfterImage) {
 		var color = entity.color
@@ -1002,7 +1026,7 @@ function showCorpse(corpse) {
 		explosionImage = rockexplosionGif
 
 		if (shouldPlaySound) {
-			powerupSound.play()
+			nExplosionSound.play()
 		}
 	}
 	//hack to get GIF to still animate
@@ -1459,6 +1483,10 @@ function tryShoot() {
 
 function tryActivateAbility(player) {
 	if (player.canActivateAbility()) {
+		if (player.ability === Player.LASER) {
+			laserBeamSound.play()
+		}
+
 		socket.emit("activateAbility", {})
 	}
 }

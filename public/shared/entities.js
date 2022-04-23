@@ -620,7 +620,7 @@ const minAsteroidSize = 50
 const maxAsteroidSize = 150
 const minAsteroidSpeed = 2
 const maxAsteroidSpeed = 5
-export const asteroidImpactDamagePerTick = 1
+export const asteroidImpactDamagePerTick = 2
 const maxFuelSpawnOnAsteroidDeath = 3
 export class Asteroid extends Entity {
 	constructor (pos, vel, size) {
@@ -1070,6 +1070,26 @@ export class Hitbox {
 		var dist = this.pos.dist(other.pos)
 		return dist < maxDist
 	}
+
+	push(entity, strength) {
+		if (!this.isColliding(entity)) {
+			return
+		}
+
+		var dist = this.pos.dist(entity.pos)
+		var pushVector = new SimpleVector(entity.pos.x - this.pos.x, entity.pos.y - this.pos.y)
+
+		if (pushVector.magnitude() === 0) {
+			pushVector = new SimpleVector(0.01, 0.01)
+		}
+
+		var scaledPushVector = new SimpleVector(
+			pushVector.x / pushVector.magnitude() * strength,
+			pushVector.y / pushVector.magnitude() * strength
+		)
+		entity.vel.x += scaledPushVector.x
+		entity.vel.y += scaledPushVector.y
+	}
 }
 
 export class PlayerAfterImage {
@@ -1117,7 +1137,7 @@ export class Boss extends Entity {
 		this.attackPattern = undefined
 		this.attackDuration = 0
 		this.players = players
-		this.health = this.maxHealth()
+		this.health = 1 //this.maxHealth()
 	}
 
 	maxHealth() {

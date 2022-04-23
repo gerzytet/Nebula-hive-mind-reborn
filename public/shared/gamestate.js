@@ -24,6 +24,7 @@ function mulberry32(a) {
     }
 }
 
+const bossOverlapDamagePerTick = 0.9
 //holds everything in the game
 export class GameState {
 	reset() {
@@ -197,6 +198,17 @@ export class GameState {
 			}
 			enemy.push(asteroid, 0.25)
 		}, false)
+
+		//players and enemies
+		//push both
+		collisionHelper(this.players, this.enemies, function(player, enemy) {
+			if (enemy instanceof Hitbox) {
+				enemy.push(player, 2)
+				player.damage(bossOverlapDamagePerTick)
+			} else {
+				enemy.push(player, 0.1)
+			}
+		})
 	}
 
 	//goes through entity array and gets rid of dead objects
