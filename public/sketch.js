@@ -439,7 +439,7 @@ function createMenu() {
 	menuInput.attribute("placeholder", "Enter a name...")
 	menuInput.class("name-input")
 	menuInput.parent(menuDiv)
-	menuInput.attribute("maxlength", "12")
+	menuInput.attribute("maxlength", "10")
 	
 	doubleShotButton = createButton("")
 	doubleShotButton.class("no-margin")
