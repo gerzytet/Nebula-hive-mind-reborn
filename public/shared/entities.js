@@ -1028,6 +1028,7 @@ export class Corpse {
 		this.entity = entity
 		this.life = life
 		this.maxLife = life
+		this.pos = entity.pos
 
 		Corpse.assertValid(this)
 	}
@@ -1036,6 +1037,7 @@ export class Corpse {
 		Assert.instanceOf(corpse, Corpse)
 		Assert.number(corpse.life)
 		Assert.number(corpse.maxLife)
+		SimpleVector.assertValid(corpse.pos)
 	}
 
 	tick() {
@@ -1137,7 +1139,7 @@ export class Boss extends Entity {
 		this.attackPattern = undefined
 		this.attackDuration = 0
 		this.players = players
-		this.health = 1 //this.maxHealth()
+		this.health = this.maxHealth()
 	}
 
 	maxHealth() {
