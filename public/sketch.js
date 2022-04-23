@@ -476,7 +476,9 @@ function createMenu() {
 		var eventsSerialized = data.events
 		if (data.events) {
 		}
+		console.log(eventsSerialized)
 		var seed = data.seed
+
 
 		var events = []
 		for (var i = 0; i < eventsSerialized.length; i++) {
@@ -485,6 +487,10 @@ function createMenu() {
 
 		state.seed(seed)
 		state.advance(events)
+		if (data.stateCheck) {
+			console.log(data.stateCheck)
+			state = GameState.deserialize(data.stateCheck)
+		}
 		socket.emit('tickReply', {});
 	})
 

@@ -108,7 +108,8 @@ function tick() {
 
     io.sockets.emit("tick", {
         events: eventsSerialized,
-        seed: seed
+        seed: seed,
+        stateCheck: Math.random() < 0.1 ? state.serialize() : undefined
     })
 }
 
@@ -232,4 +233,6 @@ function newConnection(socket) {
             new PlayerSendMessage(new Message(data.message, player.color))
         )
     }
+
+
 }

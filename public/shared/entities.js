@@ -92,6 +92,17 @@ export class Entity {
 	getHitboxes() {
 		return [this]
 	}
+
+	assertConsistent(other) {
+		Assert.true(this.pos.equals(other.pos))
+		console.log(this.pos)
+		console.log(other.pos)
+		Assert.true(this.vel.equals(other.vel))
+		Assert.true(this.acc.equals(other.acc))
+		Assert.true(this.size === other.size)
+		Assert.true(this.color.equals(other.color))
+		Assert.true(this.angle === other.angle)
+	}
 }
 
 const playerSize = 20
@@ -457,6 +468,16 @@ export class Player extends Entity {
 
 		this.fuel--
 	}
+
+	assertConsistent(other) {
+		super.assertConsistent(other)
+		Assert.true(this.ability === other.ability)
+		Assert.true(this.abilityDuration === other.abilityDuration)
+		Assert.true(this.abilityCooldown === other.abilityCooldown)
+		Assert.true(this.fuel === other.fuel)
+		Assert.true(this.health === other.health)
+		Assert.true(this.color.equals(other.color))
+	}
 }
 
 const bulletLifetimeTicks = 150
@@ -627,7 +648,7 @@ export class Asteroid extends Entity {
 		super(pos, size)
 		this.vel = vel
 		this.health = this.maxhealth()
-		this.angle = Math.floor(Math.random() * 360)
+		this.angle = 0
 		Asteroid.assertValid(this)
 	}
 
@@ -924,7 +945,6 @@ export class Enemy extends Entity {
 
 	static assertValid(enemy) {
 		Assert.number(enemy.health)
-		console.log(enemy.id)
 		if (enemy.id !== null) {
 			Assert.string(enemy.id)
         }
@@ -1120,7 +1140,7 @@ export class PlayerAfterImage {
 	}
 }
 
-const bossProjectileDamage = 40
+const bossProjectileDamage = 20
 const bossSize = 200
 const bossSpeed = 8
 const bossBaseAcceleration = 0.01

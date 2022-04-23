@@ -14,7 +14,7 @@ import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playe
 //number of ticks it should take on average to fill the whole map with powerups, asteriods, enemies, if there is nothing there already
 const serverFillTicks = 30 * 30
 
-export const VERSION = 2
+export const VERSION = 16
 
 //random num generator
 function mulberry32(a) {
@@ -485,6 +485,17 @@ export class GameState {
 		}
 
 		return closestPlayer
+	}
+
+	assertConsistent(state) {
+		function assertConsistentHelper(array1, array2) {
+			Assert.true(array1.length === array2.length)
+			for (var i = 0; i < array1.length; i++) {
+				array1[i].assertConsistent(array2[i])
+			}
+		}
+
+		assertConsistentHelper(this.players, state.players)
 	}
 }
 
