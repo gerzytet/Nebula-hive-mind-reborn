@@ -136,15 +136,16 @@ export class GameState {
 		collisionHelper(this.players, this.powerups, function(player, powerup) {
 			powerup.apply(player)
 			powerup.kill()
+			callbacks.onPickupPowerup(player)
 		})
 
 		//projectiles and enemies:
 		//kill the projectile, damage the enemy by projectile.damage
 		collisionHelper(this.projectiles, this.enemies, function(projectile, enemy) {
+			var damage = projectile.damage
 			if (enemy instanceof Hitbox) {
-				//BALANCING: if this branch executes, we know enemy is the boss
-				//we need some logic in here to nerf laser damage in this case
 				enemy = enemy.entity
+				damage /= 20
 			} else {
 				projectile.pushIfNotLaser(enemy, 2)
 			}
@@ -154,7 +155,7 @@ export class GameState {
 			}
 			projectile.killIfNotLaser()
 			//the part that does the damage
-			enemy.damage(projectile.damage)
+			enemy.damage(damage)
 		})
 
 		//enemies and enemies:
@@ -276,17 +277,22 @@ export class GameState {
 				}
 	
 				if (this.players[i].pos.dist(this.players[j].pos) < connectionRadius) {
-					this.players[i].heal(connectionHealPerTick)
-					this.players[j].heal(connectionHealPerTick)
-					this.players[i].connections++
-					this.players[j].connections++
+					if (this.players[i].connections <= 1) {
+						this.players[i].heal(connectionHealPerTick)
+						this.players[i].connections++
+					}
+
+					if (this.players[j].connections <= 1) {
+						this.players[j].heal(connectionHealPerTick)
+						this.players[j].connections++
+					}
 				}
 			}
 		}
 	}
 
 	doBossChecks() {
-		if (!this.bossPhase && this.players.length > 4) {
+		if (!this.bossPhase && this.players.length >= 4) {
 			var allSame = true
 			var color = this.players[0]
 			for (var i = 0; i < this.players.length; i++) {
@@ -310,14 +316,18 @@ export class GameState {
 		}
 	}
 
-	transitionToBoss() {
+	transitionToBoss(players=undefined) {
 		this.bossPhase = true
+		if (players === undefined) {
+			players = this.players.length
+		}
 
 		this.enemies.push(new Boss(
 			new SimpleVector(
 				mapWidth / 2,
 			    mapHeight / 2
-			)
+			),
+			players
 		))
 	}
 
@@ -437,7 +447,12 @@ export class GameState {
 
 	//true if boss or their death explosion is still around
 	bossExists() {
-		return this.enemies.find(e => e instanceof Boss) !== undefined
+		return this.getBoss() !== undefined
+	}
+
+	
+	getBoss() {
+		return this.enemies.find(e => e instanceof Boss)
 	}
 
 	getClosestPlayer(pos) {
@@ -464,6 +479,8 @@ export class Callbacks {
 	//called whan a player dies during boss phase
 	//client disconnects, sevrer send a playerLeave event
 	onKillDuringBoss(player) {}
+
+	onPickupPowerup(player) {}
 }
 //the instance of callbacks
 export var callbacks = undefined

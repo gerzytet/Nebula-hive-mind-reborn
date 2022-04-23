@@ -552,10 +552,17 @@ export class Projectile extends Entity {
 
 	bombExplosion(state) {
 		var speed = 10
+		var boss = state.getBoss()
+		if (boss === undefined) {
+			return
+		}
 
+		var players = boss.players
+
+		var fChance = (1/3) + ((Math.min(players, 10) - 4) / 6) * (1/3)
 		//BALANCING: decrease the 45 to make more bullets spawn
 		//number spawned is 360 / 45
-		for (var angle = 0; angle < 360; angle += 45) {
+		for (var angle = 0; angle < 360; angle += (360 / (players + 4))) {
 			state.projectiles.push(
 				new Projectile(
 					this.pos.clone(),
@@ -563,8 +570,7 @@ export class Projectile extends Entity {
 					playerBaseBulletSize,
 					neutralColor,
 					bossProjectileDamage,
-					//BALANCING: logic means 2/3 chance of normal bullet, 1/3 chance of F.  can be tweaked
-					[Projectile.F, Projectile.NORMAL, Projectile.NORMAL][state.randint(0, 2)]
+					state.random() < fChance ? Projectile.F : Projectile.NORMAL
 				)
 			)
 		}
@@ -594,7 +600,7 @@ export class Projectile extends Entity {
 			var closestPlayer = state.getClosestPlayer(this.pos)
 			if (closestPlayer !== null) {
 				//BALANCING: .scale() on this vector can make the Fs move faster or slower.  >1 is faster, <1 is slower
-				this.acc = SimpleVector.unitVector(this.pos.angleTo(closestPlayer.pos))//.scale(x)
+				this.acc = SimpleVector.unitVector(this.pos.angleTo(closestPlayer.pos)).scale(0.75)
 			}
 		}
 
@@ -1021,12 +1027,15 @@ export class Corpse {
 	constructor(entity, life) {
 		this.entity = entity
 		this.life = life
+		this.maxLife = life
 
 		Corpse.assertValid(this)
 	}
 
 	static assertValid(corpse) {
 		Assert.instanceOf(corpse, Corpse)
+		Assert.number(corpse.life)
+		Assert.number(corpse.maxLife)
 	}
 
 	tick() {
@@ -1083,7 +1092,6 @@ export class PlayerAfterImage {
 }
 
 const bossProjectileDamage = 40
-export const bossMaxHealth = playerMaxHealth * 6;
 const bossSize = 200
 const bossSpeed = 8
 const bossBaseAcceleration = 0.01
@@ -1092,6 +1100,7 @@ const bossMinAttackDelay = 30
 const bossAttackChancePerTick = 1/15
 const bossAttackSize = playerBaseBulletSize
 const initialFVel = 15
+const bossFAttackDuration = 50
 export class Boss extends Entity {
 	static ATTACK_LASER_LEFT = 0
 	static ATTACK_F = 1
@@ -1100,14 +1109,19 @@ export class Boss extends Entity {
 	static ATTACK_BOMB = 4
 	static MAX_ATTACK = 4
 
-	constructor (pos, color=neutralColor) {
-		super(pos, bossSize, color)
+	constructor (pos, players) {
+		super(pos, bossSize, neutralColor)
 		//BALANCING: this needs to scale with number of players
 		//make initial health or number of players a parameter to the function
-		this.health = bossMaxHealth
 		this.attackCooldown = 0
 		this.attackPattern = undefined
 		this.attackDuration = 0
+		this.players = players
+		this.health = this.maxHealth()
+	}
+
+	maxHealth() {
+		return this.players * playerMaxHealth * 4
 	}
 
 	serialize() {
@@ -1117,16 +1131,16 @@ export class Boss extends Entity {
 			vel: this.vel,
 			health: this.health,
 			angle: this.angle,
-			color: this.color.serialize(),
 			isBoss: true,
 			attackCooldown: this.attackCooldown,
 			attackPattern: this.attackPattern,
-			attackDuration: this.attackDuration
+			attackDuration: this.attackDuration,
+			players: this.players
 		}
 	}
 
 	static deserialize(data) {
-		var boss = new Boss(SimpleVector.deserialize(data.pos), Color.deserialize(data.color))
+		var boss = new Boss(SimpleVector.deserialize(data.pos), data.players)
 		boss.angle = data.angle
 		boss.vel = SimpleVector.deserialize(data.vel)
 		boss.health = data.health
@@ -1142,12 +1156,13 @@ export class Boss extends Entity {
 		Entity.assertValid(boss)
 		Assert.instanceOf(boss, Boss)
 		Assert.number(boss.health)
-		Assert.true(boss.health >= 0 && boss.health <= bossMaxHealth)
+		Assert.true(boss.health >= 0 && boss.health <= boss.maxHealth())
 		Assert.number(boss.attackCooldown)
 		Assert.true(boss.attackCooldown >= 0 && boss.attackCooldown <= bossMinAttackDelay)
 		Assert.true(boss.attackPattern === undefined || boss.attackPattern >= 0 && boss.attackPattern <= Boss.MAX_ATTACK)
 		Assert.number(boss.attackDuration)
 		Assert.true(boss.attackDuration >= 0)
+		Assert.number(boss.players)
 	}
 
 	maxAttackDuration() {
@@ -1159,7 +1174,7 @@ export class Boss extends Entity {
 			case Boss.ATTACK_LASER_RIGHT:
 				return 50
 			case Boss.ATTACK_F:
-				return 50
+				return bossFAttackDuration
 			case Boss.ATTACK_SWEEP:
 				return 60
 			case Boss.ATTACK_BOMB:
@@ -1229,6 +1244,20 @@ export class Boss extends Entity {
 		))
 		//BALANCING: a double-laser stream could be done here
 		//just change angle by some small offset, make sure it isn't negative, recalculate laserVel, push another projectile
+		if (this.players >= 7) {
+			var angle = (angle + 180) % 360
+			var laserVel = SimpleVector.unitVector(angle).scale(playerLaserVel)
+			state.projectiles.push(new Projectile(
+				handPos.clone(),
+				laserVel,
+				bossAttackSize,
+				this.color,
+				bossProjectileDamage * laserAttackFactor,
+				Projectile.LASER,
+				null,
+				(360 - angle)
+			))
+		}
 
 		if (this.attackDuration === 1) {
 			this.dash()
@@ -1236,7 +1265,9 @@ export class Boss extends Entity {
 	}
 
 	doFAttack(state) {
-		if (this.attackDuration % 5 !== 0) {
+		var fs = this.players * 2.5
+		var chancePerTick = fs / bossFAttackDuration
+		if (state.random() > chancePerTick) {
 			return
 		}
 
@@ -1295,8 +1326,8 @@ export class Boss extends Entity {
 				speed = playerBulletVel
 			}
 
-			//BALANCING: see the damage formula.  laserAttackFactor is something like 0.04 since it does damage per tick
-			var vel = SimpleVector.unitVector(angle).scale(speed)
+			var balancingSpeedFactor = 1 + (Math.min(this.players, 10) - 4) * (1/6)
+			var vel = SimpleVector.unitVector(angle).scale(speed).scale(balancingSpeedFactor)
 			state.projectiles.push(new Projectile(
 				handPos.clone(),
 				vel,
@@ -1347,7 +1378,7 @@ export class Boss extends Entity {
 			if (state.random() < bossAttackChancePerTick) {
 				//BALANCING: decrease this value to decrease gap between boss attacks
 				this.attackCooldown = bossMinAttackDelay
-				this.attackPattern = state.randint(0, MAX_ATTACK)
+				this.attackPattern = state.randint(0, Boss.MAX_ATTACK)
 				//BALANCING: see maxAttackDuration() for details
 				this.attackDuration = this.maxAttackDuration()
 			}

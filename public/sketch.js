@@ -11,25 +11,31 @@ var sounds = ['library/blaster.mp3', 'library/blaster_high_pitch.mp3', 'library/
 'library/laser_sword.mp3', 'library/powerup.mp3', 'library/explosion.mp3'];
 //'library/sword-hit.mp3'
 
+//done
 var blasterSound = new Howl({
 	src:[sounds[0]],
 	loop: false,
 	volume: 0.25
 });
+//done
 var blasterSoundHigh = new Howl({
 	src:[sounds[1]],
 	loop: false,
 	volume: 0.25
 });
+//done
 var blasterSoundLow = new Howl({
 	src:[sounds[2]],
 	loop: false,
 	volume: 0.25
 });
+//same thing as dashing
 var boostSound = new Howl({
 	src:[sounds[3]],
-	loop: false
+	loop: false,
+	volume: 5.0
 });
+//!Pointless, no more sword in game!
 var laserSwordSound = new Howl({
 	src:[sounds[4]],
 	loop: false
@@ -37,13 +43,14 @@ var laserSwordSound = new Howl({
 var powerupSound = new Howl({
 	src:[sounds[5]],
 	loop: false
-});
+}); 
 //!Change this sound completely!!!!!
 var explosionSound = new Howl({
 	src:[sounds[6]],
 	loop: false,
 	volume: 0.025
 });
+//!Pointless, no more sword in game!
 var swordHitSound = new Howl({
 	src:[sounds[6]],
 	loop: false,
@@ -53,7 +60,7 @@ var swordHitSound = new Howl({
 import {Callbacks, GameState, setCallbacks} from './shared/gamestate.js'
 import {GameEvent} from './shared/events.js'
 import {mapWidth, mapHeight, SimpleVector, connectionRadius, neutralColor, setTesting, isTesting} from './shared/utilities.js'
-import {Powerup, enemyMaxHealth, playerMaxHealth, bossMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage, Boss} from './shared/entities.js'
+import {Powerup, enemyMaxHealth, playerMaxHealth, Projectile, playerBaseBulletSize, playerMaxFuel, Player, Enemy, PlayerAfterImage, Boss} from './shared/entities.js'
 import { serverCameraDraw, isServerCamera, becomeServerCamera } from "./serverCamera.js"
 //import {cuss} from 'cuss'
 
@@ -163,6 +170,14 @@ class ClientCallbacks extends Callbacks {
 		} else {
 			transitionToState(STATE_LOSE)
 		}
+	}
+
+	onPickupPowerup(player) {
+		if (player.id !== socket.id) {
+			return
+		}
+
+		powerupSound.play()
 	}
 }
 
@@ -895,7 +910,11 @@ function showPowerup(powerup) {
 		if (powerup.life < (30 * 5)) {
 			tint(255, Math.sin(powerup.life / 2) * 255)
 		}
-		image(imageFromPowerupType(powerup.type), 0, 0, powerup.size * 2, powerup.size * 2)
+		var size = powerup.size * 2
+		if (powerup.type === Powerup.FUEL) {
+			size *= 1.3
+		}
+		image(imageFromPowerupType(powerup.type), 0, 0, size, size)
 		pop()
 	}
 }
@@ -961,11 +980,17 @@ function showCorpse(corpse) {
 	rotate(entity.angle)
 	imageMode(CENTER)
 
+	var shouldPlaySound = corpse.life === corpse.maxLife
+
 	var explosionImage
 	var name
 	if (entity instanceof Enemy) {
 		name = "enemyExplosion"
 		explosionImage = explosionGif
+
+		if (shouldPlaySound) {
+			powerupSound.play()
+		}
 	} else if (entity instanceof PlayerAfterImage) {
 		var color = entity.color
 		tint(color.r, color.g, color.b, 128 * (corpse.life / 30))
@@ -975,6 +1000,10 @@ function showCorpse(corpse) {
 	} else {
 		name = "rockExplosion"
 		explosionImage = rockexplosionGif
+
+		if (shouldPlaySound) {
+			powerupSound.play()
+		}
 	}
 	//hack to get GIF to still animate
 	tint(255, 0)
@@ -1071,7 +1100,7 @@ function ui(player, state) {
 
 			//current health bar (red)
 			fill(255, 0, 0);
-			rect((windowWidth / 2) - (100 * 3) + 110, 5, ((boss.health) / bossMaxHealth) * (100 * 6), 40);
+			rect((windowWidth / 2) - (100 * 3) + 110, 5, ((boss.health) / boss.maxHealth()) * (100 * 6), 40);
         }
     }
 
@@ -1416,9 +1445,11 @@ function tryShoot() {
 		socket.emit("shoot", {})
 		lastShootTime = millis()
 		
-		if ((Math.floor(Math.random() * 3)) == 0) {
+		//60% chance normal, 20% high, 20% low
+		var r = Math.random()
+		if (r < 0.20) {
 			blasterSoundLow.play();
-		} else if ((Math.floor(Math.random() * 3)) == 1) {
+		} else if (r < 0.40) {
 			blasterSoundHigh.play();
 		} else {
 			blasterSound.play();
@@ -1439,6 +1470,7 @@ function tryDash(player) {
 		console.log("sending dash")
 		socket.emit('dash', {})
 		lastDashMillis = millis()
+		boostSound.play()
 	}
 }
 

@@ -413,8 +413,13 @@ export class PlayerSendMessage extends GameEvent {
 
 	apply(state) {
 		state.addMessage(this.message)
-		if (isTesting() && this.message.message.split(" ")[1] === "/boss") {
-			state.transitionToBoss()
+		if (isTesting() && this.message.message.split(": ")[1].startsWith("/boss")) {
+			var msg = this.message.message.split(": ")[1]
+			if (msg.split(" ").length > 1) {
+				state.transitionToBoss(parseInt(msg.split(" ")[1]))
+			} else {
+				state.transitionToBoss()
+			}
 		}
 	}
 }
