@@ -137,11 +137,14 @@ function newConnection(socket) {
             "Player: " + (playercounter + 1),
             data.ability
         )
-
         playercounter += 1
+
         events.push(
             new PlayerJoin(player)
         )
+        
+        events.push( new PlayerSendMessage(new Message("Server "  + player.name + " Has Joined", player.color)))
+        
     }
 
     socket.emit("state", {

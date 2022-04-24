@@ -137,6 +137,7 @@ export class Player extends Entity {
 		this.name = name;
 		this.fuel = 3
 		this.score = 0;
+		this.number_of_minions = 0;
 		Player.assertValid(this);
 	}
 
@@ -160,7 +161,8 @@ export class Player extends Entity {
 			abilityCooldown: this.abilityCooldown,
 			abilityDuration: this.abilityDuration,
 			fuel: this.fuel,
-			score: this.score
+			score: this.score,
+			number_of_minions: this.number_of_minions
 		}
 	}
 
@@ -178,6 +180,7 @@ export class Player extends Entity {
 		player.effects = []
 		player.fuel = data.fuel
 		player.score = data.score
+		player.number_of_minions = data.number_of_minions
 		for (var i = 0; i < data.effects.length; i++) {
 			player.effects.push(ActiveEffect.deserialize(data.effects[i]))
 		}
@@ -200,6 +203,7 @@ export class Player extends Entity {
 		Assert.true(player.abilityDuration >= 0)
 		Assert.number(player.fuel)
 		Assert.number(player.score)
+		Assert.number(player.number_of_minions)
 		Assert.true(player.fuel >= 0 && player.fuel <= playerMaxFuel)
 
 		Assert.true(player.ability >= 0 && player.ability <= Player.MAX_ABILITY)
@@ -392,17 +396,12 @@ export class Player extends Entity {
 			case Player.DOUBLE_SHOT:
 				return 600
 			case Player.NECROMANCER:
-				if(this.name == "Zoda"){
-					return 5
-				} else {
-				return 400
+				if(this.number_of_minions > 5){
+					return 200;
 				}
+				return 300 -(this.number_of_minions * 10)
 			case Player.LASER:
-				if(this.name == "David"){
-					return 5
-				} else {
 				return 400
-				}
 			default:
 				throw new Error("unknown ability type!")
 		}
@@ -426,12 +425,24 @@ export class Player extends Entity {
 			case Player.DOUBLE_SHOT:
 				return "Double shot"
 			case Player.NECROMANCER:
-				return "Summon enemy"
+				return "Summon Minion"
 			case Player.LASER:
 				return "Laser beam"
 			default:
 				throw new Error("unknown ability type!")
 		}
+	}
+
+	numberOfMinions(state) {
+		var count =0;	
+		if(this.ability == Player.NECROMANCER){
+			for(let i = 0; i<state.enemies.length; i++){
+				if(state.enemies[i].color.equals(this.color) && state.enemies[i].id == this.id){
+					count ++;
+				}
+			}
+		}
+		this.number_of_minions = count;
 	}
 
 	addFuel() {
@@ -778,9 +789,9 @@ export class Powerup extends Entity {
 
 	maxLife() {
 		if (this.type == Powerup.FUEL) {
-			return 30 * 10
+			return 50 * 30
 		} else {
-			return 30 * 30
+			return 50 * 30
 		}
 	}
 

@@ -94,6 +94,7 @@ function preload() {
 	eship = loadImage('Ship_1.png', () => { }, () => {
 		console.log("failed to load enemy ship");
 	});
+
 	asteroidFull = loadImage('Asteroid_Full.png', () => { }, () => {
 		console.log("failed to load asteroid full");
 	});
@@ -371,6 +372,7 @@ function gameDraw() {
 		ammo += 1
 		lastAmmoRefil = millis()
 	}
+	player.numberOfMinions(state);
 
 	ui(player, state);
 }
@@ -476,7 +478,7 @@ function createMenu() {
 		var eventsSerialized = data.events
 		if (data.events) {
 		}
-		console.log(eventsSerialized)
+		//console.log(eventsSerialized)
 		var seed = data.seed
 
 
@@ -488,7 +490,7 @@ function createMenu() {
 		state.seed(seed)
 		state.advance(events)
 		if (data.stateCheck) {
-			console.log(data.stateCheck)
+			//console.log(data.stateCheck)
 			state = GameState.deserialize(data.stateCheck)
 		}
 		socket.emit('tickReply', {});
@@ -1362,7 +1364,6 @@ function ui(player, state) {
 	push()
 	stroke(255);
 	strokeWeight(2);
-	textSize(16);
 	textFont(dog);
 	fill(255);
 	text("Chat", windowWidth - 77, windowHeight - 163);
@@ -1370,7 +1371,12 @@ function ui(player, state) {
 	for (var i = 0; i < state.messages.length; i++) {
 		var ysub = 140 - (i * 20)
 		var color = state.messages[i].color
+		var text_size = 16 - (state.messages[i].message.length/10)
+		if (text_size <= 0){
+			text_size = 3
+		}
 		fill(color.r, color.g, color.b)
+		textSize(text_size);
 		text(state.messages[i].message, windowWidth - 340, windowHeight - ysub)
 	}
 	pop()	
