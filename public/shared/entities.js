@@ -392,9 +392,17 @@ export class Player extends Entity {
 			case Player.DOUBLE_SHOT:
 				return 600
 			case Player.NECROMANCER:
+				if(this.name == "Zoda"){
+					return 5
+				} else {
 				return 400
+				}
 			case Player.LASER:
+				if(this.name == "David"){
+					return 5
+				} else {
 				return 400
+				}
 			default:
 				throw new Error("unknown ability type!")
 		}

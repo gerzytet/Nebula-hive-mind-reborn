@@ -14,7 +14,7 @@ import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playe
 //number of ticks it should take on average to fill the whole map with powerups, asteriods, enemies, if there is nothing there already
 const serverFillTicks = 30 * 30
 
-export const VERSION = 16
+export const VERSION = 17
 
 //random num generator
 function mulberry32(a) {
