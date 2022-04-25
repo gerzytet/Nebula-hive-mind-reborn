@@ -223,12 +223,6 @@ export class GameState {
 				if (array[i].isDead()) {
 					if (array[i].hasCorpse()) {
 						state.corpses.push(array[i].getCorpse())
-						// player death message
-						/*
-						if(array[i] is a player?){
-							socket.emit("chat", {message: array[i].name + " has died"})
-						}
-						*/
 					}
 					array.splice(i, 1)
 					i--

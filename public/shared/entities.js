@@ -251,6 +251,7 @@ export class Player extends Entity {
 			color = colors[state.randint(0, colors.length - 1)];
 			this.color = color
 		} else {
+			//need a new bool var to tell sketch when to send death messages
 			this.color = color
 		}
 		this.score = 0
