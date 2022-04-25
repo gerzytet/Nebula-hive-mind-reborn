@@ -377,18 +377,18 @@ export class Player extends Entity {
 	}
 
 	activateAbility(state) {
-		this.abilityCooldown = this.maxCooldown(this.ability)
-		this.abilityDuration = this.maxDuration(this.ability)
-
 		if (this.ability === Player.NECROMANCER) {
 			let enemy = new Enemy(this.pos.clone(), this.color, this.id)
 			enemy.angle = -1 * this.angle
 			if (enemy.angle < 0) {
 				enemy.angle += 360
 			}
-			enemy.size = this.size*0.7
 			state.enemies.push(enemy)			
 		}
+		
+		this.numberOfMinions(state)
+		this.abilityCooldown = this.maxCooldown(this.ability)
+		this.abilityDuration = this.maxDuration(this.ability)
 	}
 
     maxCooldown() {

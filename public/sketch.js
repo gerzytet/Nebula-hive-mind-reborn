@@ -372,7 +372,6 @@ function gameDraw() {
 		ammo += 1
 		lastAmmoRefil = millis()
 	}
-	player.numberOfMinions(state);
 
 	ui(player, state);
 }
@@ -1178,12 +1177,6 @@ function ui(player, state) {
 		rect((100 * 2) + 180, windowHeight - 67, 100 * 2 * (player.abilityDuration / player.maxDuration()), 20);
     }
 	if (player.abilityDuration == 0) {
-		/*
-		if (player.abilityCooldown == 0) {
-			fill(255, 255, 0);
-		} else {
-			fill(0, 0, 255);
-        }*/
 		fill(((player.maxCooldown() - player.abilityCooldown) / player.maxCooldown()) * 255, ((player.maxCooldown() - player.abilityCooldown) / player.maxCooldown()) * 255, (player.abilityCooldown / player.maxCooldown()) * 255);
 		rect((100 * 2) + 180, windowHeight - 67, 100 * 2 * ((player.maxCooldown()-player.abilityCooldown) / player.maxCooldown()), 20);
 	}
