@@ -13,7 +13,12 @@ David J - Created sprites and integrated them into js.
 Al S - Refined David J's sprites and created new assets, such as the Boss.
 
 
+
+
+
 Game Trailer:
 https://youtu.be/QTin1Mipvyw
+
+
 
 Music credit goes to ZakharValaha (unfortunately I don't remember what the song is called).
