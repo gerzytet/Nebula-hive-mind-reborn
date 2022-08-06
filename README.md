@@ -21,7 +21,7 @@ Al S - Refined David J's sprites and created new assets, such as the Boss.
 
 
 Game Trailer (click image to view):
-[![Hive Mind](https://cdn.discordapp.com/attachments/1004972780330176542/1005308578527186975/menubackgroundbad.png)](https://www.youtube.com/watch?v=QTin1Mipvyw "Hive Mind")
+[[!]](https://cdn.discordapp.com/attachments/1004972780330176542/1005308578527186975/menubackgroundbad.png)](https://www.youtube.com/watch?v=QTin1Mipvyw )
 
 
 
