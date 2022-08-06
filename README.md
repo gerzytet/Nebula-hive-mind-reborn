@@ -15,13 +15,16 @@ https://github.com/Zoda390
 David J - Created sprites and integrated them into js.
 
 Al S - Refined David J's sprites and created new assets, such as the Boss.
+https://github.com/NewGBAXL
 
 
 
 
 
-Game Trailer (click image to view):
-[[!]](https://cdn.discordapp.com/attachments/1004972780330176542/1005308578527186975/menubackgroundbad.png)](https://www.youtube.com/watch?v=QTin1Mipvyw )
+Game Trailer:
+https://user-images.githubusercontent.com/53142589/183232335-1380150e-f855-4e94-965d-a9744a869fad.mp4
+
+
 
 
 
