@@ -22,10 +22,5 @@ https://github.com/NewGBAXL
 
 
 Game Trailer:
-https://user-images.githubusercontent.com/53142589/183232335-1380150e-f855-4e94-965d-a9744a869fad.mp4
 
-
-
-
-
-Music credit goes to ZakharValaha (unfortunately I don't remember what the song is called).
+[![Watch the video](https://cdn.discordapp.com/attachments/1005302862110273666/1010017485333987399/unknown.png)](https://youtu.be/QTin1Mipvyw)
