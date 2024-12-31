@@ -208,6 +208,10 @@ export class SimpleVector {
 		vec.y *= -1
 		return vec
 	}
+
+	equals(other) {
+		return this.x === other.x && this.y === other.y
+	}
 }
 
 var testing = false

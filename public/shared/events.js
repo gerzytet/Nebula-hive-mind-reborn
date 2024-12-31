@@ -118,7 +118,9 @@ export class PlayerDash extends GameEvent {
 			return
 		}
 
-		player.dash(state)
+		if (player.canDash()) {
+			player.dash(state)
+		}
 	}
 
 	serialize() {

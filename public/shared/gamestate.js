@@ -14,6 +14,8 @@ import {Projectile, Asteroid, Powerup, asteroidImpactDamagePerTick, Enemy, playe
 //number of ticks it should take on average to fill the whole map with powerups, asteriods, enemies, if there is nothing there already
 const serverFillTicks = 30 * 30
 
+export const VERSION = 20
+
 //random num generator
 function mulberry32(a) {
     return function() {
@@ -146,13 +148,15 @@ export class GameState {
 			var damage = projectile.damage
 			if (enemy instanceof Hitbox) {
 				enemy = enemy.entity
-				damage /= 20
+				if (projectile.type === Projectile.LASER) {
+					damage /= 15
+				}
 			} else {
 				projectile.pushIfNotLaser(enemy, 2)
 			}
 			let pointed_player = state.playerById(projectile.id)
 			if (pointed_player !== null) {
-				pointed_player.score += 1
+				pointed_player.score += damage
 			}
 			projectile.killIfNotLaser()
 			//the part that does the damage
@@ -204,7 +208,7 @@ export class GameState {
 		collisionHelper(this.players, this.enemies, function(player, enemy) {
 			if (enemy instanceof Hitbox) {
 				enemy.push(player, 2)
-				player.damage(bossOverlapDamagePerTick)
+				player.damage(bossOverlapDamagePerTick, neutralColor, state)
 			} else {
 				enemy.push(player, 0.1)
 			}
@@ -306,7 +310,7 @@ export class GameState {
 	doBossChecks() {
 		if (!this.bossPhase && this.players.length >= 4) {
 			var allSame = true
-			var color = this.players[0]
+			var color = this.players[0].color
 			for (var i = 0; i < this.players.length; i++) {
 				allSame = allSame && this.players[i].color.equals(color)
 			}
@@ -423,7 +427,7 @@ export class GameState {
 		assertHelper(state.projectiles, Projectile)
 		assertHelper(state.asteroids, Asteroid)
 		assertHelper(state.powerups, Powerup)
-		assertHelper(state.enemies, Enemy)
+		assertHelper(state.enemies.filter(e => e instanceof Enemy), Enemy)
 		assertHelper(state.corpses, Corpse)
 		assertHelper(state.messages, Message)
 
@@ -481,6 +485,17 @@ export class GameState {
 		}
 
 		return closestPlayer
+	}
+
+	assertConsistent(state) {
+		function assertConsistentHelper(array1, array2) {
+			Assert.true(array1.length === array2.length)
+			for (var i = 0; i < array1.length; i++) {
+				array1[i].assertConsistent(array2[i])
+			}
+		}
+
+		assertConsistentHelper(this.players, state.players)
 	}
 }
 

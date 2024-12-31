@@ -92,6 +92,17 @@ export class Entity {
 	getHitboxes() {
 		return [this]
 	}
+
+	assertConsistent(other) {
+		Assert.true(this.pos.equals(other.pos))
+		console.log(this.pos)
+		console.log(other.pos)
+		Assert.true(this.vel.equals(other.vel))
+		Assert.true(this.acc.equals(other.acc))
+		Assert.true(this.size === other.size)
+		Assert.true(this.color.equals(other.color))
+		Assert.true(this.angle === other.angle)
+	}
 }
 
 const playerSize = 20
@@ -126,6 +137,7 @@ export class Player extends Entity {
 		this.name = name;
 		this.fuel = 3
 		this.score = 0;
+		this.number_of_minions = 0;
 		Player.assertValid(this);
 	}
 
@@ -149,7 +161,8 @@ export class Player extends Entity {
 			abilityCooldown: this.abilityCooldown,
 			abilityDuration: this.abilityDuration,
 			fuel: this.fuel,
-			score: this.score
+			score: this.score,
+			number_of_minions: this.number_of_minions
 		}
 	}
 
@@ -167,6 +180,7 @@ export class Player extends Entity {
 		player.effects = []
 		player.fuel = data.fuel
 		player.score = data.score
+		player.number_of_minions = data.number_of_minions
 		for (var i = 0; i < data.effects.length; i++) {
 			player.effects.push(ActiveEffect.deserialize(data.effects[i]))
 		}
@@ -189,6 +203,7 @@ export class Player extends Entity {
 		Assert.true(player.abilityDuration >= 0)
 		Assert.number(player.fuel)
 		Assert.number(player.score)
+		Assert.number(player.number_of_minions)
 		Assert.true(player.fuel >= 0 && player.fuel <= playerMaxFuel)
 
 		Assert.true(player.ability >= 0 && player.ability <= Player.MAX_ABILITY)
@@ -236,6 +251,7 @@ export class Player extends Entity {
 			color = colors[state.randint(0, colors.length - 1)];
 			this.color = color
 		} else {
+			//need a new bool var to tell sketch when to send death messages
 			this.color = color
 		}
 		this.score = 0
@@ -362,18 +378,18 @@ export class Player extends Entity {
 	}
 
 	activateAbility(state) {
-		this.abilityCooldown = this.maxCooldown(this.ability)
-		this.abilityDuration = this.maxDuration(this.ability)
-
 		if (this.ability === Player.NECROMANCER) {
 			let enemy = new Enemy(this.pos.clone(), this.color, this.id)
 			enemy.angle = -1 * this.angle
 			if (enemy.angle < 0) {
 				enemy.angle += 360
 			}
-			enemy.size = this.size*0.7
 			state.enemies.push(enemy)			
 		}
+		
+		this.numberOfMinions(state)
+		this.abilityCooldown = this.maxCooldown(this.ability)
+		this.abilityDuration = this.maxDuration(this.ability)
 	}
 
     maxCooldown() {
@@ -381,7 +397,10 @@ export class Player extends Entity {
 			case Player.DOUBLE_SHOT:
 				return 600
 			case Player.NECROMANCER:
-				return 400
+				if(this.number_of_minions > 5){
+					return 200;
+				}
+				return 300 -(this.number_of_minions * 10)
 			case Player.LASER:
 				return 400
 			default:
@@ -407,12 +426,24 @@ export class Player extends Entity {
 			case Player.DOUBLE_SHOT:
 				return "Double shot"
 			case Player.NECROMANCER:
-				return "Summon enemy"
+				return "Summon Minion"
 			case Player.LASER:
 				return "Laser beam"
 			default:
 				throw new Error("unknown ability type!")
 		}
+	}
+
+	numberOfMinions(state) {
+		var count =0;	
+		if(this.ability == Player.NECROMANCER){
+			for(let i = 0; i<state.enemies.length; i++){
+				if(state.enemies[i].color.equals(this.color) && state.enemies[i].id == this.id){
+					count ++;
+				}
+			}
+		}
+		this.number_of_minions = count;
 	}
 
 	addFuel() {
@@ -456,6 +487,16 @@ export class Player extends Entity {
 		this.vel = newVel
 
 		this.fuel--
+	}
+
+	assertConsistent(other) {
+		super.assertConsistent(other)
+		Assert.true(this.ability === other.ability)
+		Assert.true(this.abilityDuration === other.abilityDuration)
+		Assert.true(this.abilityCooldown === other.abilityCooldown)
+		Assert.true(this.fuel === other.fuel)
+		Assert.true(this.health === other.health)
+		Assert.true(this.color.equals(other.color))
 	}
 }
 
@@ -627,7 +668,7 @@ export class Asteroid extends Entity {
 		super(pos, size)
 		this.vel = vel
 		this.health = this.maxhealth()
-		this.angle = Math.floor(Math.random() * 360)
+		this.angle = 0
 		Asteroid.assertValid(this)
 	}
 
@@ -749,9 +790,9 @@ export class Powerup extends Entity {
 
 	maxLife() {
 		if (this.type == Powerup.FUEL) {
-			return 30 * 10
+			return 50 * 30
 		} else {
-			return 30 * 30
+			return 50 * 30
 		}
 	}
 
@@ -897,14 +938,19 @@ export class Enemy extends Entity {
 	}
 
 	serialize() {
-		return {
+		var data =  {
 			pos: this.pos.serialize(),
 			angle: this.angle,
 			vel: this.vel,
 			health: this.health,
-			color: this.color.serialize(),
-			id: this.id
+			color: this.color.serialize()
 		}
+		if (this.id === undefined) {
+			data.id = null
+		} else {
+			data.id = this.id
+		}
+		return data
 	}
 
 	static deserialize(data) {
@@ -918,7 +964,6 @@ export class Enemy extends Entity {
 	}
 
 	static assertValid(enemy) {
-		Entity.assertValid(enemy)
 		Assert.number(enemy.health)
 		if (enemy.id !== null) {
 			Assert.string(enemy.id)
@@ -1029,6 +1074,7 @@ export class Corpse {
 		this.life = life
 		this.maxLife = life
 		this.pos = entity.pos
+		this.size = entity.size
 
 		Corpse.assertValid(this)
 	}
@@ -1038,6 +1084,7 @@ export class Corpse {
 		Assert.number(corpse.life)
 		Assert.number(corpse.maxLife)
 		SimpleVector.assertValid(corpse.pos)
+		Assert.number(corpse.size)
 	}
 
 	tick() {
@@ -1113,7 +1160,7 @@ export class PlayerAfterImage {
 	}
 }
 
-const bossProjectileDamage = 40
+const bossProjectileDamage = 20
 const bossSize = 200
 const bossSpeed = 8
 const bossBaseAcceleration = 0.01

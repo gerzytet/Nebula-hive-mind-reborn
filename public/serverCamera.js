@@ -1,5 +1,6 @@
-import {state, bg, socket, pship, asteroidFull, eship, asteroidMedium, asteroidLow, gameState, STATE_RUNNING} from "./sketch.js"
+import {state, bg, socket, pship, asteroidFull, eship, asteroidMedium, asteroidLow, gameState, STATE_RUNNING, towleImage} from "./sketch.js"
 import {mapWidth, mapHeight, neutralColor} from "./shared/utilities.js"
+import { Boss } from "./shared/entities.js"
 
 function serverCameraShowPlayer(player, serverCamScalex, serverCamScaley) {
 	push()
@@ -12,7 +13,21 @@ function serverCameraShowPlayer(player, serverCamScalex, serverCamScaley) {
 	pop()
 }
 
+function serverCameraShowBoss(boss, serverCamScalex, serverCamScaley) {
+	push()
+	translate(boss.pos.x / mapWidth * width, boss.pos.y / mapHeight * height)
+	angleMode(DEGREES)
+	rotate(-boss.angle + 90)
+	imageMode(CENTER);
+	image(towleImage, 0, 0, boss.size * 2 * serverCamScalex, boss.size * 2 * serverCamScaley)
+	pop()
+}
+
 function serverCameraShowEnemy(enemy, serverCamScalex, serverCamScaley) {
+	if (enemy instanceof Boss) {
+		serverCameraShowBoss(enemy, serverCamScalex, serverCamScaley)
+		return
+	}
 	push()
 	translate(enemy.pos.x / mapWidth * width, enemy.pos.y / mapHeight * height)
 	angleMode(DEGREES)

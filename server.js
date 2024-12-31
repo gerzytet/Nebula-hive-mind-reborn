@@ -8,7 +8,7 @@
 import {Assert, SimpleVector, Color, isTesting, setTesting, mapWidth, mapHeight} from './public/shared/utilities.js'
 import {PlayerLeave, PlayerJoin, PlayerChangeAcceleration, PlayerChangeAngle, PlayerShoot, PlayerChangeName, PlayerActivateAbility, PlayerDash, PlayerSendMessage} from './public/shared/events.js'
 import {Player} from './public/shared/entities.js'
-import {Callbacks, GameState, Message, setCallbacks} from './public/shared/gamestate.js'
+import {Callbacks, GameState, Message, setCallbacks, VERSION} from './public/shared/gamestate.js'
 import express from 'express'
 import {Server} from 'socket.io'
 
@@ -108,7 +108,8 @@ function tick() {
 
     io.sockets.emit("tick", {
         events: eventsSerialized,
-        seed: seed
+        seed: seed,
+        stateCheck: Math.random() < 0.1 ? state.serialize() : undefined
     })
 }
 
@@ -136,16 +137,20 @@ function newConnection(socket) {
             "Player: " + (playercounter + 1),
             data.ability
         )
-
         playercounter += 1
+
         events.push(
             new PlayerJoin(player)
         )
+        
+        events.push( new PlayerSendMessage(new Message("Server "  + player.name + " Has Joined", player.color)))
+        
     }
 
     socket.emit("state", {
         state: state.serialize(),
-        testing: isTesting()
+        testing: isTesting(),
+        version: VERSION
     })
 
     function tickReply(data) {
@@ -231,4 +236,6 @@ function newConnection(socket) {
             new PlayerSendMessage(new Message(data.message, player.color))
         )
     }
+
+
 }
